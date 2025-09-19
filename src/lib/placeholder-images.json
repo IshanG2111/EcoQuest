@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "sustainability-intro",
+      "description": "An introduction to sustainability.",
+      "imageUrl": "https://picsum.photos/seed/sustainability-intro/600/400",
+      "imageHint": "green leaves"
+    },
+    {
+      "id": "recycling-world",
+      "description": "The world of recycling.",
+      "imageUrl": "https://picsum.photos/seed/recycling-world/600/400",
+      "imageHint": "recycling bins"
+    },
+    {
+      "id": "renewable-energy",
+      "description": "An overview of renewable energy sources.",
+      "imageUrl": "https://picsum.photos/seed/renewable-energy/600/400",
+      "imageHint": "solar panels"
+    },
+    {
+      "id": "water-conservation",
+      "description": "Techniques for water conservation.",
+      "imageUrl": "https://picsum.photos/seed/water-conservation/600/400",
+      "imageHint": "water drop"
+    },
+    {
+      "id": "carbon-footprint",
+      "description": "Understanding your carbon footprint.",
+      "imageUrl": "https://picsum.photos/seed/carbon-footprint/600/400",
+      "imageHint": "factory smokestack"
+    },
+    {
+      "id": "sustainable-agriculture",
+      "description": "The future of farming.",
+      "imageUrl": "https://picsum.photos/seed/sustainable-agriculture/600/400",
+      "imageHint": "green farm"
+    }
+  ]
+}

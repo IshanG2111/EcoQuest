@@ -1,0 +1,74 @@
+
+{
+  "meta":{"game":"Eco City Builder","version":"1.0","generated":"2025-09-17"},
+  "buildings":[
+    {"id":"solar_farm","name":"Solar Farm","effects":{"greenEnergy":15,"co2":-5,"happiness":3},"cost":70,"buildTime":3,"tier":"early"},
+    {"id":"wind_turbine","name":"Wind Turbine","effects":{"greenEnergy":10,"co2":-4,"happiness":2},"cost":45,"buildTime":2,"tier":"early"},
+    {"id":"city_park","name":"City Park","effects":{"happiness":12,"co2":-3},"cost":20,"buildTime":1,"tier":"early"},
+    {"id":"transit_hub","name":"Transit Hub","effects":{"co2":-8,"traffic":-10,"happiness":5},"cost":50,"buildTime":2,"tier":"early"},
+    {"id":"bike_lane","name":"Protected Bike Lane","effects":{"co2":-2,"happiness":3},"cost":8,"buildTime":1,"tier":"early"},
+    {"id":"solar_rooftops","name":"Solar Rooftops","effects":{"greenEnergy":5,"happiness":1},"cost":25,"buildTime":2,"tier":"mid"},
+    {"id":"public_school","name":"Public School","effects":{"happiness":6,"education":8},"cost":30,"buildTime":3,"tier":"mid"},
+    {"id":"community_garden","name":"Community Garden","effects":{"happiness":8,"foodSecurity":6},"cost":12,"buildTime":1,"tier":"early"},
+    {"id":"green_roof","name":"Green Roof","effects":{"temperatureBuffer":5,"happiness":2},"cost":15,"buildTime":1,"tier":"mid"},
+    {"id":"metro_station","name":"Metro Station","effects":{"co2":-12,"traffic":-25,"happiness":8},"cost":150,"buildTime":4,"tier":"late"},
+    {"id":"waste_recycler","name":"Waste Recycler","effects":{"waste":-30,"happiness":2},"cost":60,"buildTime":2,"tier":"mid"},
+    {"id":"water_reuse_plant","name":"Water Reuse Plant","effects":{"waterUse":-30,"happiness":2},"cost":80,"buildTime":3,"tier":"mid"},
+    {"id":"vertical_farm","name":"Vertical Farm","effects":{"foodSecurity":12,"co2":-2},"cost":70,"buildTime":3,"tier":"mid"},
+    {"id":"shipping_hub","name":"Shipping Hub","effects":{"budget":30,"co2":8},"cost":-30,"buildTime":3,"tier":"early"},
+    {"id":"eco_industrial","name":"Eco Industrial Park","effects":{"budget":40,"jobs":20,"co2":-5},"cost":100,"buildTime":3,"tier":"mid"},
+    {"id":"city_park_large","name":"Large Central Park","effects":{"happiness":25,"biodiversity":10},"cost":120,"buildTime":4,"tier":"late"},
+    {"id":"urban_forest","name":"Urban Forest","effects":{"co2":-6,"temperatureBuffer":8},"cost":60,"buildTime":3,"tier":"mid"},
+    {"id":"ev_subsidy_program","name":"EV Subsidy Program","effects":{"co2":-5,"happiness":5},"cost":50,"buildTime":1,"tier":"mid"},
+    {"id":"congestion_charge","name":"Congestion Charge","effects":{"co2":-4,"happiness":2,"budget":15},"cost":10,"buildTime":0,"tier":"mid"},
+    {"id":"affordable_housing","name":"Affordable Housing","effects":{"happiness":10,"population":100},"cost":80,"buildTime":3,"tier":"mid"},
+    {"id":"stormwater_park","name":"Stormwater Park","effects":{"floodRisk":-20,"waterQuality":10},"cost":65,"buildTime":3,"tier":"mid"},
+    {"id":"district_heating","name":"District Heating","effects":{"greenEnergy":10,"co2":-6},"cost":90,"buildTime":3,"tier":"late"},
+    {"id":"battery_storage","name":"Battery Storage","effects":{"greenEnergyStability":15},"cost":50,"buildTime":2,"tier":"mid"},
+    {"id":"waste_to_energy","name":"Waste-to-Energy","effects":{"waste":-20,"co2":5,"budget":20},"cost":-20,"buildTime":3,"tier":"mid"},
+    {"id":"eco_bridge","name":"Eco Bridge (pedestrian)","effects":{"access":5,"walkability":8},"cost":40,"buildTime":2,"tier":"mid"},
+    {"id":"parklet","name":"Parklet","effects":{"happiness":2,"biodiversity":1},"cost":5,"buildTime":0,"tier":"early"},
+    {"id":"community_center","name":"Community Center","effects":{"happiness":8,"education":4},"cost":25,"buildTime":2,"tier":"early"},
+    {"id":"solar_farm_large","name":"Large Solar Farm","effects":{"greenEnergy":40,"co2":-20},"cost":180,"buildTime":5,"tier":"late"},
+    {"id":"waste_collection_bot","name":"Automated Waste Bot","effects":{"waste":-10},"cost":15,"buildTime":1,"tier":"early"},
+    {"id":"green_corridor","name":"Green Corridor","effects":{"biodiversity":8,"walkability":5},"cost":30,"buildTime":2,"tier":"mid"},
+    {"id":"river_restoration","name":"River Restoration","effects":{"waterQuality":25,"floodRisk":-15},"cost":140,"buildTime":4,"tier":"late"},
+    {"id":"urban_tree_canopy","name":"Street Tree Canopy","effects":{"temperatureBuffer":6,"happiness":3},"cost":20,"buildTime":1,"tier":"early"},
+    {"id":"smart_grid","name":"Smart Grid","effects":{"greenEnergyStability":10,"budget":-5},"cost":100,"buildTime":3,"tier":"late"},
+    {"id":"park_school_combo","name":"School with Park","effects":{"education":10,"happiness":8},"cost":60,"buildTime":3,"tier":"mid"},
+    {"id":"solar_bus_stop","name":"Solar Bus Stop","effects":{"greenEnergy":1,"happiness":1},"cost":8,"buildTime":0,"tier":"early"},
+    {"id":"urban_wetlands","name":"Urban Wetlands","effects":{"waterQuality":15,"biodiversity":6},"cost":90,"buildTime":3,"tier":"mid"},
+    {"id":"micro_grid","name":"Community Microgrid","effects":{"greenEnergy":6,"resilience":8},"cost":40,"buildTime":2,"tier":"mid"}
+  ],
+  "challenges":[
+    {"id":"rush_hour","name":"Rush Hour Congestion","target":"reduceTraffic","reward":50,"penalty":-15},
+    {"id":"flood_threat","name":"Flood Threat","target":"reduceFloodRisk","reward":80,"penalty":-30},
+    {"id":"air_quality_alert","name":"Air Quality Alert","target":"reduceCO2","reward":60,"penalty":-20},
+    {"id":"housing_crisis","name":"Housing Crisis","target":"increasePopulation","reward":70,"penalty":-25},
+    {"id":"budget_shortfall","name":"Budget Shortfall","target":"increaseBudget","reward":100,"penalty":-40}
+  ],
+  "events":[
+    {"id":"economic_boom","name":"Economic Boom","probability":0.03,"effects":{"budget":40,"population":50}},
+    {"id":"recession","name":"Recession","probability":0.02,"effects":{"budget":-50,"happiness":-8}},
+    {"id":"heatwave","name":"Heatwave","probability":0.04,"effects":{"temperature":5,"happiness":-5}},
+    {"id":"flood","name":"Urban Flood","probability":0.02,"effects":{"floodRisk":30,"infrastructureDamage":10}},
+    {"id":"drought","name":"Drought","probability":0.03,"effects":{"waterUse":-10,"happiness":-3}},
+    {"id":"fuel_spike","name":"Fuel Price Spike","probability":0.03,"effects":{"transportCost":10,"happiness":-4}},
+    {"id":"innovation_grant","name":"Innovation Grant","probability":0.02,"effects":{"budget":30,"greenEnergy":5}},
+    {"id":"strike","name":"Worker Strike","probability":0.01,"effects":{"happiness":-10,"budget":-10}},
+    {"id":"public_protest","name":"Public Protest","probability":0.02,"effects":{"happiness":-12,"approval":-8}},
+    {"id":"earthquake","name":"Earthquake","probability":0.005,"effects":{"infrastructureDamage":30,"budget":-20}}
+  ],
+  "difficultyScale":[
+    {"populationThreshold":0,"budgetMultiplier":1.0,"eventMultiplier":1.0},
+    {"populationThreshold":1000,"budgetMultiplier":0.95,"eventMultiplier":1.15},
+    {"populationThreshold":3000,"budgetMultiplier":0.9,"eventMultiplier":1.3}
+  ],
+  "presets":{
+    "starter_city":{"population":500,"budget":200,"mapSize":8,"availableBuildings":["parklet","solar_rooftops","bike_lane","community_garden"]},
+    "industrial_rush":{"population":1500,"budget":300,"mapSize":10,"availableBuildings":["shipping_hub","eco_industrial","transit_hub"]}
+  },
+  "seeds":{"defaultSeed":555555}
+}
+
+    

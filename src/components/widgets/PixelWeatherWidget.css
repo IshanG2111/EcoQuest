@@ -1,0 +1,149 @@
+:root {
+    --pixel-bg-forest: hsl(var(--secondary));
+    --pixel-fg-forest: hsl(var(--primary));
+    --pixel-accent-forest: hsl(var(--accent));
+    
+    --pixel-bg-ocean: hsl(var(--secondary));
+    --pixel-fg-ocean: hsl(var(--primary));
+    --pixel-accent-ocean: hsl(var(--accent));
+
+    --pixel-bg-city: hsl(var(--secondary));
+    --pixel-fg-city: hsl(var(--primary));
+    --pixel-accent-city: hsl(var(--accent));
+}
+
+.pixel-weather-widget {
+    position: relative;
+    width: 280px;
+    height: 160px;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 3px solid hsl(var(--foreground));
+    background-color: var(--pixel-bg-forest);
+    box-shadow: 4px 4px 0px 0px hsl(var(--secondary));
+    image-rendering: pixelated;
+    cursor: pointer;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    color: hsl(var(--card-foreground));
+    display: flex;
+    flex-direction: column;
+}
+
+.pixel-weather-widget:hover {
+    transform: scale(1.03) translate(-2px, -2px);
+    box-shadow: 6px 6px 0px 0px hsl(var(--secondary));
+}
+
+.pixel-weather-widget.forest { background-color: var(--pixel-bg-forest); }
+.pixel-weather-widget.ocean { background-color: var(--pixel-bg-ocean); }
+.pixel-weather-widget.city { background-color: var(--pixel-bg-city); }
+
+.pixel-scene {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    transform: scale(2); /* Makes pixels larger */
+    transform-origin: bottom left;
+}
+
+.scene-bg {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50%;
+    background-color: var(--pixel-fg-forest);
+}
+.forest .scene-bg { background-color: var(--pixel-fg-forest); }
+.ocean .scene-bg { background-color: var(--pixel-fg-ocean); }
+.city .scene-bg { background-color: var(--pixel-fg-city); }
+
+/* Weather states for bg */
+.scene-bg.clouds, .scene-bg.rain, .scene-bg.fog, .scene-bg.snow, .scene-bg.thunderstorm {
+    filter: brightness(0.8);
+}
+
+
+.pixel-layer {
+    position: absolute;
+    inset: 0;
+    background-repeat: repeat;
+    pointer-events: none;
+}
+
+.pixel-layer.rain {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAAGCAYAAADAL2zVAAAAFElEQVQImWNgYGD4z/AfAzYgBQEAWpUKotbSgZcAAAAASUVORK5CYII=');
+    animation: rain-anim 0.5s linear infinite;
+}
+
+@keyframes rain-anim {
+    from { background-position: 0 0; }
+    to { background-position: 0 100%; }
+}
+
+.overlay {
+    position: relative;
+    z-index: 2;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    color: hsl(var(--primary-foreground));
+}
+
+.topline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.temp {
+    font-size: 28px;
+    font-weight: bold;
+    font-family: 'Press Start 2P', monospace;
+}
+
+.label {
+    font-size: 14px;
+    text-transform: uppercase;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+.microfact {
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 4px;
+    background-color: rgba(0,0,0,0.4);
+    border-radius: 3px;
+}
+
+.controls {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 3;
+    display: flex;
+    gap: 4px;
+}
+
+.widget-button {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--primary-foreground));
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.widget-button:hover {
+    background: rgba(0,0,0,0.6);
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <defs>
+    <pattern id="vault-pattern" patternUnits="userSpaceOnUse" width="50" height="50">
+      <path d="M25 0 L25 50 M0 25 L50 25" stroke="#0D82C4" stroke-width="1"/>
+      <path d="M12.5 12.5 L12.5 37.5 M0 25 L50 25" stroke="#F9D342" stroke-width="0.5" opacity="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#vault-pattern)" />
+</svg>

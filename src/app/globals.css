@@ -1,0 +1,285 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, [data-theme='the-tva-archives'] {
+    --background: 33 26% 87%; /* #DDCDBF - Parchment Paper */
+    --foreground: 20 16% 20%; /* #3D2B24 - Walnut Brown */
+    
+    --card: 135 15% 5%; /* #0A0F0B - TVA Black */
+    --card-foreground: 29 100% 59%; /* #FFB02E - Temporal Amber */
+
+    --popover: 135 15% 5%;
+    --popover-foreground: 29 100% 59%;
+
+    --primary: 19 69% 51%; /* #C75B22 - Burnt Orange */
+    --primary-foreground: 33 26% 87%; /* Parchment Paper */
+
+    --secondary: 19 69% 51%;
+    --secondary-foreground: 33 26% 87%;
+    
+    --muted: 33 26% 80%; /* A lighter parchment for muted backgrounds */
+    --muted-foreground: 33 26% 87%; /* Parchment Paper for sub-text on dark cards */
+
+    --accent: 29 100% 59%;
+    --accent-foreground: 135 15% 5%;
+    
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 29 64% 49%;
+    --input: 29 64% 49%;
+    --ring: 19 69% 51%;
+
+    --radius: 0.25rem;
+  }
+
+  [data-theme='the-vault-ed-program'] {
+    --background: 80 8% 30%;    /* Darker Olive Drab */
+    --foreground: 147 100% 66%; /* #2BFF7A - Phosphor Green */
+
+    --card: 132 17% 8%;         /* #111812 - Terminal Black */
+    --card-foreground: 147 100% 66%; /* Phosphor Green */
+
+    --popover: 132 17% 8%;
+    --popover-foreground: 147 100% 66%;
+
+    --primary: 147 100% 66%;
+    --primary-foreground: 132 17% 8%;
+    
+    --secondary: 147 58% 35%;    /* Brighter Dim Green */
+    --secondary-foreground: 147 100% 66%;
+
+    --muted: 0 0% 20%;           /* #333333 - Industrial Gray */
+    --muted-foreground: 147 58% 55%; /* Brighter muted green for readability */
+
+    --accent: 147 100% 66%;
+    --accent-foreground: 132 17% 8%;
+
+    --destructive: 359 63% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 147 58% 35%;
+    --input: 147 58% 35%;
+    --ring: 147 100% 66%;
+  }
+
+  [data-theme='the-lumon-method'] {
+    --background: 0 0% 100%;      /* #FFFFFF - Stark White */
+    --foreground: 223 83% 19%;  /* #010C36 - Lumon Blue */
+    
+    --card: 223 83% 19%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 223 83% 19%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 168 32% 56%; /* #52AD9A - Frolic Green */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 0 0% 95%;       /* Lighter Inactive Gray */
+    --secondary-foreground: 223 83% 19%;
+
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 100%; /* Pure White for sub-text on dark cards */
+
+    --accent: 46 92% 61%;       /* #F9D342 - Woe Yellow */
+    --accent-foreground: 223 83% 19%;
+
+    --destructive: 0 69% 60%;  /* #DD5E5E - Dread Red */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 168 32% 56%;
+
+    --radius: 0.1rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
+}
+
+@layer components {
+  /* CRT Monitor Effects */
+  .vignette {
+    box-shadow: inset 0 0 150px rgba(0,0,0,0.5);
+  }
+  .scanlines {
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0) 50%,
+      rgba(0, 0, 0, 0.2) 70%,
+      rgba(0, 0, 0, 0.6)
+    );
+    background-size: 100% 3px;
+    animation: scan 10s linear infinite;
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  .retro-window {
+    @apply border-2 border-solid bg-card shadow-md;
+    border-top-color: hsl(var(--muted));
+    border-left-color: hsl(var(--muted));
+    border-bottom-color: #000;
+    border-right-color: #000;
+    
+    [data-theme='the-tva-archives'] & {
+       text-shadow: 0 0 5px hsl(var(--card-foreground) / 0.5);
+       box-shadow: 5px 5px 0px 0px hsl(var(--secondary));
+    }
+    [data-theme='the-vault-ed-program'] & {
+       border-radius: 0;
+       border: 4px solid hsl(var(--primary));
+       box-shadow: 0 0 15px hsl(var(--primary) / 0.7);
+       animation: flicker 0.15s infinite;
+    }
+    [data-theme='the-lumon-method'] & {
+       border-radius: 2px;
+       box-shadow: none;
+       border-width: 1px;
+    }
+  }
+  
+  .window-drag-handle {
+    @apply bg-secondary text-secondary-foreground flex items-center justify-between p-1 cursor-move;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+
+    [data-theme='the-vault-ed-program'] & {
+       @apply bg-primary text-primary-foreground;
+    }
+    [data-theme='the-lumon-method'] & {
+       @apply bg-card text-foreground font-body border-b;
+    }
+  }
+
+  .window-content {
+    @apply p-4 md:p-6;
+  }
+  
+  .filter-primary {
+    filter: invert(42%) sepia(21%) saturate(543%) hue-rotate(106deg) brightness(91%) contrast(87%);
+    [data-theme='the-tva-archives'] & {
+      filter: invert(65%) sepia(58%) saturate(1433%) hue-rotate(334deg) brightness(102%) contrast(101%);
+    }
+    [data-theme='the-vault-ed-program'] & {
+      filter: invert(86%) sepia(30%) saturate(2258%) hue-rotate(85deg) brightness(105%) contrast(106%);
+    }
+    [data-theme='the-lumon-method'] & {
+       filter: none;
+    }
+  }
+
+  .pixelated-icon {
+    image-rendering: pixelated;
+  }
+}
+
+@layer utilities {
+  @keyframes scan {
+    from { background-position: 0 0; }
+    to { background-position: 0 100%; }
+  }
+
+  @keyframes zoom-in {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+      from {
+          opacity: 0;
+          transform: translateY(20px);
+      }
+      to {
+          opacity: 1;
+          transform: translateY(0);
+      }
+  }
+
+  @keyframes flicker {
+    0% { opacity: 1; }
+    50% { opacity: 0.95; }
+  }
+
+  @keyframes crt-open {
+    0% {
+      transform: scale(1, 0.005);
+      opacity: 0;
+      filter: brightness(3);
+    }
+    15% {
+      transform: scale(1, 0.005);
+      opacity: 1;
+      filter: brightness(3);
+    }
+    30% {
+      transform: scale(1.05, 1.05);
+      opacity: 1;
+      filter: brightness(1);
+    }
+    35% {
+      transform: scale(1, 1);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1, 1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes crt-close {
+    0% {
+      transform: scale(1, 1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1, 0.005);
+      opacity: 1;
+      filter: brightness(1);
+    }
+    80% {
+      transform: scale(1, 0.005);
+      opacity: 1;
+      filter: brightness(3);
+    }
+    100% {
+      transform: scale(0, 0);
+      opacity: 0;
+    }
+  }
+
+  .animate-zoom-in {
+    animation: zoom-in 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+  
+  .animate-crt-open {
+    animation: crt-open 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .animate-crt-close {
+    animation: crt-close 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+}

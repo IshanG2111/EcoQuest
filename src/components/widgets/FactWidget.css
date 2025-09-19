@@ -1,0 +1,109 @@
+.fact-widget-container {
+  perspective: 1000px;
+  width: 280px;
+  min-height: 180px;
+  position: relative;
+}
+
+.fact-widget-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+}
+
+.fact-widget-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.fact-widget-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent content from spilling out */
+  word-wrap: break-word; /* Ensure long words wrap */
+  
+  /* Pixel art styles */
+  border: 3px solid hsl(var(--foreground));
+  border-radius: 8px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  padding: 16px;
+  image-rendering: pixelated;
+  box-shadow: 4px 4px 0px 0px hsl(var(--secondary));
+}
+
+.fact-widget-face--front {
+  z-index: 2;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.fact-widget-face--back {
+  transform: rotateY(180deg);
+  justify-content: flex-start;
+  gap: 1rem; /* Increased gap for better spacing */
+  font-size: 14px;
+  padding: 20px; /* Add slightly more padding to the back */
+  overflow-y: auto; /* Allow vertical scrolling */
+}
+
+.fact-widget-face h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: hsl(var(--primary));
+    font-family: var(--font-headline);
+    margin: 0;
+    padding-bottom: 4px;
+    border-bottom: 2px solid hsl(var(--border));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fact-widget-face p,
+.fact-widget-face blockquote {
+    margin: 0;
+    line-height: 1.4;
+    white-space: pre-wrap; /* Allow wrapping */
+    word-break: break-word; /* Break long words */
+}
+
+.fact-widget-refresh-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 3; /* Ensure it's above the card faces */
+  background: transparent;
+  border: none;
+  color: hsl(var(--foreground));
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.fact-widget-refresh-btn:hover {
+  opacity: 1;
+  transform: rotate(90deg);
+}
+
+.fact-widget-close-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    background: transparent;
+    border: none;
+    color: hsl(var(--foreground));
+    opacity: 0.7;
+    transition: opacity 0.2s, transform 0.2s;
+}
+.fact-widget-close-btn:hover {
+    opacity: 1;
+}

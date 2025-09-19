@@ -1,0 +1,53 @@
+
+[
+    {
+        "fact": "Recycling one aluminum can saves enough energy to run a TV for three hours.",
+        "explanation": "Recycling aluminum is highly efficient, using only about 5% of the energy needed to produce new aluminum from raw bauxite ore.",
+        "tip": "Always recycle your aluminum cans. It's one of the most effective ways to save energy through recycling."
+    },
+    {
+        "fact": "A single mature tree can absorb up to 48 pounds of carbon dioxide per year.",
+        "explanation": "Through photosynthesis, trees convert CO2 into oxygen and store the carbon in their wood, roots, and leaves, acting as natural carbon sinks.",
+        "tip": "Plant a native tree in your yard or support reforestation projects to help combat climate change."
+    },
+    {
+        "fact": "The Great Pacific Garbage Patch is twice the size of Texas.",
+        "explanation": "Ocean currents, called gyres, concentrate plastic waste into massive floating patches. The Great Pacific Garbage Patch is the largest of these.",
+        "tip": "Reduce your use of single-use plastics and participate in local clean-up events to prevent plastic from reaching the ocean."
+    },
+    {
+        "fact": "Turning off the tap while brushing your teeth can save up to 8 gallons of water per day.",
+        "explanation": "A standard faucet can flow at a rate of 2 gallons per minute. Leaving it running during a two-minute brush wastes a significant amount of water.",
+        "tip": "Make it a habit to turn off the water while brushing your teeth and washing your hands."
+    },
+    {
+        "fact": "LED light bulbs use at least 75% less energy than incandescent bulbs.",
+        "explanation": "LEDs are far more efficient at converting electricity into light, with less energy wasted as heat. They also last up to 25 times longer.",
+        "tip": "Replace the most frequently used light bulbs in your home with energy-efficient LEDs to save electricity and money."
+    },
+    {
+        "fact": "Globally, we throw away about 1.3 billion tons of food every year.",
+        "explanation": "Food waste occurs at every stage, from farm to fork. When food rots in a landfill, it produces methane, a potent greenhouse gas.",
+        "tip": "Plan your meals, buy only what you need, and compost your food scraps to reduce food waste."
+    },
+    {
+        "fact": "Fast fashion is responsible for 10% of humanity's carbon emissions.",
+        "explanation": "The production of clothing requires vast amounts of water, energy, and chemicals. The industry's rapid production cycle encourages overconsumption and waste.",
+        "tip": "Choose quality over quantity. Buy second-hand, repair your clothes, and support sustainable fashion brands."
+    },
+    {
+        "fact": "A plant-based diet can reduce an individual's carbon footprint from food by up to 73%.",
+        "explanation": "Livestock farming is a major source of greenhouse gases, land use, and water pollution. Growing plants is significantly more resource-efficient.",
+        "tip": "Try incorporating more plant-based meals into your week. Even a 'Meatless Monday' can make a big difference."
+    },
+    {
+        "fact": "Bees are responsible for pollinating about one-third of the food we eat.",
+        "explanation": "Many fruits, vegetables, and nuts rely on pollinators like bees to reproduce. A decline in bee populations threatens global food security.",
+        "tip": "Plant a pollinator-friendly garden with native flowers and avoid using pesticides to help support local bee populations."
+    },
+    {
+        "fact": "About 8 million metric tons of plastic enter our oceans every year.",
+        "explanation": "This plastic waste harms marine life through ingestion and entanglement, and it breaks down into microplastics that contaminate the entire food web.",
+        "tip": "Carry a reusable water bottle and coffee cup. Refuse plastic straws and bags whenever possible."
+    }
+]

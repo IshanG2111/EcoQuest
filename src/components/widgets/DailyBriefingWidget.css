@@ -1,0 +1,12 @@
+.daily-briefing-widget {
+    padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border: 3px solid hsl(var(--foreground));
+    border-radius: 8px;
+    box-shadow: 4px 4px 0px 0px hsl(var(--secondary));
+}
