@@ -166,7 +166,7 @@ export default function OceanExplorerPage() {
                   onClick={() => handleAction(hazard)}
                 >
                   <div className="w-24 h-24 bg-gray-700/50 rounded-md flex items-center justify-center">
-                    <span className="text-red-400">{hazard.name}</span>
+                    <span className="text-error">{hazard.name}</span>
                   </div>
                   <p className="text-xs mt-1">Impact: {hazard.impact}</p>
                 </div>

@@ -75,7 +75,7 @@
     calc((var(--pointer-from-top) * 10px) - 5px) 20px -5px hsla(var(--foreground), 0.5);
   transition: transform 1s ease;
   transform: translate3d(0, 0, 0.1px) rotateX(0deg) rotateY(0deg);
-  background-color: hsl(var(--background));
+  background-color: hsl(var(--background) / 0.9);
   border: 2px solid hsl(var(--border));
 }
 
@@ -190,7 +190,7 @@
   align-items: center;
   justify-content: space-between;
   background: hsla(var(--background), 0.5);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(24px);
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
   padding: 8px 10px;
@@ -226,19 +226,22 @@
   align-items: flex-start;
   flex-direction: column;
   gap: 4px;
+  
 }
 
 .pc-handle {
-  font-size: 16px;
+  font-size: 24px;
   font-weight: 500;
   color: hsl(var(--foreground));
   line-height: 1;
+  color:hsl(var(--accent-foreground));
 }
 
 .pc-status {
   font-size: 14px;
   color: hsl(var(--muted-foreground));
   line-height: 1;
+  color: rgb(21, 179, 0);
 }
 
 .pc-contact-btn {
@@ -303,6 +306,7 @@
   font-size: 20px;
   margin: 0 auto;
   color: hsl(var(--muted-foreground));
+  filter: invert(0.8);
 }
 
 /* Back Face Styles */

@@ -1,4 +1,5 @@
 import type {NextConfig} from 'next';
+import { devIndicatorServerState } from 'next/dist/server/dev/dev-indicator-server-state';
 
 const nextConfig: NextConfig = {
   typescript: {
@@ -8,5 +9,4 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
 };
-
 export default nextConfig;

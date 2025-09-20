@@ -47,7 +47,7 @@ interface ProfileCardProps {
 }
 
 const ProfileCardComponent: React.FC<ProfileCardProps> = ({
-  avatarUrl = 'https://picsum.photos/seed/avatar/300/300',
+  avatarUrl = 'public/img/8d80ac310f8cc213371c3ea847a46860.jpg',
   iconUrl = '/tva-logo.svg',
   grainUrl,
   behindGradient,

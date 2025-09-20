@@ -54,6 +54,7 @@
     font-size: 0.60em;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.8);
+    color: black;
     font-family: 'Press Start 2P', cursive;
 }
 
@@ -87,7 +88,8 @@
 }
 
 .auth-btn:hover:not(:disabled) {
-    background: rgba(19, 19, 19, 0.872);
+    border: 0px solid;
+    background: rgba(0, 184, 0, 0.872);
     color: rgb(250, 248, 248);
     border: 2px solid grey;
     box-shadow: 0 0 15px #6fd269, 0 0 30px #b18d87;
@@ -110,10 +112,10 @@
 .auth-link-btn {
     height: 30px;
     padding: 0 15px;
-    background: rgba(255, 255, 255, 0.678);
+    background: rgba(11, 159, 0, 0.678);
     border: 2px solid rgba(37, 36, 36, 0.377);
     border-radius: 10px;
-    font-size: 0.5em;
+    font-size: 0.9em;
     font-family: 'Press Start 2P', cursive;
     text-decoration: none;
     display: inline-block;
@@ -131,12 +133,14 @@
 }
 
 .auth-text-link {
-    color: #38022a;
+    color: #790058;
     text-decoration: none;
     font-size: 10px;
+    transition: 0.1s all;
 }
 
 .auth-text-link:hover {
+    transform: scale(10px);
     text-decoration: underline;
 }
 

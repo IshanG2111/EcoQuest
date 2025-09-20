@@ -187,7 +187,7 @@ export default function EcoCityBuilderPage() {
               <Progress
                 value={100 - co2}
                 className="h-3 border border-secondary"
-                indicatorClassName={co2 > 50 ? 'bg-red-500' : 'bg-primary'}
+                indicatorClassName={co2 > 50 ? 'bg-error' : 'bg-success'}
               />
             </div>
           </footer>

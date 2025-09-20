@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { userProgress, availableActivities } from '@/lib/user-data';
+import { userProgress } from '@/lib/user-data';
 import { quizModules } from '@/lib/quizzes-data';
 import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
@@ -18,13 +18,21 @@ import ProfileCard from '@/components/profile-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
+// Helper to generate a unique avatar URL based on user id or displayName using RoboHash
+function getUniqueAvatarUrl(user: { uid?: string; displayName?: string | null } | null) {
+  // Use a hash or the uid/displayName as a seed for the avatar
+  const seed = user?.uid || user?.displayName || Math.random().toString(36).substring(2, 10);
+  // Use RoboHash avatar service
+  return `https://robohash.org/${encodeURIComponent(seed)}.png?set=set3`;
+}
+
 export default function DashboardPage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
-  const avatarUrl = 'https://picsum.photos/seed/avatar/300/300';
+  const avatarUrl = getUniqueAvatarUrl(user);
   const username = user?.displayName ?? 'Eco-Champion';
 
   useEffect(() => {
@@ -74,7 +82,7 @@ export default function DashboardPage() {
                     title="Eco-Champion"
                     handle={user?.displayName?.toLowerCase() ?? 'eco_champion'}
                     avatarUrl={avatarUrl}
-                    miniAvatarUrl="https://picsum.photos/seed/user-avatar-mini/80/80"
+                    miniAvatarUrl={avatarUrl}
                     status='Online'
                     contactText="View Stats"
                     grainUrl=""

@@ -89,9 +89,9 @@ export default function CarbonQuestPage() {
   }
 
   const getCo2Color = () => {
-    if (co2 > 500) return 'text-red-500 animate-pulse';
-    if (co2 > 450) return 'text-red-400';
-    if (co2 < 350) return 'text-green-400';
+    if (co2 > 500) return 'text-error animate-pulse';
+    if (co2 > 450) return 'text-error';
+    if (co2 < 350) return 'text-success';
     return 'text-yellow-400';
   };
 
@@ -231,7 +231,7 @@ export default function CarbonQuestPage() {
                   <CardContent className="space-y-2 text-sm p-3">
                     <p
                       className={
-                        card.co2 > 0 ? 'text-red-400' : 'text-green-400'
+                        card.co2 > 0 ? 'text-error' : 'text-success'
                       }
                     >
                       CO₂: {card.co2 > 0 ? '+' : ''}
@@ -239,7 +239,7 @@ export default function CarbonQuestPage() {
                     </p>
                     <p
                       className={
-                        card.approval >= 0 ? 'text-green-400' : 'text-red-400'
+                        card.approval >= 0 ? 'text-success' : 'text-error'
                       }
                     >
                       Approval: {card.approval >= 0 ? '+' : ''}

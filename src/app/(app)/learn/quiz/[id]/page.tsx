@@ -141,9 +141,9 @@ export default function QuizPage() {
                   key={index}
                   className={`flex items-center space-x-2 p-3 rounded-md border ${
                     selectedAnswer && option === currentQuestion.correctAnswer
-                      ? 'bg-green-100 dark:bg-green-900 border-green-500'
+                      ? 'quiz-correct'
                       : selectedAnswer && option === selectedAnswer && option !== currentQuestion.correctAnswer
-                      ? 'bg-red-100 dark:bg-red-900 border-red-500'
+                      ? 'quiz-incorrect'
                       : ''
                   }`}
                 >

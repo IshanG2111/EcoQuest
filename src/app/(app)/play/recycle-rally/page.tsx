@@ -193,7 +193,7 @@ export default function RecycleRallyPage() {
                 <p
                   className={cn(
                     'text-4xl font-bold animate-ping',
-                    feedback === 'Correct!' ? 'text-green-400' : 'text-red-400'
+                    feedback === 'Correct!' ? 'text-success' : 'text-error'
                   )}
                 >
                   {feedback}
