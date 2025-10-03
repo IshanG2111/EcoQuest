@@ -1,6 +1,5 @@
 # 🌿 EcoQuest: Gamified Sustainability Learning Platform
 
-[![Vercel](https://img.shields.io/badge/deployed-on-vercel-000000?style=flat&logo=vercel)](https://ecoquest-woad.vercel.app) [![License](https://img.shields.io/badge/license-MIT-green)](#license)
 
 **EcoQuest** is an interactive web application that makes learning about **environmental sustainability** fun, engaging, and effective. Built within a retro-themed "Eco-OS," it combines gamified learning, quizzes, and mock AI-powered tools for students and teachers alike.
 
