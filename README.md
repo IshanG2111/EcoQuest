@@ -10,6 +10,17 @@
 
 ---
 
+## 📸 Screenshots
+
+### Desktop Interface
+![EcoQuest Desktop](https://drive.google.com/uc?export=view&id=YOUR_GOOGLE_DRIVE_FILE_ID)
+*The retro-themed "Eco-OS" desktop interface with draggable windows and customizable themes*
+
+<!-- To add more screenshots, use the format: -->
+<!-- ![Description](https://drive.google.com/uc?export=view&id=YOUR_FILE_ID) -->
+
+---
+
 ## 🎮 Features
 
 ### 👩‍🎓 Student Experience
