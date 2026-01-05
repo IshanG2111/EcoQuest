@@ -8,6 +8,8 @@
 ## 🔗 Live Demo
 [![Open Demo](https://img.shields.io/badge/Live%20Demo-Click%20Here-brightgreen)](https://ecoquest-woad.vercel.app)
 
+
+[![EcoQuest Preview](https://lh3.googleusercontent.com/d/1OiK1YyheQw5NHd1ZOy66rhT6SLbvd30F)](https://drive.google.com/file/d/1OiK1YyheQw5NHd1ZOy66rhT6SLbvd30F/view?usp=sharing)
 ---
 
 ## 🎮 Features
