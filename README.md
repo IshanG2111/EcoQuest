@@ -16,8 +16,14 @@
 ![EcoQuest Desktop](https://drive.google.com/uc?export=view&id=YOUR_GOOGLE_DRIVE_FILE_ID)
 *The retro-themed "Eco-OS" desktop interface with draggable windows and customizable themes*
 
-<!-- To add more screenshots, use the format: -->
-<!-- ![Description](https://drive.google.com/uc?export=view&id=YOUR_FILE_ID) -->
+<!-- 
+To add more screenshots:
+1. Upload image to Google Drive
+2. Right-click the image and select "Get link"
+3. Make sure link sharing is set to "Anyone with the link can view"
+4. Copy the file ID from the URL (the part after /d/ and before /view)
+5. Use format: ![Description](https://drive.google.com/uc?export=view&id=YOUR_FILE_ID)
+-->
 
 ---
 
