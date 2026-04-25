@@ -18,8 +18,7 @@
     border-radius: 20px;
     border: 2px solid rgb(144, 141, 141);
     box-shadow: 0 0 50px rgb(198, 192, 192);
-    background: rgba(255, 255, 255, 0.292);
-    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.95);
     z-index: 20;
 }
 

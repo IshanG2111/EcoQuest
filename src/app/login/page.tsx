@@ -195,10 +195,13 @@ export default function ChatAuthPage() {
       {/* Background GIF */}
       <div 
         className="absolute inset-0 z-0 bg-no-repeat bg-cover bg-center"
-        style={{ backgroundImage: "url('/sig.gif')" }}
+        style={{ 
+          backgroundImage: "url('/sig.gif')",
+          imageRendering: 'pixelated'
+        }}
       ></div>
       {/* Dark Overlay to ensure readability */}
-      <div className="absolute inset-0 z-0 bg-white/18 backdrop-blur-[1px] pointer-events-none"></div>
+      <div className="absolute inset-0 z-0 bg-black/40 pointer-events-none"></div>
 
       <Card className="w-full max-w-2xl bg-zinc-900/90 border-zinc-800 text-zinc-100 shadow-2xl backdrop-blur-md z-10 flex flex-col h-[600px] max-h-[90vh]">
         
