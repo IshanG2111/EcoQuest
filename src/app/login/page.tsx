@@ -191,11 +191,14 @@ export default function ChatAuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4 font-mono relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center">
-        <Leaf className="w-96 h-96 text-green-500 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 font-mono relative overflow-hidden">
+      {/* Background GIF */}
+      <div 
+        className="absolute inset-0 z-0 bg-no-repeat bg-cover bg-center"
+        style={{ backgroundImage: "url('/sig.gif')" }}
+      ></div>
+      {/* Dark Overlay to ensure readability */}
+      <div className="absolute inset-0 z-0 bg-white/18 backdrop-blur-[1px] pointer-events-none"></div>
 
       <Card className="w-full max-w-2xl bg-zinc-900/90 border-zinc-800 text-zinc-100 shadow-2xl backdrop-blur-md z-10 flex flex-col h-[600px] max-h-[90vh]">
         

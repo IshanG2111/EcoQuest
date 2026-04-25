@@ -14,6 +14,8 @@ import { Desktop } from '@/components/desktop';
 import connectDB from '@/lib/mongodb';
 import Quiz from '@/models/Quiz';
 
+export const dynamic = 'force-dynamic';
+
 export default async function QuizzesPage() {
   await connectDB();
   
