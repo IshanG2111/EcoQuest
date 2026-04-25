@@ -1,17 +1,21 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-// Mock User type for authentication
-interface MockUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
+export type UserRole = 'student' | 'teacher' | 'admin';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  image?: string | null;
+  role: UserRole;
 }
 
 interface AuthContextType {
-  user: MockUser | null;
+  user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, username: string) => Promise<void>;
@@ -21,73 +25,69 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  login: async () => {},
-  signup: async () => {},
-  logout: async () => {}
+  login: async () => { },
+  signup: async () => { },
+  logout: async () => { },
 });
-
-// Mock authentication functions
-const createMockUser = (email: string, username?: string): MockUser => ({
-  uid: Math.random().toString(36).substr(2, 9),
-  email,
-  displayName: username || email.split('@')[0]
-});
-
-const mockLogin = async (email: string, password: string): Promise<MockUser> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // For demo purposes, accept any non-empty credentials
-  if (!email || !password) {
-    throw new Error('Email and password are required');
-  }
-  
-  return createMockUser(email);
-};
-
-const mockSignup = async (email: string, password: string, username: string): Promise<MockUser> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  if (!email || !password || !username) {
-    throw new Error('All fields are required');
-  }
-  
-  return createMockUser(email, username);
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<MockUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  useEffect(() => {
-    // Check for stored user on mount
-    const storedUser = localStorage.getItem('mockUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  const user: AuthUser | null = session?.user
+    ? {
+      id: session.user.id as string,
+      email: session.user.email ?? '',
+      name: session.user.name ?? '',
+      image: session.user.image,
+      role: ((session.user as any).role as UserRole) ?? 'student',
     }
-    setLoading(false);
-  }, []);
+    : null;
 
   const login = async (email: string, password: string) => {
-    const mockUser = await mockLogin(email, password);
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      throw new Error('Invalid email or password. Please try again.');
+    }
   };
 
   const signup = async (email: string, password: string, username: string) => {
-    const mockUser = await mockSignup(email, password, username);
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName: username }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error ?? 'Failed to create account.');
+    }
+
+    // Auto sign-in after registration
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      throw new Error('Account created but sign-in failed. Please log in manually.');
+    }
   };
 
   const logout = async () => {
-    setUser(null);
-    localStorage.removeItem('mockUser');
+    await signOut({ redirect: false });
+    router.push('/');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading: status === 'loading', login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -96,22 +96,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthGuard = ({ children }: { children: ReactNode }) => {
-    const { user, loading } = useAuth();
-    const router = useRouter();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        }
-    }, [user, loading, router]);
-
-    if (loading || !user) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <p>Loading...</p>
-            </div>
-        );
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
     }
+  }, [user, loading, router]);
 
-    return <>{children}</>;
-}
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};

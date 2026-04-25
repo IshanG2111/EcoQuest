@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/hooks/use-auth';
+import { SessionProvider } from 'next-auth/react';
 import { Poppins, VT323, Press_Start_2P, IBM_Plex_Mono, Roboto_Condensed } from 'next/font/google';
 
 export const metadata: Metadata = {
@@ -49,17 +50,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-body antialiased ${poppins.variable} ${vt323.variable} ${pressStart2P.variable} ${ibmPlexMono.variable} ${robotoCondensed.variable}`}>
-        <AuthProvider>
-          <ThemeProvider
-            attribute="data-theme"
-            defaultTheme="the-tva-archives"
-            enableSystem={false}
-          >
-            {children}
-            <Toaster />
-            <SpeedInsights />
-          </ThemeProvider>
-        </AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            <ThemeProvider
+              attribute="data-theme"
+              defaultTheme="the-tva-archives"
+              enableSystem={false}
+            >
+              {children}
+              <Toaster />
+              <SpeedInsights />
+            </ThemeProvider>
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

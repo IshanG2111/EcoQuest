@@ -8,9 +8,9 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { userProgress } from '@/lib/user-data';
+import { useUserProgress } from '@/hooks/useUserProgress';
 import { quizModules } from '@/lib/quizzes-data';
-import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle } from 'lucide-react';
+import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Desktop } from '@/components/desktop';
@@ -27,46 +27,41 @@ function getUniqueAvatarUrl(user: { uid?: string; displayName?: string | null } 
 }
 
 export default function DashboardPage() {
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions] = useState<string[]>([
+    'Sustainable Cities: Innovations for Urban Living',
+    'Marine Ecosystems and Ocean Stewardship',
+    'Forests: Biodiversity and Conservation',
+  ]);
   const [error] = useState<string | null>(null);
   const { user } = useAuth();
   const router = useRouter();
+  const { progress, isLoading: progressLoading } = useUserProgress();
   const avatarUrl = getUniqueAvatarUrl(user);
-  const username = user?.displayName ?? 'Eco-Champion';
+  const username = user?.name ?? 'Eco-Champion';
 
   useEffect(() => {
     if (!user) {
-        router.push('/login');
-        return;
+      router.push('/login');
+      return;
     }
-    // Replaced AI call with mock data to prevent API errors.
-    setIsLoading(true);
-    const mockSuggestions = [
-      'Sustainable Cities: Innovations for Urban Living',
-      'Marine Ecosystems and Ocean Stewardship',
-      'Forests: Biodiversity and Conservation',
-    ];
-    setSuggestions(mockSuggestions);
-    setIsLoading(false);
   }, [user, router]);
 
   const stats = [
     {
       title: 'Eco Points',
-      value: userProgress.points.toLocaleString(),
+      value: progressLoading ? '...' : (progress?.points ?? 0).toLocaleString(),
       icon: Star,
       color: 'text-yellow-500',
     },
     {
       title: 'Daily Streak',
-      value: `${userProgress.streak} Days`,
+      value: progressLoading ? '...' : `${progress?.streak ?? 0} Days`,
       icon: Flame,
       color: 'text-orange-500',
     },
     {
       title: 'Badges Earned',
-      value: userProgress.badges.length,
+      value: progressLoading ? '...' : (progress?.badges.length ?? 0),
       icon: Award,
       color: 'text-blue-500',
     },
@@ -76,47 +71,47 @@ export default function DashboardPage() {
     <Desktop>
       <div className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1 flex justify-center items-center">
-                 <ProfileCard 
-                    name={username}
-                    title="Eco-Champion"
-                    handle={user?.displayName?.toLowerCase() ?? 'eco_champion'}
-                    avatarUrl={avatarUrl}
-                    miniAvatarUrl={avatarUrl}
-                    status='Online'
-                    contactText="View Stats"
-                    grainUrl=""
-                    behindGradient=""
-                    innerGradient=""
-                 />
+          <div className="lg:col-span-1 flex justify-center items-center">
+            <ProfileCard
+              name={username}
+              title="Eco-Champion"
+              handle={user?.displayName?.toLowerCase() ?? 'eco_champion'}
+              avatarUrl={avatarUrl}
+              miniAvatarUrl={avatarUrl}
+              status='Online'
+              contactText="View Stats"
+              grainUrl=""
+              behindGradient=""
+              innerGradient=""
+            />
+          </div>
+          <div className="lg:col-span-2">
+            <div>
+              <h1 className="text-3xl font-bold">Welcome Back, {username}!</h1>
+              <p className="text-muted-foreground">
+                Continue your journey to make the world a greener place.
+              </p>
             </div>
-            <div className="lg:col-span-2">
-                <div>
-                  <h1 className="text-3xl font-bold">Welcome Back, {username}!</h1>
-                  <p className="text-muted-foreground">
-                    Continue your journey to make the world a greener place.
-                  </p>
-                </div>
-                 <div className="grid gap-4 md:grid-cols-3 mt-6">
-                  {stats.map((stat, index) => (
-                    <Card
-                      key={stat.title}
-                      className="animate-fade-in-up"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          {stat.title}
-                        </CardTitle>
-                        <stat.icon className={cn('h-5 w-5', stat.color)} />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{stat.value}</div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+            <div className="grid gap-4 md:grid-cols-3 mt-6">
+              {stats.map((stat, index) => (
+                <Card
+                  key={stat.title}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {stat.title}
+                    </CardTitle>
+                    <stat.icon className={cn('h-5 w-5', stat.color)} />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+          </div>
         </div>
 
 
@@ -132,17 +127,20 @@ export default function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
-              {userProgress.badges.map((badge) => (
-                <div
-                  key={badge.name}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
-                    <badge.icon className="w-8 h-8 text-accent pixelated-icon" />
+              {progressLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="animate-spin w-4 h-4" /> Loading badges...</div>
+              ) : progress?.badges.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No badges yet. Complete quizzes to earn some!</p>
+              ) : (
+                progress?.badges.map((badge) => (
+                  <div key={badge.id} className="flex flex-col items-center gap-2" title={badge.description}>
+                    <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
+                      <Award className="w-8 h-8 text-accent" />
+                    </div>
+                    <span className="text-xs font-medium text-center w-16 truncate">{badge.name}</span>
                   </div>
-                  <span className="text-xs font-medium">{badge.name}</span>
-                </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -164,9 +162,9 @@ export default function DashboardPage() {
                 <p className="text-muted-foreground">Generating suggestions...</p>
               ) : error ? (
                 <div className="flex items-center gap-3 text-destructive">
-                    <AlertTriangle className="h-5 w-5" />
-                    <span className="font-medium">{error}</span>
-                  </div>
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="font-medium">{error}</span>
+                </div>
               ) : (
                 <ul className="space-y-3">
                   {suggestions.slice(0, 3).map((suggestion) => {
