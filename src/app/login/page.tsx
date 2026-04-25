@@ -23,6 +23,7 @@ export default function ChatAuthPage() {
   const router = useRouter();
   const { login, signup } = useAuth();
   const { data: session } = useSession();
+  const nextMessageIdRef = useRef(2);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -33,11 +34,20 @@ export default function ChatAuthPage() {
   ]);
   const [step, setStep] = useState<Step>('init');
   const [inputValue, setInputValue] = useState('');
-  
-  // Data collection
+
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  const getNextMessageId = () => {
+    const id = nextMessageIdRef.current;
+    nextMessageIdRef.current += 1;
+    return id;
+  };
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +64,7 @@ export default function ChatAuthPage() {
   }, [messages, step]);
 
   const addMessage = (text: string | React.ReactNode, sender: Sender, isPassword = false) => {
-    setMessages((prev) => [...prev, { id: Date.now(), text, sender, isPassword }]);
+    setMessages((prev) => [...prev, { id: getNextMessageId(), text, sender, isPassword }]);
   };
 
   const handleModeSelect = (mode: 'login' | 'signup') => {
@@ -93,6 +103,10 @@ export default function ChatAuthPage() {
     // State machine logic
     switch (step) {
       case 'login_email':
+        if (!validateEmail(currentInput)) {
+          addMessage('Invalid email format. Please enter a valid email address (e.g., eco@warrior.com):', 'bot');
+          return;
+        }
         setEmail(currentInput);
         setTimeout(() => {
           addMessage('Got it. Now enter your password:', 'bot');
@@ -110,6 +124,10 @@ export default function ChatAuthPage() {
         break;
 
       case 'signup_email':
+        if (!validateEmail(currentInput)) {
+          addMessage('Invalid email format. Please enter a valid email address:', 'bot');
+          return;
+        }
         setEmail(currentInput);
         setTimeout(() => {
           addMessage('Great. What should we call you? (Choose a username)', 'bot');
@@ -118,14 +136,22 @@ export default function ChatAuthPage() {
         break;
 
       case 'signup_username':
+        if (currentInput.length < 2) {
+          addMessage('Username is too short. Please use at least 2 characters:', 'bot');
+          return;
+        }
         setUsername(currentInput);
         setTimeout(() => {
-          addMessage(`Nice to meet you, ${currentInput}! Lastly, choose a strong password:`, 'bot');
+          addMessage(`Nice to meet you, ${currentInput}! Lastly, choose a strong password (min 6 chars):`, 'bot');
           setStep('signup_password');
         }, 500);
         break;
 
       case 'signup_password':
+        if (currentInput.length < 6) {
+          addMessage('Password too weak. Please use at least 6 characters:', 'bot');
+          return;
+        }
         setPassword(currentInput);
         setStep('loading');
         setTimeout(() => {
@@ -142,17 +168,14 @@ export default function ChatAuthPage() {
       addMessage('Authentication successful! Access granted.', 'system');
       setStep('success');
       setTimeout(() => {
-        const role = (session?.user as any)?.role ?? 'user';
-        if (role === 'admin') {
-          router.push('/desktop'); // Or admin dashboard if you build one
-        } else {
-          router.push('/desktop');
-        }
+        router.push('/desktop');
       }, 1500);
     } catch (err: any) {
-      addMessage(`Error: ${err.message}`, 'error' as any); // Render as system error
-      addMessage('Type "restart" to try again.', 'bot');
-      setStep('error');
+      addMessage(`ACCESS DENIED: ${err.message}`, 'error' as any);
+      setTimeout(() => {
+        addMessage('Would you like to try logging in again or reset?', 'bot');
+        setStep('init'); // Back to start but keep context or offer buttons
+      }, 800);
     }
   };
 
@@ -165,21 +188,23 @@ export default function ChatAuthPage() {
         router.push('/desktop');
       }, 1500);
     } catch (err: any) {
-      addMessage(`Error: ${err.message}`, 'error' as any);
-      addMessage('Type "restart" to start over.', 'bot');
-      setStep('error');
+      addMessage(`REGISTRATION FAILED: ${err.message}`, 'error' as any);
+      setTimeout(() => {
+        addMessage('Please try again with a different email or username.', 'bot');
+        setStep('init');
+      }, 800);
     }
   };
 
   const resetChat = () => {
     setMessages([
       {
-        id: Date.now(),
+        id: getNextMessageId(),
         sender: 'system',
         text: 'Terminal reset.',
       },
       {
-        id: Date.now() + 1,
+        id: getNextMessageId(),
         sender: 'bot',
         text: 'Welcome to EcoQuest Terminal. Are you a returning EcoWarrior or a new recruit?',
       }
