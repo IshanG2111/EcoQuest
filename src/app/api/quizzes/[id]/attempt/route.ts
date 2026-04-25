@@ -3,8 +3,9 @@ import { auth } from '@/auth';
 import connectDB from '@/lib/mongodb';
 import QuizAttempt from '@/models/QuizAttempt';
 import User from '@/models/User';
-import Badge from '@/models/Badge';
 import Quiz from '@/models/Quiz';
+import { evaluateAndAwardBadges } from '@/lib/badges';
+import { createBadgeNotifications, createNotification } from '@/lib/notifications';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 
@@ -86,16 +87,26 @@ export async function POST(
 
                 await user.save();
 
-                // Check "Perfect Score" badge
-                if (percentage === 1) {
-                    const badge = await Badge.findOne({ name: 'Perfect Score' }).lean();
-                    if (badge) {
-                        const hasBadge = user.badges.some((b: any) => b.badge_id.toString() === badge._id.toString());
-                        if (!hasBadge) {
-                            user.badges.push({ badge_id: badge._id, earned_at: new Date() });
-                            await user.save();
-                        }
-                    }
+                await createNotification(session.user.id, {
+                    type: 'quiz',
+                    title: 'Quiz Completed',
+                    message: `You scored ${score}/${max_score} and earned ${ecoPointsEarned} Eco Points.`,
+                    metadata: {
+                        quiz_id,
+                        score,
+                        max_score,
+                        ecoPointsEarned,
+                        percentage,
+                        attemptId: attempt._id.toString(),
+                    },
+                });
+
+                const awardedBadges = await evaluateAndAwardBadges(session.user.id);
+                if (awardedBadges.length > 0) {
+                    await createBadgeNotifications(
+                        session.user.id,
+                        awardedBadges.map((badge) => badge.name)
+                    );
                 }
             }
         }

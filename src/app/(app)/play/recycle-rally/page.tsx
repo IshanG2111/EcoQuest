@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Desktop } from '@/components/desktop';
 import gameData from '@/lib/game-data/recycle_rally.json';
+import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 
 type Item = typeof gameData.items[0];
 type BinType = 'Recycle' | 'Landfill' | 'Compost' | 'E-Waste' | 'Hazardous' | 'Textile' | 'Bulk';
@@ -40,6 +41,14 @@ export default function RecycleRallyPage() {
   const [streak, setStreak] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [timeLeft, setTimeLeft] = useState(30);
+
+  useGameSessionTracker({
+    gameSlug: 'recycle-rally',
+    isPlaying: gameState === 'playing',
+    isFinished: gameState === 'end',
+    score,
+    metadata: { streak },
+  });
 
   const currentItem = shuffledItems[currentItemIndex];
 

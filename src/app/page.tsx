@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
+import { AppLoader } from '@/components/ui/app-loader';
 
 // This is the new, detailed homepage component for unauthenticated users.
 const UnauthenticatedHomePage = () => {
@@ -247,9 +248,10 @@ export default function HomePage() {
   // While loading or if the user is authenticated, show a loading screen or nothing
   if (loading || user) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <p>Loading...</p>
-      </div>
+      <AppLoader
+        title="Loading EcoQuest"
+        subtitle="Preparing your learning world and checking your session..."
+      />
     );
   }
 

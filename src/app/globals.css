@@ -3719,4 +3719,16 @@ video {
   .animate-crt-close {
     animation: crt-close 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
+
+  @keyframes loader-slide {
+    0% {
+      transform: translateX(-130%);
+    }
+    50% {
+      transform: translateX(90%);
+    }
+    100% {
+      transform: translateX(260%);
+    }
+  }
 }

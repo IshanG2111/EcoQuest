@@ -1,4 +1,6 @@
 # **App Name**: EcoQuest
+> [!NOTE]
+> This document represents the original design blueprint. The project has since evolved into a high-fidelity retro "Edu-OS" aesthetic (TVA/Vault-Ed/Lumon themes), though many of the core functional concepts remain the same.
 
 ## Core Features:
 

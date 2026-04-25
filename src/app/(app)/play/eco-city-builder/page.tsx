@@ -7,6 +7,7 @@ import { Wind, Sun, Trees, BookOpen, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Desktop } from '@/components/desktop';
 import gameData from '@/lib/game-data/eco_city_builder.json';
+import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 
 type Building = typeof gameData.buildings[0];
 type GameEvent = typeof gameData.events[0];
@@ -19,6 +20,15 @@ export default function EcoCityBuilderPage() {
   const [happiness, setHappiness] = useState(40);
   const [co2, setCo2] = useState(80); // Higher is worse
   const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null);
+
+  const estimatedScore = Math.max(0, population + happiness * 8 + greenEnergy * 10 + (100 - co2) * 6);
+
+  useGameSessionTracker({
+    gameSlug: 'eco-city-builder',
+    isPlaying: gameState === 'playing',
+    score: estimatedScore,
+    metadata: { population, budget, happiness, greenEnergy, co2 },
+  });
 
   useEffect(() => {
     if (gameState === 'playing') {

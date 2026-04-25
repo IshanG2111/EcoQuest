@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Desktop } from '@/components/desktop';
 import gameData from '@/lib/game-data/ecosystem_builder.json';
+import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 
 // Define types based on your JSON structure
 type Tile = {
@@ -38,6 +39,13 @@ export default function ForestGuardianPage() {
   const [ecosystemHealth, setEcosystemHealth] = useState(50);
   const [points, setPoints] = useState(0);
   const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null);
+
+  useGameSessionTracker({
+    gameSlug: 'forest-guardian',
+    isPlaying: gameState === 'playing',
+    score: points,
+    metadata: { ecosystemHealth },
+  });
 
   // Simplified game loop trigger
   useEffect(() => {

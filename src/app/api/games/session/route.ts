@@ -3,7 +3,8 @@ import { auth } from '@/auth';
 import connectDB from '@/lib/mongodb';
 import GameSession from '@/models/GameSession';
 import User from '@/models/User';
-import Badge from '@/models/Badge';
+import { evaluateAndAwardBadges } from '@/lib/badges';
+import { createBadgeNotifications, createNotification } from '@/lib/notifications';
 import { z } from 'zod';
 
 const GameSessionSchema = z.object({
@@ -60,20 +61,25 @@ export async function POST(request: Request) {
 
                 await user.save();
 
-                // Check: have they played all 5 games? Award "Game Master" badge
-                const playedGames = await GameSession.distinct('game_slug', { user_id: session.user.id });
-                const uniqueGames = new Set(playedGames);
-                const allGameSlugs = ['forest-guardian', 'ocean-explorer', 'eco-city-builder', 'recycle-rally', 'carbon-quest'];
+                await createNotification(session.user.id, {
+                    type: 'game',
+                    title: 'Game Session Saved',
+                    message: `${game_slug} completed with score ${score}. You earned ${ecoPointsToAdd} Eco Points.`,
+                    metadata: {
+                        game_slug,
+                        score,
+                        ecoPointsToAdd,
+                        duration_secs,
+                        sessionId: gameSession._id.toString(),
+                    },
+                });
 
-                if (allGameSlugs.every((slug) => uniqueGames.has(slug))) {
-                    const badge = await Badge.findOne({ name: 'Game Master' }).lean();
-                    if (badge) {
-                        const hasBadge = user.badges.some((b: any) => b.badge_id.toString() === badge._id.toString());
-                        if (!hasBadge) {
-                            user.badges.push({ badge_id: badge._id, earned_at: new Date() });
-                            await user.save();
-                        }
-                    }
+                const awardedBadges = await evaluateAndAwardBadges(session.user.id);
+                if (awardedBadges.length > 0) {
+                    await createBadgeNotifications(
+                        session.user.id,
+                        awardedBadges.map((badge) => badge.name)
+                    );
                 }
             }
         }

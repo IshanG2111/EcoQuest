@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { BookOpen, AlertTriangle } from 'lucide-react';
 import { Desktop } from '@/components/desktop';
 import gameData from '@/lib/game-data/carbon_quest.json';
+import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 
 
 type Policy = typeof gameData.policies[0];
@@ -42,6 +43,19 @@ export default function CarbonQuestPage() {
   const [policyChoices, setPolicyChoices] = useState<Policy[]>([]);
   const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null);
   const [log, setLog] = useState('A new year begins. Choose a policy.');
+
+  const estimatedScore = Math.max(
+    0,
+    (year - gameData.presets.steady_start.year) * 60 + (500 - co2) + approval + budget
+  );
+
+  useGameSessionTracker({
+    gameSlug: 'carbon-quest',
+    isPlaying: gameState === 'playing',
+    isFinished: gameState === 'end',
+    score: estimatedScore,
+    metadata: { year, co2, approval, budget },
+  });
 
   useEffect(() => {
     if (gameState === 'playing') {

@@ -31,12 +31,13 @@ This document provides a comprehensive overview of the technologies and librarie
 
 ## Backend & Services
 
-- **Authentication**: Mock authentication system
-  - Simple role-based access control for student/teacher differentiation
-  - Uses React context for user session management
-- **Data Storage**: Static JSON files and local state
-  - User progress stored in browser local storage
-  - Game data loaded from static JSON files in the project
+- **Authentication**: [NextAuth.js](https://next-auth.js.org/)
+  - Secure authentication with credentials and session management.
+  - Role-based access control (RBAC) for student and teacher differentiation.
+- **Database**: [MongoDB](https://www.mongodb.com/)
+  - Persistent storage for user profiles, game progress, badges, and quiz results.
+  - Uses [Mongoose](https://mongoosejs.com/) for elegant object modeling and schema validation.
+- **Server Environment**: Node.js with Next.js Server Actions and API Routes.
 
 ## Other Key Libraries
 

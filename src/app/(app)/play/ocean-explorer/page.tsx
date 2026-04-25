@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Desktop } from '@/components/desktop';
 import gameData from '@/lib/game-data/coral_lab.json';
+import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 
 type Tool = 'skimmer' | 'netting' | 'algae_scrubber' | 'manual_removal';
 type Hazard = typeof gameData.hazards[0];
@@ -25,6 +26,13 @@ export default function OceanExplorerPage() {
   const [currentTool, setCurrentTool] = useState<Tool>('skimmer');
   const [activeHazards, setActiveHazards] = useState<Hazard[]>([]);
   const [points, setPoints] = useState(0);
+
+  useGameSessionTracker({
+    gameSlug: 'ocean-explorer',
+    isPlaying: gameState === 'playing',
+    score: points,
+    metadata: { marineHealth, activeHazards: activeHazards.length },
+  });
 
   useEffect(() => {
     if (gameState === 'playing') {

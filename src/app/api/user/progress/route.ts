@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import Badge from '@/models/Badge';
+import { evaluateAndAwardBadges } from '@/lib/badges';
+import { createBadgeNotifications, createNotification } from '@/lib/notifications';
 
 // GET /api/user/progress — returns current user's progress + badges
 export async function GET() {
@@ -75,38 +76,28 @@ export async function PATCH(request: Request) {
 
     await user.save();
 
-    // Check for badge milestones
-    await checkAndAwardBadges(user);
+    const awardedBadges = await evaluateAndAwardBadges(userId);
+
+    if (pointsToAdd > 0) {
+        await createNotification(userId, {
+            type: 'progress',
+            title: 'Eco Points Updated',
+            message: `You gained ${pointsToAdd} Eco Points. Total: ${user.points}.`,
+            metadata: { pointsToAdd, totalPoints: user.points },
+        });
+    }
+
+    if (awardedBadges.length > 0) {
+        await createBadgeNotifications(
+            userId,
+            awardedBadges.map((badge) => badge.name)
+        );
+    }
 
     return NextResponse.json({
         points: user.points,
         streak: user.streak,
         last_active: user.last_active,
+        awardedBadges,
     });
-}
-
-async function checkAndAwardBadges(user: any) {
-    const ownedBadgeIds = new Set(user.badges.map((b: any) => b.badge_id.toString()));
-
-    const allBadges = await Badge.find({}).lean();
-    
-    if (!allBadges || allBadges.length === 0) return;
-
-    const badgeMap = Object.fromEntries(allBadges.map((b: any) => [b.name, b._id.toString()]));
-    let updated = false;
-
-    // Points milestones
-    if (user.points >= 1000 && badgeMap['Eco Warrior'] && !ownedBadgeIds.has(badgeMap['Eco Warrior'])) {
-        user.badges.push({ badge_id: badgeMap['Eco Warrior'], earned_at: new Date() });
-        updated = true;
-    }
-    // Streak milestones
-    if (user.streak >= 3 && badgeMap['Streak Starter'] && !ownedBadgeIds.has(badgeMap['Streak Starter'])) {
-        user.badges.push({ badge_id: badgeMap['Streak Starter'], earned_at: new Date() });
-        updated = true;
-    }
-
-    if (updated) {
-        await user.save();
-    }
 }

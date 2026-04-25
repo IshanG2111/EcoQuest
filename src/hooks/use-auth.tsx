@@ -3,6 +3,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { AppLoader } from '@/components/ui/app-loader';
 
 export type UserRole = 'student' | 'teacher' | 'admin';
 
@@ -107,9 +108,10 @@ export const AuthGuard = ({ children }: { children: ReactNode }) => {
 
   if (loading || !user) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p>Loading...</p>
-      </div>
+      <AppLoader
+        title="Checking your EcoQuest account"
+        subtitle="Authenticating and syncing your latest progress..."
+      />
     );
   }
 

@@ -13,8 +13,8 @@ Transform environmental sustainability education through gamification, interacti
 - **Styling**: Tailwind CSS with custom theming system
 - **UI Components**: ShadCN UI (built on Radix UI primitives)
 - **State Management**: React Context & Hooks
-- **Authentication**: Mock role-based system (student/teacher differentiation)
-- **Data**: Static JSON files + local storage for user progress
+- **Authentication**: NextAuth.js (Session-based, role-aware)
+- **Data**: MongoDB (Mongoose) + static JSON for game scenarios
 - **Animations**: CSS animations, React Draggable for window management
 
 ### Project Structure

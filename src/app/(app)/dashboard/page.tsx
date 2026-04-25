@@ -9,13 +9,15 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { useUserProgress } from '@/hooks/useUserProgress';
-import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle, Loader2 } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle, Loader2, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Desktop } from '@/components/desktop';
 import ProfileCard from '@/components/profile-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 // Helper to generate a unique avatar URL based on user id or name using RoboHash
 function getUniqueAvatarUrl(user: { id?: string; name?: string | null } | null) {
@@ -36,6 +38,13 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { progress, isLoading: progressLoading } = useUserProgress();
+  const {
+    notifications,
+    unreadCount,
+    isLoading: notificationsLoading,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications(6);
   const avatarUrl = getUniqueAvatarUrl(user);
   const username = user?.name ?? 'Eco-Champion';
 
@@ -184,6 +193,61 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="animate-fade-in-up" style={{ animationDelay: '500ms' }}>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
+                Notifications
+              </CardTitle>
+              <CardDescription>
+                {unreadCount > 0 ? `${unreadCount} unread updates` : 'You are all caught up.'}
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={unreadCount === 0}
+              onClick={markAllAsRead}
+            >
+              Mark all as read
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {notificationsLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading notifications...
+              </div>
+            ) : notifications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No notifications yet. Complete activities to get updates.</p>
+            ) : (
+              <ul className="space-y-3">
+                {notifications.map((notification) => (
+                  <li
+                    key={notification.id}
+                    className={cn(
+                      'rounded-lg border p-3 transition-colors',
+                      notification.is_read ? 'bg-muted/30' : 'bg-primary/5 border-primary/30'
+                    )}
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="font-semibold">{notification.title}</p>
+                        <p className="text-sm text-muted-foreground">{notification.message}</p>
+                      </div>
+                      {!notification.is_read && (
+                        <Button size="sm" variant="ghost" onClick={() => markAsRead(notification.id)}>
+                          Mark read
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Desktop>
   );
