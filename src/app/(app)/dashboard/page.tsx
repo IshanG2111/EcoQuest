@@ -9,7 +9,6 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { useUserProgress } from '@/hooks/useUserProgress';
-import { quizModules } from '@/lib/quizzes-data';
 import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -18,10 +17,10 @@ import ProfileCard from '@/components/profile-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
-// Helper to generate a unique avatar URL based on user id or displayName using RoboHash
-function getUniqueAvatarUrl(user: { uid?: string; displayName?: string | null } | null) {
-  // Use a hash or the uid/displayName as a seed for the avatar
-  const seed = user?.uid || user?.displayName || Math.random().toString(36).substring(2, 10);
+// Helper to generate a unique avatar URL based on user id or name using RoboHash
+function getUniqueAvatarUrl(user: { id?: string; name?: string | null } | null) {
+  // Use a hash or the id/name as a seed for the avatar
+  const seed = user?.id || user?.name || Math.random().toString(36).substring(2, 10);
   // Use RoboHash avatar service
   return `https://robohash.org/${encodeURIComponent(seed)}.png?set=set3`;
 }
@@ -33,6 +32,7 @@ export default function DashboardPage() {
     'Forests: Biodiversity and Conservation',
   ]);
   const [error] = useState<string | null>(null);
+  const [isLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { progress, isLoading: progressLoading } = useUserProgress();
@@ -75,7 +75,7 @@ export default function DashboardPage() {
             <ProfileCard
               name={username}
               title="Eco-Champion"
-              handle={user?.displayName?.toLowerCase() ?? 'eco_champion'}
+              handle={user?.name?.toLowerCase() ?? 'eco_champion'}
               avatarUrl={avatarUrl}
               miniAvatarUrl={avatarUrl}
               status='Online'
@@ -168,11 +168,9 @@ export default function DashboardPage() {
               ) : (
                 <ul className="space-y-3">
                   {suggestions.slice(0, 3).map((suggestion) => {
-                    const module = quizModules.find(m => m.title === suggestion);
-                    const moduleHref = module ? `/learn/quiz/${module.id}` : '/quizzes';
                     return (
                       <li key={suggestion}>
-                        <Link href={moduleHref}>
+                        <Link href="/quizzes">
                           <div className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary transition-colors cursor-pointer">
                             <BookOpen className="h-5 w-5 text-primary" />
                             <span className="font-medium">{suggestion}</span>

@@ -17,8 +17,8 @@ export default function AccountSettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (user?.displayName) {
-      setUsername(user.displayName);
+    if (user?.name) {
+      setUsername(user.name);
     }
   }, [user]);
 
@@ -43,7 +43,7 @@ export default function AccountSettingsPage() {
     setIsLoading(true);
     try {
       // Update local storage with new username
-      const updatedUser = { ...user, displayName: username };
+      const updatedUser = { ...user, name: username };
       localStorage.setItem('mockUser', JSON.stringify(updatedUser));
       
       toast({

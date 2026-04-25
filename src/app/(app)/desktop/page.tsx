@@ -296,7 +296,7 @@ export default function DesktopHomePage() {
           <div className="flex-1"></div>
 
           <div className="flex items-center h-full text-foreground/80 text-xs font-code gap-4 px-3">
-            {user && <span>{user.displayName || user.email}</span>}
+            {user && <span>{user.name || user.email}</span>}
             <div className="flex items-center px-3 h-8 bg-background/10 border border-t-white/20 border-l-white/20 border-b-black/20 border-r-black/20">
               <span className="font-code text-xs">{time}</span>
             </div>
