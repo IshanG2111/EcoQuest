@@ -228,17 +228,17 @@ export default function ChatAuthPage() {
       {/* Dark Overlay to ensure readability */}
       <div className="absolute inset-0 z-0 bg-black/40 pointer-events-none"></div>
 
-      <Card className="w-full max-w-2xl bg-zinc-900/90 border-zinc-800 text-zinc-100 shadow-2xl backdrop-blur-md z-10 flex flex-col h-[600px] max-h-[90vh]">
+      <Card className="w-full max-w-2xl retro-window z-10 flex flex-col h-[600px] max-h-[90vh]">
         
         {/* Header */}
-        <div className="border-b border-zinc-800 p-4 flex items-center justify-between bg-zinc-900/50 rounded-t-xl">
-          <div className="flex items-center gap-2 text-green-500">
+        <div className="window-drag-handle rounded-t-lg">
+          <div className="flex items-center gap-2">
             <Terminal className="w-5 h-5" />
-            <span className="font-bold tracking-wider">ECO_QUEST://AUTH</span>
+            <span className="font-headline tracking-wider uppercase text-xs">EcoQuest://Auth</span>
           </div>
           <button 
             onClick={resetChat} 
-            className="text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="hover:text-primary transition-colors opacity-70 hover:opacity-100"
             title="Restart Terminal"
           >
             <RefreshCw className="w-4 h-4" />
@@ -250,22 +250,22 @@ export default function ChatAuthPage() {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex flex-col max-w-[80%] ${
+              className={`flex flex-col max-w-[85%] ${
                 msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'
               }`}
             >
-              <span className="text-[10px] text-zinc-500 mb-1 px-1 uppercase">
+              <span className="text-[10px] text-foreground/50 mb-1 px-1 uppercase tracking-widest font-headline">
                 {msg.sender === 'bot' ? 'EcoBot' : msg.sender === 'system' || msg.sender === ('error' as any) ? 'System' : 'You'}
               </span>
               <div
-                className={`p-3 rounded-lg text-sm sm:text-base ${
+                className={`p-3 rounded-lg text-sm sm:text-base border transition-all duration-300 ${
                   msg.sender === 'user'
-                    ? 'bg-green-600/20 text-green-400 border border-green-500/30'
+                    ? 'bg-primary/10 text-primary border-primary/30 shadow-[0_0_10px_rgba(var(--primary),0.1)]'
                     : msg.sender === 'bot'
-                    ? 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                    ? 'bg-secondary/20 text-foreground border-border/50'
                     : msg.sender === ('error' as any)
-                    ? 'bg-red-900/20 text-red-400 border border-red-500/30'
-                    : 'bg-blue-900/20 text-blue-400 border border-blue-500/30 italic'
+                    ? 'quiz-incorrect !bg-destructive/10'
+                    : 'bg-accent/10 text-accent border-accent/30 italic'
                 }`}
               >
                 {msg.isPassword ? '••••••••' : msg.text}
@@ -273,31 +273,29 @@ export default function ChatAuthPage() {
             </div>
           ))}
 
-          {step === 'init' && (
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button 
                 onClick={() => handleModeSelect('login')}
                 variant="outline"
-                className="bg-zinc-800 border-zinc-700 hover:bg-zinc-700 hover:text-white text-zinc-300 w-full sm:w-auto"
+                className="border-primary/50 text-primary hover:bg-primary/10 w-full sm:w-auto font-headline text-xs tracking-widest"
               >
-                Login
+                LOGIN
               </Button>
               <Button 
                 onClick={() => handleModeSelect('signup')}
-                className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto font-headline text-xs tracking-widest"
               >
-                Sign Up
+                SIGN UP
               </Button>
             </div>
-          )}
           
           <div ref={messagesEndRef} />
         </CardContent>
 
         {/* Input Area */}
-        <div className="p-4 bg-zinc-900/80 border-t border-zinc-800 rounded-b-xl">
+        <div className="p-4 bg-secondary/30 border-t border-border/30 rounded-b-lg">
           <form onSubmit={processSubmit} className="flex gap-2">
-            <span className="text-green-500 pt-2 font-bold">{'>'}</span>
+            <span className="text-primary pt-2 font-bold animate-pulse">{'>'}</span>
             <Input
               ref={inputRef}
               type={step.includes('password') ? 'password' : 'text'}
@@ -306,10 +304,10 @@ export default function ChatAuthPage() {
               placeholder={
                 step === 'init' ? "Select an option above..." : 
                 step === 'loading' || step === 'success' ? "Please wait..." : 
-                "Type your response..."
+                "Enter command..."
               }
               disabled={step === 'init' || step === 'loading' || step === 'success'}
-              className="bg-transparent border-none text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 shadow-none font-mono text-base"
+              className="bg-transparent border-none text-foreground placeholder:text-foreground/30 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 shadow-none font-body text-lg"
               autoComplete="off"
               autoFocus
             />
@@ -317,7 +315,7 @@ export default function ChatAuthPage() {
               type="submit" 
               size="icon"
               disabled={!inputValue.trim() || step === 'init' || step === 'loading' || step === 'success'}
-              className="bg-green-600 hover:bg-green-500 text-white shrink-0"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 shadow-lg"
             >
               <Send className="w-4 h-4" />
             </Button>

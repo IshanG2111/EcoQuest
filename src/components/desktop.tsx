@@ -77,7 +77,7 @@ export function Desktop({ children }: { children: React.ReactNode }) {
     "window-content bg-card overflow-auto",
      {
       'max-h-[70vh]': windowState === 'open',
-      'h-[calc(100vh-40px)]': windowState === 'maximized',
+      'h-[calc(100vh-56px)] pb-20': windowState === 'maximized',
     }
   );
 
@@ -90,15 +90,15 @@ export function Desktop({ children }: { children: React.ReactNode }) {
         style={windowState === 'maximized' ? { top: 0, left: 0 } : {}}
       >
         <div className="window-drag-handle flex items-center justify-between">
-          <span className="pl-2">{capitalizedTitle}</span>
-          <div className="flex items-center">
-             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleMinimize}>
-              <Minus className="h-4 w-4" />
+          <span className="pl-4 font-headline text-xs tracking-widest uppercase">{capitalizedTitle}</span>
+          <div className="flex items-center gap-1 pr-2">
+             <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/20" onClick={handleMinimize}>
+              <Minus className="h-3 w-3" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={toggleMaximize}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/20" onClick={toggleMaximize}>
               {windowState === 'maximized' ? <Square className="h-3 w-3" /> : <Maximize className="h-3 w-3" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleClose}>
+            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/20 hover:text-destructive" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>

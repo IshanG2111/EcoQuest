@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migration Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --parchment:#f5e6c8;--ink:#2c1810;--sepia:#8b6914;--rust:#c0392b;
+  --teal:#1a6b6b;--sky:#4a9ebe;--warm:#e67e22;--green:#27ae60;
+  --shadow:rgba(44,24,16,0.3);
+}
+body{
+  font-family:'Source Sans 3',sans-serif;
+  background:var(--ink);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+
+/* Paper texture */
+#app{
+  width:min(680px,98vw);
+  background:var(--parchment);
+  color:var(--ink);
+  border-radius:4px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.8),0 2px 4px rgba(0,0,0,0.4);
+}
+/* parchment texture overlay */
+#app::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:100;opacity:0.5;
+}
+/* torn edges */
+#app::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:12px;
+  background:repeating-linear-gradient(90deg,var(--parchment) 0px,var(--parchment) 6px,transparent 6px,transparent 12px);
+  z-index:101;
+}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:0;padding:0}
+.screen.active{display:flex}
+
+/* --- START SCREEN --- */
+.map-header{
+  width:100%;padding:28px 32px 20px;
+  border-bottom:3px double var(--sepia);
+  text-align:center;position:relative;
+}
+.compass{
+  position:absolute;top:16px;right:24px;
+  font-size:36px;
+  animation:spin-slow 20s linear infinite;
+}
+@keyframes spin-slow{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.game-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(28px,6vw,48px);
+  font-weight:900;color:var(--ink);
+  line-height:1.1;
+}
+.game-title span{color:var(--teal)}
+.subtitle{font-size:14px;color:var(--sepia);font-style:italic;margin-top:4px}
+
+.start-body{padding:24px 32px}
+.legend-box{
+  background:rgba(44,24,16,0.06);
+  border:1px solid rgba(44,24,16,0.2);
+  border-radius:4px;
+  padding:16px;
+  font-size:14px;line-height:1.7;
+  margin-bottom:16px;
+}
+.legend-box strong{color:var(--teal)}
+.animal-list{
+  display:flex;flex-wrap:wrap;gap:8px;
+  margin:12px 0;justify-content:center;
+}
+.animal-tag{
+  background:rgba(44,24,16,0.08);
+  border:1px solid rgba(44,24,16,0.2);
+  border-radius:20px;
+  padding:4px 12px;
+  font-size:13px;
+}
+.map-btn{
+  width:100%;
+  background:var(--teal);color:var(--parchment);
+  font-family:'Playfair Display',serif;font-weight:700;font-size:17px;
+  border:none;cursor:pointer;padding:14px;border-radius:4px;
+  letter-spacing:1px;transition:all 0.2s;
+  box-shadow:0 4px 0 #0d3d3d;
+}
+.map-btn:hover{background:#1d7f7f;transform:translateY(-1px)}
+.map-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #0d3d3d}
+
+/* --- GAME SCREEN --- */
+.game-hud{
+  width:100%;padding:12px 20px;
+  display:flex;justify-content:space-between;
+  border-bottom:2px solid rgba(44,24,16,0.2);
+  background:rgba(44,24,16,0.05);
+}
+.hud-chip{display:flex;flex-direction:column;align-items:center;gap:1px}
+.chip-label{font-size:10px;color:var(--sepia);text-transform:uppercase;letter-spacing:1px;font-family:'Playfair Display',serif}
+.chip-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--ink)}
+
+/* The map area */
+.map-area{
+  width:100%;padding:16px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.map-canvas{
+  width:100%;
+  background:linear-gradient(160deg,#c8e6f5 0%,#b3d9f0 30%,#c8e6c8 60%,#d4b896 100%);
+  border:2px solid rgba(44,24,16,0.2);
+  border-radius:4px;
+  position:relative;
+  height:clamp(180px,40vw,260px);
+  overflow:hidden;
+}
+/* Continent shapes via CSS */
+.continent{
+  position:absolute;
+  background:rgba(178,160,120,0.5);
+  border-radius:40%;
+}
+/* location dots */
+.loc-dot{
+  position:absolute;
+  cursor:pointer;
+  transition:transform 0.15s;
+  z-index:5;
+}
+.loc-dot:hover{transform:scale(1.3)}
+.dot-circle{
+  width:clamp(24px,5vw,32px);height:clamp(24px,5vw,32px);
+  border-radius:50%;
+  border:3px solid;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(14px,3vw,18px);
+  background:rgba(255,255,255,0.8);
+  transition:all 0.2s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
+}
+.dot-circle.correct{background:#c8f7c5;border-color:var(--green);animation:pop 0.3s}
+.dot-circle.wrong{background:#ffd5d5;border-color:var(--rust);animation:shake 0.3s}
+.dot-circle.selected{box-shadow:0 0 0 4px rgba(26,107,107,0.4);border-color:var(--teal)}
+.dot-name{
+  position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);
+  font-size:9px;white-space:nowrap;
+  font-family:'Playfair Display',serif;
+  color:var(--ink);background:rgba(245,230,200,0.9);
+  padding:1px 4px;border-radius:2px;
+}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Path line drawn on map */
+.path-line{
+  position:absolute;
+  background:rgba(26,107,107,0.5);
+  height:2px;
+  transform-origin:left center;
+  z-index:3;
+  border-top:2px dashed rgba(26,107,107,0.7);
+}
+
+/* Animal card */
+.animal-card{
+  background:rgba(44,24,16,0.06);
+  border:1px solid rgba(44,24,16,0.2);
+  border-radius:4px;
+  padding:14px 18px;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.animal-emoji{font-size:clamp(28px,6vw,42px);flex-shrink:0;line-height:1}
+.animal-info{}
+.animal-name{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(14px,3vw,18px);font-weight:700;color:var(--ink);
+}
+.animal-cue{font-size:13px;color:var(--sepia);line-height:1.5;margin-top:3px}
+.question-txt{
+  font-size:14px;font-weight:600;color:var(--teal);
+  margin-top:6px;
+}
+
+/* Feedback bar */
+.feedback-bar{
+  padding:8px 16px;
+  border-radius:4px;font-size:13px;
+  line-height:1.5;
+  min-height:40px;
+  transition:all 0.3s;
+}
+.feedback-bar.good{background:#e8f8e8;border:1px solid var(--green);color:#1a5c1a}
+.feedback-bar.bad{background:#fdecea;border:1px solid var(--rust);color:#7b1515}
+.feedback-bar.neutral{background:rgba(44,24,16,0.05);border:1px solid rgba(44,24,16,0.1);color:var(--sepia)}
+
+/* --- END SCREEN --- */
+.end-body{padding:28px 32px;width:100%;text-align:center}
+.end-title{font-family:'Playfair Display',serif;font-size:clamp(24px,6vw,40px);font-weight:900;color:var(--ink)}
+.end-score{font-family:'Playfair Display',serif;font-size:clamp(64px,14vw,96px);font-weight:900;color:var(--teal);line-height:1}
+.end-msg{font-size:15px;color:var(--sepia);font-style:italic;margin:8px 0}
+.end-fact-box{
+  background:rgba(26,107,107,0.08);border:1px solid rgba(26,107,107,0.3);
+  border-radius:4px;padding:14px 18px;
+  font-size:13px;line-height:1.6;text-align:left;color:var(--ink);
+  margin:12px 0;
+}
+.end-fact-box strong{color:var(--teal)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <div class="screen active" id="start-screen">
+    <div class="map-header">
+      <span class="compass" aria-hidden="true">🧭</span>
+      <div class="game-title">Migration <span>Map</span></div>
+      <div class="subtitle">A naturalist's guide to climate-driven wildlife journeys</div>
+    </div>
+    <div class="start-body">
+      <div class="legend-box">
+        As temperatures shift, animals migrate to new habitats. Some routes are ancient. Some are changing forever. <strong>Match each animal to the correct destination or migration fact</strong> before time runs out!
+        <br><br>
+        🗺 Click a location on the map to answer. 10 questions, 15 seconds each.
+      </div>
+      <div class="animal-list">
+        <span class="animal-tag">🐋 Humpback Whale</span>
+        <span class="animal-tag">🦋 Monarch Butterfly</span>
+        <span class="animal-tag">🐦 Arctic Tern</span>
+        <span class="animal-tag">🐘 African Elephant</span>
+        <span class="animal-tag">🐢 Sea Turtle</span>
+        <span class="animal-tag">🦅 Golden Eagle</span>
+        <span class="animal-tag">🐟 Atlantic Salmon</span>
+        <span class="animal-tag">🦌 Caribou</span>
+      </div>
+      <div class="legend-box" style="font-size:12px">
+        📊 Over 1,000 bird species are threatened by climate-driven habitat loss. Migration routes that evolved over millennia are being disrupted in decades.
+      </div>
+      <button class="map-btn" onclick="startGame()">🗺 Begin Expedition</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="game-screen">
+    <div class="game-hud">
+      <div class="hud-chip"><span class="chip-label">Score</span><span class="chip-val" id="score">0</span></div>
+      <div class="hud-chip"><span class="chip-label">Round</span><span class="chip-val" id="round">1/10</span></div>
+      <div class="hud-chip"><span class="chip-label">Time</span><span class="chip-val" id="timer">15s</span></div>
+      <div class="hud-chip"><span class="chip-label">Correct</span><span class="chip-val" id="streak">0✓</span></div>
+    </div>
+    <div class="map-area">
+      <div class="map-canvas" id="map-canvas">
+        <!-- continents drawn via JS -->
+      </div>
+      <div class="animal-card">
+        <span id="animal-emoji" class="animal-emoji">🐋</span>
+        <div class="animal-info">
+          <div class="animal-name" id="animal-name">Loading...</div>
+          <div class="animal-cue" id="animal-cue"></div>
+          <div class="question-txt" id="question-txt"></div>
+        </div>
+      </div>
+      <div class="feedback-bar neutral" id="feedback">👆 Click the correct location on the map above</div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="screen" id="end-screen">
+    <div class="map-header">
+      <div class="game-title">Expedition <span>Complete</span></div>
+    </div>
+    <div class="end-body">
+      <div class="end-score" id="final-score">0</div>
+      <div class="end-msg" id="end-msg"></div>
+      <div class="end-fact-box">
+        🌊 <strong>Fact:</strong> The Arctic Tern has the longest migration of any animal — travelling up to 90,000 km per year between the Arctic and Antarctic. Climate change is shrinking both polar habitats simultaneously, threatening this ancient journey.
+      </div>
+      <div class="end-fact-box">
+        💡 <strong>Action:</strong> Support wildlife corridor initiatives and climate-conscious travel. Reducing carbon emissions is the most effective way to preserve migration routes for future generations.
+      </div>
+      <button class="map-btn" onclick="startGame()" style="margin-top:8px">🗺 New Expedition</button>
+    </div>
+  </div>
+
+</div>
+<script>
+// Map setup - locations as % of map canvas
+const LOCATIONS=[
+  {id:'arctic',name:'Arctic',x:50,y:5,e:'🧊'},
+  {id:'alaska',name:'Alaska',x:15,y:12,e:'🏔'},
+  {id:'canada',name:'Canada',x:22,y:22,e:'🍁'},
+  {id:'mexico',name:'Mexico',x:22,y:48,e:'🌵'},
+  {id:'amazon',name:'Amazon',x:30,y:68,e:'🌿'},
+  {id:'patagonia',name:'Patagonia',x:28,y:87,e:'🏔'},
+  {id:'antarctic',name:'Antarctic',x:50,y:98,e:'❄️'},
+  {id:'scotland',name:'Scotland',x:48,y:18,e:'🏴'},
+  {id:'sahara',name:'Sahara',x:50,y:48,e:'🏜'},
+  {id:'serengeti',name:'Serengeti',x:56,y:60,e:'🦁'},
+  {id:'southafrica',name:'S. Africa',x:54,y:78,e:'🌍'},
+  {id:'india',name:'India',x:70,y:48,e:'🌺'},
+  {id:'siberia',name:'Siberia',x:72,y:10,e:'🌨'},
+  {id:'australia',name:'Australia',x:80,y:74,e:'🦘'},
+  {id:'pacific',name:'Pacific Ocean',x:10,y:60,e:'🌊'},
+  {id:'atlantic',name:'Atlantic Ocean',x:40,y:50,e:'🌊'},
+];
+
+const QUESTIONS=[
+  {animal:'🐋',name:'Humpback Whale',cue:'Travels thousands of km between feeding & breeding grounds. Climate change is shifting their prey.',q:'Where do humpbacks travel to BREED?',correct:'pacific',expl:'Humpbacks travel to tropical waters like Hawaii to breed, and to cold Antarctic waters to feed on krill.'},
+  {animal:'🦋',name:'Monarch Butterfly',cue:'North America\'s most iconic migrant. Pesticides and milkweed loss threaten their numbers.',q:'Where do Monarchs overwinter?',correct:'mexico',expl:'Monarchs migrate up to 4,500 km to specific forests in central Mexico each winter — a journey they\'ve never made before!'},
+  {animal:'🐦',name:'Arctic Tern',cue:'The world\'s longest migrant, travelling pole to pole each year.',q:'Where does the Arctic Tern winter?',correct:'antarctic',expl:'Arctic Terns travel from the Arctic to Antarctic and back each year — up to 90,000 km, seeing two summers annually.'},
+  {animal:'🐘',name:'African Elephant',cue:'Follows ancient rainfall corridors across the Serengeti, now disrupted by fences and drought.',q:'Elephants follow rainfall across...',correct:'serengeti',expl:'Elephant migration follows the seasonal rains across East Africa. Climate disruption means these ancient routes are no longer reliable.'},
+  {animal:'🐢',name:'Sea Turtle',cue:'Returns to the exact beach where it was born to lay eggs. Warming sand affects hatchling sex ratios.',q:'Where do loggerhead turtles nest?',correct:'southafrica',expl:'Sea turtles travel across entire ocean basins to nest on the same beach where they were born, using Earth\'s magnetic field to navigate.'},
+  {animal:'🦅',name:'Golden Eagle',cue:'Soars thousands of km on thermals each autumn. Scotland to North Africa and back.',q:'Golden Eagles winter near...',correct:'sahara',expl:'Scottish Golden Eagles migrate to North Africa for winter, following a route used for millennia — now disrupted by wind farms and habitat loss.'},
+  {animal:'🐟',name:'Atlantic Salmon',cue:'Born in rivers, matures in the ocean, returns to spawn in its birth river.',q:'Where do Atlantic Salmon mature?',correct:'atlantic',expl:'Atlantic salmon are born in freshwater rivers, migrate to the North Atlantic to feed and grow, then return to their exact birth stream to spawn.'},
+  {animal:'🦌',name:'Caribou',cue:'The largest terrestrial migration in North America. Melting permafrost is threatening their calving grounds.',q:'Caribou calve (give birth) in...',correct:'alaska',expl:'Caribou herds travel up to 5,000 km each year between winter ranges and arctic calving grounds in Alaska and northern Canada.'},
+  {animal:'🦅',name:'Osprey',cue:'A fish-hunting raptor that migrates between Scotland and West Africa each year.',q:'Where do Scottish Ospreys winter?',correct:'sahara',expl:'Scottish Ospreys make a solo 5,000 km journey to West Africa each autumn, following fish-rich rivers south through France and Spain.'},
+  {animal:'🐋',name:'Blue Whale',cue:'Earth\'s largest animal follows krill blooms. Climate is shifting krill populations poleward.',q:'Blue Whales feed in the...',correct:'antarctic',expl:'Blue whales migrate to Antarctic waters to gorge on krill during summer. Warming oceans are pushing krill further south, extending their journeys.'},
+];
+
+let score=0,round=0,streak=0,timeLeft=15,qTimer=null;
+const TOTAL=10;
+
+function startGame(){
+  score=0;round=0;streak=0;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('game-screen').classList.add('active');
+  buildMap();
+  showRound();
+}
+
+function buildMap(){
+  const canvas=document.getElementById('map-canvas');
+  canvas.innerHTML='';
+  // draw simple continent shapes
+  const shapes=[
+    {l:'10%',t:'5%',w:'18%',h:'30%',r:'30% 40% 50% 30%',o:0.5},// N America
+    {l:'24%',t:'55%',w:'10%',h:'35%',r:'40%',o:0.45},// S America
+    {l:'45%',t:'5%',w:'12%',h:'30%',r:'30%',o:0.5},// Europe
+    {l:'45%',t:'35%',w:'18%',h:'40%',r:'30% 50% 50% 30%',o:0.5},// Africa
+    {l:'63%',t:'5%',w:'28%',h:'50%',r:'30%',o:0.45},// Asia
+    {l:'76%',t:'62%',w:'16%',h:'22%',r:'30%',o:0.45},// Australia
+  ];
+  shapes.forEach(s=>{
+    const d=document.createElement('div');
+    d.style.cssText=`position:absolute;left:${s.l};top:${s.t};width:${s.w};height:${s.h};background:rgba(178,150,100,${s.o});border-radius:${s.r};`;
+    canvas.appendChild(d);
+  });
+  // add location dots
+  LOCATIONS.forEach(loc=>{
+    const dot=document.createElement('div');
+    dot.className='loc-dot';
+    dot.id='loc-'+loc.id;
+    dot.style.cssText=`left:${loc.x}%;top:${loc.y}%;transform:translate(-50%,-50%)`;
+    dot.innerHTML=`<div class="dot-circle" id="circle-${loc.id}">${loc.e}</div><span class="dot-name">${loc.name}</span>`;
+    dot.onclick=()=>answer(loc.id);
+    canvas.appendChild(dot);
+  });
+}
+
+function showRound(){
+  if(round>=TOTAL){endGame();return;}
+  const q=QUESTIONS[round];
+  document.getElementById('animal-emoji').textContent=q.animal;
+  document.getElementById('animal-name').textContent=q.name;
+  document.getElementById('animal-cue').textContent=q.cue;
+  document.getElementById('question-txt').textContent='❓ '+q.q;
+  document.getElementById('round').textContent=`${round+1}/${TOTAL}`;
+  document.getElementById('feedback').textContent='👆 Click the correct location on the map above';
+  document.getElementById('feedback').className='feedback-bar neutral';
+  // reset circles
+  LOCATIONS.forEach(l=>{
+    const c=document.getElementById('circle-'+l.id);
+    if(c)c.className='dot-circle';
+  });
+  document.querySelectorAll('.loc-dot').forEach(d=>d.style.pointerEvents='auto');
+  startTimer();
+}
+
+function startTimer(){
+  timeLeft=15;updateTimer();
+  clearInterval(qTimer);
+  qTimer=setInterval(()=>{
+    timeLeft--;updateTimer();
+    if(timeLeft<=0){clearInterval(qTimer);timeout();}
+  },1000);
+}
+
+function updateTimer(){
+  document.getElementById('timer').textContent=timeLeft+'s';
+  document.getElementById('timer').style.color=timeLeft<=5?'var(--rust)':'var(--ink)';
+}
+
+function answer(locId){
+  clearInterval(qTimer);
+  const q=QUESTIONS[round];
+  document.querySelectorAll('.loc-dot').forEach(d=>d.style.pointerEvents='none');
+  const circle=document.getElementById('circle-'+locId);
+  const fb=document.getElementById('feedback');
+  if(locId===q.correct){
+    circle.classList.add('correct');
+    score+=Math.max(50,timeLeft*20);streak++;
+    document.getElementById('streak').textContent=streak+'✓';
+    fb.textContent='✅ '+q.expl;fb.className='feedback-bar good';
+  }else{
+    circle.classList.add('wrong');
+    const correctCircle=document.getElementById('circle-'+q.correct);
+    if(correctCircle)correctCircle.classList.add('correct');
+    streak=0;
+    fb.textContent='❌ '+q.expl;fb.className='feedback-bar bad';
+  }
+  document.getElementById('score').textContent=score;
+  setTimeout(()=>{round++;showRound();},2500);
+}
+
+function timeout(){
+  const q=QUESTIONS[round];
+  const fb=document.getElementById('feedback');
+  fb.textContent='⏰ Time up! '+q.expl;fb.className='feedback-bar bad';
+  const correctCircle=document.getElementById('circle-'+q.correct);
+  if(correctCircle)correctCircle.classList.add('correct');
+  streak=0;
+  document.querySelectorAll('.loc-dot').forEach(d=>d.style.pointerEvents='none');
+  setTimeout(()=>{round++;showRound();},2500);
+}
+
+function endGame(){
+  clearInterval(qTimer);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('end-screen').classList.add('active');
+  document.getElementById('final-score').textContent=score;
+  let msg;
+  if(score>=1200)msg='🌍 Extraordinary! You have the instincts of a seasoned naturalist.';
+  else if(score>=700)msg='🗺 Good navigation! You understand wildlife\'s changing journeys.';
+  else msg='📚 Keep exploring. These animals need you to learn their stories.';
+  document.getElementById('end-msg').textContent=msg;
+}
+</script>
+</body>
+</html>

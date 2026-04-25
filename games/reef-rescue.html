@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reef Rescue</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --deep:#0a192f;--ocean:#0d3b6e;--mid:#1565c0;--coral:#ff6b6b;
+  --coral2:#ff9a3c;--teal:#00bcd4;--sand:#f4d03f;--white:#e8f4f8;
+  --bleach:#f5f5dc;--healthy:#26a69a;--danger:#ef5350;
+}
+body{
+  font-family:'Nunito',sans-serif;
+  background:var(--deep);
+  color:var(--white);
+  min-height:100vh;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* Ocean animated bg */
+.ocean-bg{
+  position:fixed;inset:0;z-index:0;
+  background:linear-gradient(180deg,var(--deep) 0%,var(--ocean) 40%,var(--mid) 100%);
+}
+.bubble{
+  position:absolute;border-radius:50%;
+  background:rgba(255,255,255,0.08);
+  animation:rise linear infinite;
+}
+@keyframes rise{
+  0%{transform:translateY(100vh) scale(0);opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{transform:translateY(-100px) scale(1);opacity:0}
+}
+.wave{
+  position:fixed;bottom:0;left:-50%;width:200%;height:120px;
+  background:rgba(255,255,255,0.05);
+  border-radius:50% 50% 0 0;
+  animation:wave 6s infinite linear;
+}
+.wave:nth-child(2){animation-delay:3s;opacity:0.5;height:80px}
+@keyframes wave{0%{transform:translateX(0)}100%{transform:translateX(25%)}}
+
+#app{position:relative;z-index:1;width:min(680px,98vw);padding:16px}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:18px;text-align:center}
+.screen.active{display:flex}
+
+/* Start */
+.logo{
+  font-family:'Pacifico',cursive;
+  font-size:clamp(44px,10vw,72px);
+  color:var(--teal);
+  text-shadow:0 0 30px rgba(0,188,212,0.6),0 4px 0 rgba(0,0,0,0.3);
+}
+.intro-card{
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px;
+  padding:20px 28px;
+  max-width:440px;
+  line-height:1.6;font-size:14px;
+}
+.fact-pill{
+  background:rgba(0,188,212,0.2);
+  border:1px solid var(--teal);
+  border-radius:30px;
+  padding:10px 20px;
+  font-size:13px;color:var(--teal);
+  max-width:400px;
+}
+.play-btn{
+  background:linear-gradient(135deg,var(--teal),#00838f);
+  color:var(--deep);font-family:'Nunito',sans-serif;font-weight:800;
+  font-size:18px;border:none;cursor:pointer;
+  padding:14px 44px;border-radius:50px;
+  box-shadow:0 6px 24px rgba(0,188,212,0.4);
+  transition:all 0.2s;
+}
+.play-btn:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 10px 32px rgba(0,188,212,0.6)}
+
+/* HUD */
+.hud{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  background:rgba(0,0,0,0.3);border-radius:16px;padding:12px 20px;
+  backdrop-filter:blur(4px);
+}
+.hud-stat{display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.5)}
+.hud-val{font-size:24px;font-weight:800;color:var(--sand)}
+
+/* Health bar */
+.health-wrap{width:100%}
+.health-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;opacity:0.7}
+.health-track{
+  width:100%;height:20px;
+  background:rgba(255,255,255,0.1);
+  border-radius:30px;overflow:hidden;
+  border:1px solid rgba(255,255,255,0.1);
+}
+.health-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--danger),var(--sand),var(--healthy));
+  background-size:300% 100%;
+  border-radius:30px;
+  transition:width 0.6s,background-position 0.6s;
+  width:30%;
+  background-position:0% 50%;
+}
+
+/* REEF CANVAS AREA */
+.reef-area{
+  width:100%;
+  background:rgba(0,0,0,0.25);
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,0.1);
+  padding:16px;
+  min-height:280px;
+  position:relative;
+  overflow:hidden;
+}
+.reef-area::before{
+  content:'~~ Coral Reef ~~';
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  font-size:11px;opacity:0.3;letter-spacing:2px;
+  white-space:nowrap;
+}
+.reef-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+  gap:10px;
+  margin-top:16px;
+}
+.coral-cell{
+  aspect-ratio:1;
+  border-radius:12px;
+  cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:28px;
+  position:relative;
+  transition:transform 0.15s,filter 0.4s;
+  user-select:none;
+  border:2px solid transparent;
+}
+.coral-cell:hover{transform:scale(1.1)}
+.coral-cell.bleached{
+  background:rgba(245,245,220,0.15);
+  border-color:rgba(245,245,220,0.3);
+  filter:grayscale(0.8) brightness(0.8);
+}
+.coral-cell.healthy{
+  background:rgba(38,166,154,0.2);
+  border-color:rgba(38,166,154,0.4);
+  animation:sway 3s ease-in-out infinite;
+}
+.coral-cell.dead{
+  background:rgba(239,83,80,0.1);
+  border-color:rgba(239,83,80,0.2);
+  filter:grayscale(1) brightness(0.5);
+  cursor:not-allowed;
+}
+.coral-cell.healing{
+  animation:pulse-heal 0.5s ease-out;
+}
+@keyframes sway{0%,100%{transform:rotate(-2deg) scale(1)}50%{transform:rotate(2deg) scale(1.03)}}
+@keyframes pulse-heal{0%{transform:scale(1)}50%{transform:scale(1.3);filter:brightness(1.5)}100%{transform:scale(1)}}
+
+.cell-label{font-size:8px;opacity:0.6;margin-top:2px;text-align:center;line-height:1.1}
+
+/* Threats */
+.threat{
+  position:absolute;
+  font-size:28px;
+  cursor:pointer;
+  transition:transform 0.1s;
+  animation:swim linear;
+  z-index:2;
+  user-select:none;
+  filter:drop-shadow(0 0 8px rgba(239,83,80,0.5));
+}
+.threat:hover{transform:scale(1.3)!important}
+@keyframes swim{
+  0%{opacity:0;transform:translateX(120px)}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{opacity:0;transform:translateX(-120px)}
+}
+
+/* Action bar */
+.action-bar{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;width:100%;
+}
+.action-btn{
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:12px;
+  padding:10px 16px;
+  cursor:pointer;color:var(--white);
+  font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;
+  transition:all 0.2s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.action-btn:hover{background:rgba(0,188,212,0.3);border-color:var(--teal)}
+.action-btn.selected{background:rgba(0,188,212,0.3);border-color:var(--teal);box-shadow:0 0 12px rgba(0,188,212,0.4)}
+.action-btn span:first-child{font-size:22px}
+.action-btn .cost{font-size:10px;color:var(--sand)}
+
+/* feedback float */
+.float-text{
+  position:absolute;
+  pointer-events:none;
+  font-weight:800;font-size:14px;
+  animation:floatUp 1s forwards;
+  z-index:10;
+}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
+
+/* End */
+.end-logo{font-family:'Pacifico',cursive;font-size:clamp(36px,8vw,60px);color:var(--teal)}
+.big-num{font-size:clamp(72px,16vw,110px);font-weight:800;color:var(--sand);line-height:1}
+.end-msg{font-size:17px;font-weight:700;color:var(--healthy)}
+.end-card{background:rgba(38,166,154,0.15);border:1px solid var(--healthy);border-radius:16px;padding:16px 22px;font-size:13px;color:#b2dfdb;max-width:400px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="ocean-bg"></div>
+<div class="wave"></div><div class="wave"></div>
+
+<div id="app">
+
+  <div class="screen active" id="start-screen">
+    <div class="logo">🐠 Reef Rescue</div>
+    <div class="intro-card">
+      The Great Barrier Reef is bleaching. Ocean temperatures are rising, pollution is spreading, and coral is dying. <strong>Your mission:</strong> restore bleached coral, fend off threats, and bring the reef back to life before time runs out!
+      <br><br>
+      🖱 <strong>Click threats</strong> to remove them &nbsp;|&nbsp; 🌿 <strong>Select a tool</strong> then <strong>click coral</strong> to heal
+    </div>
+    <div class="fact-pill">🌊 Coral reefs support 25% of all marine life despite covering &lt;1% of the ocean floor</div>
+    <button class="play-btn" onclick="startGame()">🐚 Dive In!</button>
+  </div>
+
+  <div class="screen" id="game-screen">
+    <div class="hud">
+      <div class="hud-stat"><span class="hud-label">Score</span><span class="hud-val" id="score">0</span></div>
+      <div class="hud-stat"><span class="hud-label">Coral Points</span><span class="hud-val" id="cp">50 💎</span></div>
+      <div class="hud-stat"><span class="hud-label">Time</span><span class="hud-val" id="time">60s</span></div>
+    </div>
+    <div class="health-wrap">
+      <div class="health-label"><span>☠️ Dead</span><span>Reef Health: <span id="health-pct">30</span>%</span><span>🌺 Thriving</span></div>
+      <div class="health-track"><div class="health-fill" id="health-fill"></div></div>
+    </div>
+    <div class="reef-area" id="reef-area">
+      <div class="reef-grid" id="reef-grid"></div>
+    </div>
+    <div class="action-bar" id="action-bar">
+      <button class="action-btn selected" id="tool-antidote" onclick="selectTool('antidote')">
+        <span>💉</span><span>Antidote</span><span class="cost">Cost: 15💎</span>
+      </button>
+      <button class="action-btn" id="tool-temp" onclick="selectTool('temp')">
+        <span>🧊</span><span>Cool Water</span><span class="cost">Cost: 25💎</span>
+      </button>
+      <button class="action-btn" id="tool-restore" onclick="selectTool('restore')">
+        <span>🌿</span><span>Restore</span><span class="cost">Cost: 40💎</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="screen" id="end-screen">
+    <div class="end-logo">🐚 Mission Complete</div>
+    <div class="big-num" id="final-score">0</div>
+    <div class="end-msg" id="end-msg">You saved the reef!</div>
+    <div class="end-card">🔬 <strong>Fact:</strong> The ocean has absorbed 90% of excess heat from global warming since 1970, causing mass coral bleaching events that kill reefs worldwide. Reducing CO₂ emissions is the only long-term solution.</div>
+    <div class="end-card" style="background:rgba(244,208,63,0.1);border-color:var(--sand);color:#fff8e1">
+      💡 <strong>Real Action:</strong> Support reef-safe sunscreen brands (no oxybenzone), reduce plastic use, and cut fossil fuel consumption. Every 0.5°C of warming prevented saves thousands of reef species.
+    </div>
+    <button class="play-btn" onclick="startGame()">🔄 Try Again</button>
+  </div>
+
+</div>
+
+<script>
+// Bubbles
+for(let i=0;i<15;i++){
+  const b=document.createElement('div');
+  b.className='bubble';
+  const s=10+Math.random()*30;
+  b.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;bottom:-${s}px;animation-duration:${6+Math.random()*10}s;animation-delay:${Math.random()*8}s`;
+  document.querySelector('.ocean-bg').appendChild(b);
+}
+
+const CORAL_TYPES=[
+  {e:'🪸',n:'Staghorn'},
+  {e:'🌊',n:'Brain Coral'},
+  {e:'🌺',n:'Fan Coral'},
+  {e:'🌸',n:'Tube Coral'},
+  {e:'⭐',n:'Star Coral'},
+  {e:'🦀',n:'Crab Home'},
+  {e:'🐠',n:'Clownfish'},
+  {e:'🦑',n:'Squid Perch'},
+];
+const THREATS=[
+  {e:'🏭',n:'Pollution',dmg:15},
+  {e:'⚡',n:'Warming',dmg:12},
+  {e:'🦠',n:'Disease',dmg:10},
+  {e:'⚓',n:'Anchor',dmg:20},
+];
+
+const TOOLS={antidote:{cost:15,heal:20},temp:{cost:25,heal:35},restore:{cost:40,heal:60}};
+let score=0,cp=50,health=30,timeLeft=60,activeTool='antidote',gameTimer,threatTimer,cpTimer;
+let cells=[];
+
+function startGame(){
+  score=0;cp=50;health=30;timeLeft=60;activeTool='antidote';
+  cells=[];
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('game-screen').classList.add('active');
+  buildReef();
+  updateHUD();
+  clearInterval(gameTimer);clearInterval(threatTimer);clearInterval(cpTimer);
+  gameTimer=setInterval(tick,1000);
+  threatTimer=setInterval(spawnThreat,4000);
+  cpTimer=setInterval(()=>{cp=Math.min(200,cp+5);updateHUD();},3000);
+  selectTool('antidote');
+}
+
+function buildReef(){
+  const grid=document.getElementById('reef-grid');
+  grid.innerHTML='';cells=[];
+  for(let i=0;i<16;i++){
+    const type=CORAL_TYPES[Math.floor(Math.random()*CORAL_TYPES.length)];
+    const state=Math.random()<0.4?'healthy':Math.random()<0.5?'bleached':'dead';
+    const cell=document.createElement('div');
+    cell.className=`coral-cell ${state}`;
+    cell.innerHTML=`${type.e}<div class="cell-label">${type.n}</div>`;
+    cell.dataset.state=state;
+    cell.onclick=()=>healCoral(cell,i);
+    grid.appendChild(cell);
+    cells.push({el:cell,type,state});
+    if(state==='healthy')health=Math.min(100,health+3);
+  }
+  updateHealthBar();
+}
+
+function healCoral(cell,idx){
+  const s=cell.dataset.state;
+  if(s==='healthy')return;
+  if(s==='dead'&&activeTool!=='restore')return;
+  const tool=TOOLS[activeTool];
+  if(cp<tool.cost){showFloat(cell,'💎 Not enough!','#f44');return;}
+  cp-=tool.cost;
+  cell.dataset.state='healthy';
+  cells[idx].state='healthy';
+  cell.className='coral-cell healthy healing';
+  setTimeout(()=>cell.classList.remove('healing'),600);
+  score+=tool.heal*2;
+  health=Math.min(100,health+(tool.heal/3));
+  updateHUD();updateHealthBar();
+  showFloat(cell,`+${tool.heal*2} pts`,'#26a69a');
+}
+
+function selectTool(t){
+  activeTool=t;
+  document.querySelectorAll('.action-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('tool-'+t).classList.add('selected');
+}
+
+function spawnThreat(){
+  if(!document.getElementById('game-screen').classList.contains('active'))return;
+  const threat=THREATS[Math.floor(Math.random()*THREATS.length)];
+  const area=document.getElementById('reef-area');
+  const t=document.createElement('div');
+  t.className='threat';
+  t.textContent=threat.e;
+  t.title=threat.n;
+  const top=20+Math.random()*220;
+  t.style.cssText=`top:${top}px;right:-40px;animation-duration:${5+Math.random()*4}s`;
+  t.onclick=()=>{
+    if(!area.contains(t))return;
+    t.style.animation='none';
+    t.style.transform='scale(0)';
+    t.style.transition='transform 0.2s';
+    score+=50;cp=Math.min(200,cp+10);
+    showFloat(t,'+50 pts','#f5a623');
+    setTimeout(()=>t.remove(),200);
+    updateHUD();
+  };
+  area.appendChild(t);
+  // threat damages reef
+  setTimeout(()=>{
+    if(area.contains(t)){
+      t.remove();
+      damageCoral(threat.dmg);
+    }
+  },(5+Math.random()*4)*1000);
+}
+
+function damageCoral(dmg){
+  const healthy=cells.filter(c=>c.state==='healthy');
+  if(healthy.length>0){
+    const target=healthy[Math.floor(Math.random()*healthy.length)];
+    target.state='bleached';
+    target.el.dataset.state='bleached';
+    target.el.className='coral-cell bleached';
+    health=Math.max(0,health-dmg/5);
+    updateHealthBar();
+  }
+}
+
+function tick(){
+  timeLeft--;
+  if(timeLeft<=0){endGame();return;}
+  // natural degradation
+  if(Math.random()<0.3)damageCoral(5);
+  // natural recovery if health high
+  if(health>70&&Math.random()<0.2){
+    const bleached=cells.filter(c=>c.state==='bleached');
+    if(bleached.length>0){
+      const t=bleached[Math.floor(Math.random()*bleached.length)];
+      t.state='healthy';t.el.dataset.state='healthy';
+      t.el.className='coral-cell healthy';
+    }
+  }
+  updateHUD();
+}
+
+function updateHUD(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('cp').textContent=cp+'💎';
+  document.getElementById('time').textContent=timeLeft+'s';
+}
+
+function updateHealthBar(){
+  const fill=document.getElementById('health-fill');
+  fill.style.width=health+'%';
+  fill.style.backgroundPosition=`${100-health}% 50%`;
+  document.getElementById('health-pct').textContent=Math.round(health);
+}
+
+function showFloat(ref,text,color){
+  const rect=ref.getBoundingClientRect();
+  const area=document.getElementById('reef-area').getBoundingClientRect();
+  const f=document.createElement('div');
+  f.className='float-text';
+  f.textContent=text;
+  f.style.cssText=`left:${rect.left-area.left}px;top:${rect.top-area.top}px;color:${color}`;
+  document.getElementById('reef-area').appendChild(f);
+  setTimeout(()=>f.remove(),1000);
+}
+
+function endGame(){
+  clearInterval(gameTimer);clearInterval(threatTimer);clearInterval(cpTimer);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('end-screen').classList.add('active');
+  document.getElementById('final-score').textContent=score;
+  let msg;
+  if(health>70)msg='🌊 The reef is thriving! Marine life is recovering beautifully.';
+  else if(health>40)msg='🌿 The reef survived — but still needs more love.';
+  else msg='⚠️ The reef is critical. Ocean temperatures are deadly. Learn & return!';
+  document.getElementById('end-msg').textContent=msg;
+}
+
+// init
+updateHealthBar();
+</script>
+</body>
+</html>

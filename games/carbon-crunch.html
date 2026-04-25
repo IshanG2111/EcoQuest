@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Crunch</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --smoke:#1a1a2e;--city:#16213e;--smog:#e94560;--clean:#00d4aa;
+  --yellow:#f5a623;--white:#f0f0f0;--grey:#8892b0;
+  --card:#0f3460;--glow:rgba(0,212,170,0.3)
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--smoke);
+  color:var(--white);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  position:relative;
+}
+/* Animated city skyline background */
+.skyline{
+  position:fixed;bottom:0;left:0;width:100%;height:200px;
+  display:flex;align-items:flex-end;gap:4px;
+  pointer-events:none;z-index:0;opacity:0.4;
+}
+.building{
+  background:var(--city);
+  border-radius:3px 3px 0 0;
+  position:relative;
+  flex-shrink:0;
+}
+.building::after{
+  content:'';
+  position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+  width:6px;height:8px;
+  background:var(--smog);
+  border-radius:50% 50% 0 0;
+  animation:puff 2s infinite alternate;
+}
+@keyframes puff{0%{height:8px;opacity:0.8}100%{height:20px;opacity:0.2}}
+
+/* Smog overlay */
+.smog-overlay{
+  position:fixed;top:0;left:0;width:100%;height:60%;
+  background:linear-gradient(to bottom,rgba(233,69,96,0.15),transparent);
+  pointer-events:none;z-index:0;
+  transition:background 1s;
+}
+
+/* Main container */
+#app{position:relative;z-index:1;width:min(600px,95vw)}
+
+/* Screens */
+.screen{display:none;flex-direction:column;align-items:center;gap:20px;text-align:center}
+.screen.active{display:flex}
+
+/* Start screen */
+.game-logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(48px,10vw,80px);
+  color:var(--smog);
+  text-shadow:0 0 30px rgba(233,69,96,0.5);
+  letter-spacing:4px;
+}
+.subtitle{font-size:16px;color:var(--grey);max-width:380px;line-height:1.6}
+.fact-box{
+  background:rgba(0,212,170,0.1);
+  border:1px solid var(--clean);
+  border-radius:12px;
+  padding:16px 24px;
+  font-size:13px;
+  color:var(--clean);
+  max-width:420px;
+  line-height:1.5;
+}
+.btn{
+  background:var(--smog);
+  color:var(--white);
+  border:none;cursor:pointer;
+  padding:14px 40px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:20px;
+  letter-spacing:2px;
+  border-radius:8px;
+  transition:all 0.2s;
+  box-shadow:0 4px 20px rgba(233,69,96,0.4);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(233,69,96,0.6)}
+.btn.green{background:var(--clean);color:var(--smoke);box-shadow:0 4px 20px rgba(0,212,170,0.4)}
+.btn.green:hover{box-shadow:0 6px 30px rgba(0,212,170,0.6)}
+
+/* Game screen */
+#game-screen{gap:14px}
+.hud{
+  width:100%;
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(255,255,255,0.05);
+  border-radius:12px;padding:12px 20px;
+}
+.hud-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.hud-label{font-size:11px;color:var(--grey);text-transform:uppercase;letter-spacing:1px}
+.hud-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--yellow)}
+
+/* Carbon meter */
+.carbon-bar-wrap{width:100%}
+.carbon-label{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--grey)}
+.carbon-track{
+  width:100%;height:18px;
+  background:rgba(255,255,255,0.1);
+  border-radius:20px;
+  overflow:hidden;
+}
+.carbon-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--clean),var(--smog));
+  border-radius:20px;
+  transition:width 0.5s;
+  width:50%;
+}
+
+/* Cards area */
+.scenario-area{
+  background:var(--card);
+  border-radius:16px;
+  padding:24px;
+  width:100%;
+}
+.scenario-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;
+  color:var(--yellow);
+  letter-spacing:2px;
+  margin-bottom:8px;
+}
+.scenario-q{font-size:15px;line-height:1.5;margin-bottom:20px;color:var(--white)}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.option-btn{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:12px;
+  padding:16px 12px;
+  cursor:pointer;
+  transition:all 0.2s;
+  color:var(--white);
+  font-family:'DM Sans',sans-serif;
+  font-size:14px;
+  line-height:1.4;
+  text-align:center;
+}
+.option-btn:hover{border-color:var(--clean);background:rgba(0,212,170,0.1)}
+.option-btn.correct{border-color:var(--clean);background:rgba(0,212,170,0.2);animation:pop 0.3s}
+.option-btn.wrong{border-color:var(--smog);background:rgba(233,69,96,0.2);animation:shake 0.3s}
+.option-btn:disabled{cursor:not-allowed;opacity:0.7}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.feedback{
+  font-size:13px;color:var(--grey);
+  min-height:36px;
+  padding:8px 0;
+  transition:all 0.3s;
+  line-height:1.4;
+}
+.feedback.good{color:var(--clean)}
+.feedback.bad{color:var(--smog)}
+
+/* Timer ring */
+.timer-ring{
+  position:relative;width:54px;height:54px;
+}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring .bg{fill:none;stroke:rgba(255,255,255,0.1);stroke-width:4}
+.timer-ring .progress{fill:none;stroke:var(--yellow);stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:138;stroke-dashoffset:0;transition:stroke-dashoffset 1s linear}
+.timer-num{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--yellow);
+}
+
+/* End screen */
+.end-score{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(64px,14vw,110px);
+  color:var(--clean);
+  text-shadow:0 0 40px var(--glow);
+  line-height:1;
+}
+.impact-msg{
+  font-size:18px;font-weight:600;color:var(--yellow);
+}
+.tip-box{
+  background:rgba(245,166,35,0.1);
+  border:1px solid var(--yellow);
+  border-radius:12px;padding:16px 24px;
+  font-size:13px;color:var(--yellow);max-width:420px;line-height:1.5;
+}
+.tip-box strong{display:block;margin-bottom:4px;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="smog-overlay" id="smogOverlay"></div>
+
+<!-- Skyline -->
+<div class="skyline" id="skyline"></div>
+
+<div id="app">
+
+  <!-- START -->
+  <div class="screen active" id="start-screen">
+    <div class="game-logo">⚡ Carbon<br>Crunch</div>
+    <p class="subtitle">Every choice you make has a carbon cost. Choose the greener option before the city chokes!</p>
+    <div class="fact-box">🌍 <strong>Did you know?</strong> The average person's lifestyle emits ~4–7 tonnes of CO₂ per year. Switching just a few habits can cut that in half.</div>
+    <div style="font-size:13px;color:var(--grey);line-height:1.5">
+      ⏱ 15 seconds per question &nbsp;|&nbsp; 10 rounds &nbsp;|&nbsp; Choose the lower-carbon option
+    </div>
+    <button class="btn" onclick="startGame()">START GAME</button>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="game-screen">
+    <div class="hud">
+      <div class="hud-item">
+        <span class="hud-label">Score</span>
+        <span class="hud-val" id="score-display">0</span>
+      </div>
+      <div class="timer-ring">
+        <svg viewBox="0 0 46 46" width="54" height="54">
+          <circle class="bg" cx="23" cy="23" r="22"/>
+          <circle class="progress" id="timer-arc" cx="23" cy="23" r="22"/>
+        </svg>
+        <span class="timer-num" id="timer-num">15</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Round</span>
+        <span class="hud-val" id="round-display">1/10</span>
+      </div>
+    </div>
+
+    <div class="carbon-bar-wrap">
+      <div class="carbon-label">
+        <span>🌿 Clean Air</span>
+        <span>Carbon Level: <span id="carbon-pct">50</span>%</span>
+        <span>🏭 Toxic</span>
+      </div>
+      <div class="carbon-track"><div class="carbon-fill" id="carbon-fill"></div></div>
+    </div>
+
+    <div class="scenario-area">
+      <div class="scenario-title" id="q-title">Daily Commute</div>
+      <div class="scenario-q" id="q-text">Loading...</div>
+      <div class="options" id="options-grid"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="screen" id="end-screen">
+    <div class="game-logo" style="font-size:clamp(32px,7vw,52px);color:var(--clean)">RESULTS</div>
+    <div class="end-score" id="final-score">0</div>
+    <div class="impact-msg" id="impact-msg">You saved the city!</div>
+    <div class="fact-box" id="end-fact"></div>
+    <div class="tip-box" id="end-tip"></div>
+    <button class="btn green" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+
+</div>
+
+<script>
+// --- BUILD SKYLINE ---
+const sl = document.getElementById('skyline');
+for(let i=0;i<40;i++){
+  const b = document.createElement('div');
+  b.className='building';
+  const h = 40+Math.random()*140;
+  const w = 20+Math.random()*40;
+  b.style.cssText=`height:${h}px;width:${w}px;`;
+  sl.appendChild(b);
+}
+
+// --- QUESTIONS ---
+const questions = [
+  {title:"🚗 Daily Commute",q:"How do you get to work/school most often?",opts:[{t:"Drive alone in a car 🚙",co:true},{t:"Take the bus or train 🚌",co:false},{t:"Carpool with 3+ people 🤝",co:false},{t:"Cycle or walk 🚲",co:false}],green:1,expl:"Cycling or walking produces zero emissions! A bus beats solo driving by ~7x in CO₂ per passenger."},
+  {title:"🍽 Lunch Choice",q:"What do you pick for lunch today?",opts:[{t:"Beef burger 🍔",co:true},{t:"Chicken wrap 🌯",co:false},{t:"Veggie bowl 🥗",co:false},{t:"Lentil soup 🍲",co:false}],green:2,expl:"Beef produces ~27kg CO₂/kg — that's 10x more than lentils. Plant-based meals can cut food emissions by up to 50%."},
+  {title:"💡 Home Energy",q:"You need to power your home. What's your choice?",opts:[{t:"Coal power (grid) ⚡",co:true},{t:"Natural gas heating 🔥",co:false},{t:"Solar panels ☀️",co:false},{t:"Nuclear power ⚛️",co:false}],green:2,expl:"Solar emits ~20g CO₂/kWh over its lifetime vs coal's 820g/kWh — a 40x difference."},
+  {title:"🛍 Shopping",q:"You need a new shirt. What do you do?",opts:[{t:"Buy fast fashion online 📦",co:true},{t:"Buy from a local store 🏪",co:false},{t:"Buy secondhand 👕",co:false},{t:"Swap with a friend 🤝",co:false}],green:2,expl:"The fashion industry emits more CO₂ than aviation + shipping combined. Secondhand extends garment life by 2x."},
+  {title:"🥤 Hydration",q:"You're thirsty on the go. You grab…",opts:[{t:"Single-use plastic bottle 🧴",co:true},{t:"Canned soda 🥫",co:false},{t:"Reusable bottle + tap 💧",co:false},{t:"Carton juice 🧃",co:false}],green:2,expl:"Producing a single plastic water bottle emits ~100g CO₂. A reusable bottle breaks even after just 10 uses."},
+  {title:"✈ Travel",q:"You're going on a 500km trip. You choose…",opts:[{t:"Short-haul flight ✈️",co:true},{t:"Long-distance train 🚆",co:false},{t:"Electric car 🔋",co:false},{t:"Bus 🚌",co:false}],green:1,expl:"A train journey emits ~6x less CO₂ than a comparable flight. High-speed rail is the greenest motorized travel."},
+  {title:"🌡 Home Heating",q:"It's winter. How do you stay warm?",opts:[{t:"Crank the thermostat to 26°C 🔴",co:true},{t:"Keep it at 20°C, add a sweater 🧥",co:false},{t:"Use electric blanket only 🛏",co:false},{t:"Passive solar + insulation ☀️",co:false}],green:3,expl:"Lowering your thermostat by just 1°C saves ~10% on heating emissions. Good insulation is the #1 efficiency win."},
+  {title:"🍖 Diet",q:"Which diet has the lowest carbon footprint?",opts:[{t:"Omnivore (meat daily) 🥩",co:true},{t:"Flexitarian (meat weekly) 🥦",co:false},{t:"Vegetarian 🥕",co:false},{t:"Vegan 🌱",co:false}],green:3,expl:"A vegan diet produces ~50% less CO₂ than a meat-heavy diet — the single biggest lifestyle lever available."},
+  {title:"📦 Delivery",q:"You order online. Fastest delivery option?",opts:[{t:"Same-day drone delivery 🚁",co:true},{t:"Next-day van delivery 🚐",co:false},{t:"Grouped weekly delivery 📅",co:false},{t:"Click & collect at store 🏬",co:false}],green:2,expl:"Grouped deliveries can cut emissions by 40% vs daily individual trips. Click & collect is even better."},
+  {title:"⚡ Appliances",q:"Your old fridge breaks. You:",opts:[{t:"Buy the cheapest model 💸",co:true},{t:"Buy A+++ rated model ⭐",co:false},{t:"Buy second-hand fridge ♻️",co:false},{t:"Share a fridge with flatmates 👥",co:false}],green:1,expl:"Energy-efficient appliances (A+++) use 70% less electricity. Shared appliances divide emissions by the number of users."},
+];
+
+let score=0,round=0,carbonLevel=50,timer,timeLeft;
+const TOTAL=10;
+const circumference=138;
+
+function buildSkyline(carbon){
+  document.getElementById('smogOverlay').style.background=
+    `linear-gradient(to bottom,rgba(233,69,96,${carbon/200+0.05}),transparent)`;
+}
+
+function startGame(){
+  score=0;round=0;carbonLevel=50;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('game-screen').classList.add('active');
+  showRound();
+}
+
+function showRound(){
+  if(round>=TOTAL){endGame();return;}
+  const q=questions[round];
+  document.getElementById('q-title').textContent=q.title;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('score-display').textContent=score;
+  document.getElementById('round-display').textContent=`${round+1}/${TOTAL}`;
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+
+  const grid=document.getElementById('options-grid');
+  grid.innerHTML='';
+  // shuffle
+  const shuffled=[...q.opts].map((o,i)=>({...o,idx:i})).sort(()=>Math.random()-0.5);
+  shuffled.forEach(opt=>{
+    const b=document.createElement('button');
+    b.className='option-btn';
+    b.textContent=opt.t;
+    b.onclick=()=>answer(opt.idx===q.green,b,q.expl,grid);
+    grid.appendChild(b);
+  });
+  startTimer();
+}
+
+function startTimer(){
+  timeLeft=15;
+  updateTimerRing(15);
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    timeLeft--;
+    updateTimerRing(timeLeft);
+    if(timeLeft<=0){
+      clearInterval(timer);
+      timeOut();
+    }
+  },1000);
+}
+
+function updateTimerRing(t){
+  document.getElementById('timer-num').textContent=t;
+  const arc=document.getElementById('timer-arc');
+  const offset=circumference-(t/15)*circumference;
+  arc.style.strokeDashoffset=offset;
+  arc.style.stroke=t>7?'var(--yellow)':t>3?'orange':'var(--smog)';
+}
+
+function timeOut(){
+  carbonLevel=Math.min(100,carbonLevel+15);
+  updateCarbon();
+  const fb=document.getElementById('feedback');
+  fb.textContent="⏰ Time's up! Carbon levels rising...";
+  fb.className='feedback bad';
+  document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+  setTimeout(()=>{round++;showRound();},1800);
+}
+
+function answer(correct,btn,expl,grid){
+  clearInterval(timer);
+  document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+  const fb=document.getElementById('feedback');
+  if(correct){
+    btn.classList.add('correct');
+    score+=Math.max(10,timeLeft*7);
+    carbonLevel=Math.max(0,carbonLevel-10);
+    fb.textContent='✅ '+expl;
+    fb.className='feedback good';
+  }else{
+    btn.classList.add('wrong');
+    carbonLevel=Math.min(100,carbonLevel+12);
+    fb.textContent='❌ '+expl;
+    fb.className='feedback bad';
+  }
+  document.getElementById('score-display').textContent=score;
+  updateCarbon();
+  setTimeout(()=>{round++;showRound();},2400);
+}
+
+function updateCarbon(){
+  document.getElementById('carbon-fill').style.width=carbonLevel+'%';
+  document.getElementById('carbon-pct').textContent=Math.round(carbonLevel);
+  buildSkyline(carbonLevel);
+}
+
+function endGame(){
+  clearInterval(timer);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('end-screen').classList.add('active');
+  document.getElementById('final-score').textContent=score;
+
+  let msg,tip;
+  if(score>=700){msg='🌍 You cleaned the air! A true eco-champion.';tip='💡 Real tip: Switching to a plant-rich diet and avoiding one transatlantic flight saves ~2.5 tonnes CO₂/yr — more than any other single action.';}
+  else if(score>=400){msg='🌱 Good effort! The city can breathe a little easier.';tip='💡 Real tip: Choosing public transit over driving just 3 days a week cuts your transport emissions by ~30%.';}
+  else{msg='🏭 The city is struggling. Learn & try again!';tip='💡 Real tip: The average household can cut emissions by 25% just by switching to LED lights, efficient appliances, and reducing red meat consumption.';}
+
+  document.getElementById('impact-msg').textContent=msg;
+  document.getElementById('end-fact').innerHTML='🔬 <strong>Fact:</strong> Tropical forests absorb ~2.6 billion tonnes of CO₂ per year — but only if we stop cutting them down.';
+  document.getElementById('end-tip').innerHTML=tip;
+}
+
+// init
+updateCarbon();
+</script>
+</body>
+</html>

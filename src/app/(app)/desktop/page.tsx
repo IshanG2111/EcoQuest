@@ -47,9 +47,9 @@ const desktopIcons = [
 ];
 
 const themes = [
-  { name: 'The TVA Archives', id: 'the-tva-archives' },
-  { name: 'The Vault-Ed Program', id: 'the-vault-ed-program' },
-  { name: 'The Lumon Method', id: 'the-lumon-method' },
+  { name: 'Verdant Grove (Earth)', id: 'the-verdant-grove' },
+  { name: 'Ember Hearth (Fire)', id: 'the-ember-hearth' },
+  { name: 'Abyssal Tide (Water)', id: 'the-abyssal-tide' },
 ];
 
 type WidgetType = 'fact' | 'briefing' | 'weather';
@@ -112,46 +112,46 @@ export default function DesktopHomePage() {
   const getStartButtonContent = () => {
     if (!isClient) return '...';
     switch (activeTheme) {
-      case 'the-vault-ed-program':
-        return 'PIP-BOY 3000';
-      case 'the-lumon-method':
-        return 'MAIN DIRECTORY';
+      case 'the-ember-hearth':
+        return 'HEARTH_CMD';
+      case 'the-abyssal-tide':
+        return 'TIDE_LINK';
       default:
-        return 'INDEX';
+        return 'VERDANT_SYS';
     }
   };
 
   const getStartButtonIcon = () => {
     if (!isClient) return <div className="w-5 h-5 mr-2" />;
     switch (activeTheme) {
-      case 'the-vault-ed-program':
+      case 'the-ember-hearth':
         return (
           <Image
             src="/vault-tec-logo.svg"
-            alt="Vault-Tec"
+            alt="Fire"
             width={20}
             height={20}
             className="mr-2 filter-primary"
           />
         );
-      case 'the-lumon-method':
+      case 'the-abyssal-tide':
         return (
           <Image
             src="/lumon-logo.svg"
-            alt="Lumon"
+            alt="Water"
             width={12}
             height={12}
-            className="mr-2"
+            className="mr-2 filter-primary"
           />
         );
       default:
         return (
           <Image
             src="/tva-logo.svg"
-            alt="TVA"
+            alt="Earth"
             width={20}
             height={20}
-            className="mr-2"
+            className="mr-2 filter-primary"
           />
         );
     }
@@ -190,8 +190,8 @@ export default function DesktopHomePage() {
           <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] grid-rows-[repeat(auto-fill,90px)] gap-y-4 gap-x-2">
             {desktopIcons.map((item) => (
               <Link href={item.href} key={item.label} className="flex-shrink-0">
-                <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline cursor-pointer hover:bg-black/20 hover:border-dotted hover:border-white/50 border border-transparent p-2 rounded-md h-full [text-shadow:1px_1px_2px_#000]">
-                  <item.icon className="w-10 h-10" />
+                <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline cursor-pointer hover:bg-primary/20 hover:border-solid hover:border-primary/50 hover:shadow-lg border border-transparent p-2 rounded-lg h-full transition-all group backdrop-blur-[2px]">
+                  <item.icon className="w-10 h-10 group-hover:scale-110 transition-transform" />
                   <span className="text-sm leading-tight font-code">
                     {item.label}
                   </span>
@@ -201,17 +201,17 @@ export default function DesktopHomePage() {
             <div
               onClick={() =>
                 setTheme(
-                  activeTheme === 'the-tva-archives'
-                    ? 'the-vault-ed-program'
-                    : activeTheme === 'the-vault-ed-program'
-                    ? 'the-lumon-method'
-                    : 'the-tva-archives'
+                  activeTheme === 'the-verdant-grove'
+                    ? 'the-ember-hearth'
+                    : activeTheme === 'the-ember-hearth'
+                    ? 'the-abyssal-tide'
+                    : 'the-verdant-grove'
                 )
               }
               className="flex-shrink-0 cursor-pointer"
             >
-              <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline hover:bg-black/20 hover:border-dotted hover:border-white/50 border border-transparent p-2 rounded-md h-full [text-shadow:1px_1px_2px_#000]">
-                <Palette className="w-10 h-10" />
+              <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline hover:bg-primary/20 hover:border-solid hover:border-primary/50 hover:shadow-lg border border-transparent p-2 rounded-lg h-full transition-all group backdrop-blur-[2px]">
+                <Palette className="w-10 h-10 group-hover:scale-110 transition-transform" />
                 <span className="text-sm leading-tight font-code">Themes</span>
               </div>
             </div>
@@ -219,15 +219,15 @@ export default function DesktopHomePage() {
               onClick={() => setIsWidgetDockOpen(true)}
               className="flex-shrink-0 cursor-pointer"
             >
-              <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline hover:bg-black/20 hover:border-dotted hover:border-white/50 border border-transparent p-2 rounded-md h-full [text-shadow:1px_1px_2px_#000]">
-                <LayoutGrid className="w-10 h-10" />
+              <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline hover:bg-primary/20 hover:border-solid hover:border-primary/50 hover:shadow-lg border border-transparent p-2 rounded-lg h-full transition-all group backdrop-blur-[2px]">
+                <LayoutGrid className="w-10 h-10 group-hover:scale-110 transition-transform" />
                 <span className="text-sm leading-tight font-code">Widgets</span>
               </div>
             </div>
             {user && (
               <Link href="/account-settings" className="flex-shrink-0 cursor-pointer">
-                <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline hover:bg-black/20 hover:border-dotted hover:border-white/50 border border-transparent p-2 rounded-md h-full [text-shadow:1px_1px_2px_#000]">
-                  <Settings className="w-10 h-10" strokeWidth={1} />
+                <div className="flex flex-col items-center justify-center gap-1 text-white text-center no-underline hover:bg-primary/20 hover:border-solid hover:border-primary/50 hover:shadow-lg border border-transparent p-2 rounded-lg h-full transition-all group backdrop-blur-[2px]">
+                  <Settings className="w-10 h-10 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                   <span className="text-sm leading-tight font-code">Settings</span>
                 </div>
               </Link>
@@ -249,7 +249,7 @@ export default function DesktopHomePage() {
 
         </main>
 
-        <footer className="w-full h-10 bg-secondary border-t-2 border-border flex items-center px-2 z-40">
+        <footer className="w-full h-12 bg-background/80 backdrop-blur-md border-t border-primary/20 flex items-center px-4 z-40 shadow-xl">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

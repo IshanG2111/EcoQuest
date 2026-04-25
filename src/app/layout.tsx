@@ -54,7 +54,7 @@ export default function RootLayout({
           <AuthProvider>
             <ThemeProvider
               attribute="data-theme"
-              defaultTheme="the-tva-archives"
+              defaultTheme="the-verdant-grove"
               enableSystem={false}
             >
               {children}

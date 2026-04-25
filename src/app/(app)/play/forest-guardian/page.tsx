@@ -1,250 +1,437 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Shovel, Trash2, Droplets, BookOpen, AlertTriangle } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
+import { useEffect, useMemo, useState } from 'react';
 import { Desktop } from '@/components/desktop';
-import gameData from '@/lib/game-data/ecosystem_builder.json';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
+import { AlertTriangle, Droplets, Flame, Shield, Sprout, Trees } from 'lucide-react';
 
-// Define types based on your JSON structure
-type Tile = {
-  id: string;
-  category: string;
-  name: string;
-  effects: { [key: string]: number };
-  cost: number;
-  rarity: string;
-};
+type Phase = 'home' | 'rules' | 'playing' | 'result';
+type Tool = 'defend' | 'plant' | 'water' | 'extinguish';
+type ThreatType = 'log' | 'fire' | 'pest' | 'storm' | 'dev';
+type CellState = 'healthy' | 'threatened' | 'fire' | 'felled';
 
-type GameEvent = {
-  id: string;
+interface Cell {
+  id: number;
+  tree: string;
+  state: CellState;
+  threatType: ThreatType | null;
+  decayAt: number | null;
+}
+
+interface Threat {
   name: string;
-  probability: number;
-  effects: { [key: string]: number };
-};
+  description: string;
+  type: ThreatType;
+  durationMs: number;
+}
+
+const TREE_TYPES = ['🌲', '🌳', '🎋', '🌴', '🌿', '🍃'];
+const THREATS: Threat[] = [
+  {
+    name: 'Loggers Incoming',
+    description: 'Defend threatened trees before they are cut down.',
+    type: 'log',
+    durationMs: 5000,
+  },
+  {
+    name: 'Wildfire Spreading',
+    description: 'Use Extinguish on burning trees immediately.',
+    type: 'fire',
+    durationMs: 4000,
+  },
+  {
+    name: 'Invasive Pest Bloom',
+    description: 'Water stressed trees to clear pest pressure.',
+    type: 'pest',
+    durationMs: 5000,
+  },
+  {
+    name: 'Storm Cell Overhead',
+    description: 'Defend vulnerable trees before structural damage occurs.',
+    type: 'storm',
+    durationMs: 5000,
+  },
+  {
+    name: 'Development Encroachment',
+    description: 'Stabilize the border by defending threatened canopy cells.',
+    type: 'dev',
+    durationMs: 5000,
+  },
+];
+
+const GRID_SIZE = 24;
+const GRID_COLUMNS = 8;
+const GAME_SECONDS = 90;
+const STARTING_SEEDS = 20;
+const THREAT_INTERVAL_MS = 6000;
+const SEED_GAIN_INTERVAL_MS = 4000;
+
+function createInitialForest(): Cell[] {
+  return Array.from({ length: GRID_SIZE }).map((_, index) => ({
+    id: index,
+    tree: TREE_TYPES[Math.floor(Math.random() * TREE_TYPES.length)],
+    state: Math.random() < 0.2 ? 'felled' : 'healthy',
+    threatType: null,
+    decayAt: null,
+  }));
+}
 
 export default function ForestGuardianPage() {
-  const [gameState, setGameState] = useState<'home' | 'rules' | 'playing'>(
-    'home'
-  );
-  const [ecosystemHealth, setEcosystemHealth] = useState(50);
-  const [points, setPoints] = useState(0);
-  const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null);
+  const [phase, setPhase] = useState<Phase>('home');
+  const [cells, setCells] = useState<Cell[]>(createInitialForest);
+  const [score, setScore] = useState(0);
+  const [seeds, setSeeds] = useState(STARTING_SEEDS);
+  const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
+  const [activeTool, setActiveTool] = useState<Tool>('defend');
+  const [eventText, setEventText] = useState('Watch for threats. Defend trees and restore felled zones.');
+
+  const healthyCount = useMemo(() => cells.filter((cell) => cell.state === 'healthy').length, [cells]);
+  const standingCount = useMemo(() => cells.filter((cell) => cell.state !== 'felled').length, [cells]);
+  const forestHealth = Math.round((healthyCount / GRID_SIZE) * 100);
 
   useGameSessionTracker({
     gameSlug: 'forest-guardian',
-    isPlaying: gameState === 'playing',
-    score: points,
-    metadata: { ecosystemHealth },
+    isPlaying: phase === 'playing',
+    isFinished: phase === 'result',
+    score,
+    metadata: { healthyCount, standingCount, forestHealth, seeds },
   });
 
-  // Simplified game loop trigger
   useEffect(() => {
-    if (gameState === 'playing') {
-      const gameLoop = setInterval(() => {
-        // Trigger a random event based on probability
-        const randomEvent = gameData.events.find(
-          (event) => Math.random() < event.probability
-        );
-        if (randomEvent) {
-          setCurrentEvent(randomEvent as unknown as GameEvent);
-          if (randomEvent.effects.treeMortality) {
-            setEcosystemHealth(prev => Math.max(0, prev + (randomEvent.effects.treeMortality || 0)));
+    if (phase !== 'playing') {
+      return;
+    }
+
+    if (timeLeft <= 0) {
+      setPhase('result');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
+      setScore((prev) => prev + healthyCount);
+
+      const now = Date.now();
+      let collapsed = 0;
+      setCells((prev) =>
+        prev.map((cell) => {
+          if (
+            (cell.state === 'threatened' || cell.state === 'fire') &&
+            cell.decayAt !== null &&
+            now >= cell.decayAt
+          ) {
+            collapsed += 1;
+            return {
+              ...cell,
+              state: 'felled',
+              threatType: null,
+              decayAt: null,
+            };
           }
-        } else {
-            setCurrentEvent(null);
+          return cell;
+        })
+      );
+
+      if (collapsed > 0) {
+        setEventText(`${collapsed} tree${collapsed > 1 ? 's were' : ' was'} lost. Stabilize threats faster.`);
+        setScore((prev) => Math.max(0, prev - collapsed * 20));
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [phase, timeLeft, healthyCount]);
+
+  useEffect(() => {
+    if (phase !== 'playing') {
+      return;
+    }
+
+    const threatTicker = setInterval(() => {
+      const threat = THREATS[Math.floor(Math.random() * THREATS.length)];
+      const now = Date.now();
+
+      setCells((prev) => {
+        const next = [...prev];
+        const healthyIndexes = next
+          .map((cell, idx) => (cell.state === 'healthy' ? idx : -1))
+          .filter((idx) => idx >= 0);
+
+        if (healthyIndexes.length === 0) {
+          return next;
         }
-      }, 5000); // Check for new event every 5 seconds
 
-      return () => clearInterval(gameLoop);
-    }
-  }, [gameState]);
+        const affected = Math.min(4, healthyIndexes.length);
+        for (let i = 0; i < affected; i += 1) {
+          const pick = healthyIndexes[Math.floor(Math.random() * healthyIndexes.length)];
+          next[pick] = {
+            ...next[pick],
+            state: threat.type === 'fire' ? 'fire' : 'threatened',
+            threatType: threat.type,
+            decayAt: now + threat.durationMs,
+          };
+        }
 
-  const handleAction = (tile: Tile) => {
-    // For simplicity, we just use the first positive effect we find.
-    const healthEffect = tile.effects.fertility || tile.effects.waterRetention || tile.effects.waterFiltration || 5;
-    const pointsEffect = tile.cost * 10;
-    
-    setEcosystemHealth((prev) =>
-      Math.min(100, Math.max(0, prev + healthEffect))
-    );
-    setPoints((prev) => prev + pointsEffect);
-  };
-  
-  const content = () => {
-    if (gameState === 'home') {
-      return (
-        <div className="flex flex-col h-full w-full font-code text-white bg-green-900/80 items-center justify-center text-center p-8 relative overflow-hidden">
-          <video
-            src="/videos/forest-guardian.mp4"
-            autoPlay
-            loop
-            muted
-            className="absolute top-0 left-0 w-full h-full object-cover z-0"
-          ></video>
-          <div className="absolute inset-0 bg-black/50 z-10"></div>
-          <div className="z-20 animate-fade-in-up">
-            <h1 className="text-6xl font-headline text-primary mb-4 animate-zoom-in">Forest Guardian</h1>
-            <p className="text-xl mb-8">A Conservation Adventure</p>
-            <Button size="lg" onClick={() => setGameState('rules')} className="font-bold text-lg">
-              Start Your Patrol
-            </Button>
-          </div>
-        </div>
-      );
-    }
+        return next;
+      });
+      setEventText(`${threat.name}: ${threat.description}`);
+    }, THREAT_INTERVAL_MS);
 
-    if (gameState === 'rules') {
-      return (
-        <div className="flex flex-col h-full w-full font-code text-white bg-green-900/80 items-center justify-center text-center p-8">
-          <Card className="bg-background/80 text-foreground max-w-2xl animate-fade-in-up">
-              <CardHeader>
-                  <CardTitle className="flex items-center justify-center gap-2 text-2xl"><BookOpen /> Ranger's Field Guide</CardTitle>
-                  <CardDescription>Your mission is to restore the forest's health and earn points.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-left">
-                  <p><span className="font-bold text-primary">1. Assess:</span> Look for degraded areas and choose actions to fix them.</p>
-                  <p><span className="font-bold text-primary">2. Act:</span> Use your toolbar to perform actions like planting trees or cleaning water.</p>
-                  <p><span className="font-bold text-primary">3. Beware of Events:</span> Random events like wildfires or droughts can occur, impacting the ecosystem.</p>
-                  <p><span className="font-bold text-primary">4. Reward:</span> Watch the Ecosystem Health meter fill up and your Guardian Points increase!</p>
-              </CardContent>
-              <div className="p-6 pt-0">
-                  <Button className="w-full font-bold" onClick={() => setGameState('playing')}>Begin Restoration</Button>
-              </div>
-          </Card>
-        </div>
-      );
-    }
+    const seedTicker = setInterval(() => {
+      setSeeds((prev) => Math.min(50, prev + 1));
+    }, SEED_GAIN_INTERVAL_MS);
 
-    return (
-      <div className="flex flex-col h-full w-full font-code text-white bg-black/80 relative overflow-hidden">
-        <div className="z-20 p-4 flex flex-col flex-1 gap-4">
-          {/* Header */}
-          <header className="flex justify-between items-center bg-black/50 p-2 border-2 border-primary/50 rounded-md">
-            <div>
-              <h1 className="text-lg font-headline text-primary">
-                Forest Guardian
-              </h1>
-              <div className="flex items-center gap-4 mt-1">
-                <div className="w-48">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Ecosystem Health
-                  </p>
-                  <Progress
-                    value={ecosystemHealth}
-                    className="h-3 border border-secondary"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-accent">
-                {points.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Guardian Points</p>
-            </div>
-          </header>
+    return () => {
+      clearInterval(threatTicker);
+      clearInterval(seedTicker);
+    };
+  }, [phase]);
 
-          {/* Game Area */}
-          <main className="flex-1 flex flex-col items-center justify-center bg-green-900/30 p-4 border-2 border-primary/50 rounded-md">
-             {currentEvent && (
-              <div className="w-full text-center p-2 bg-red-900/50 border border-red-500 rounded-md mb-4 flex items-center justify-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-300" />
-                <p className="font-bold">EVENT: {currentEvent.name}</p>
-              </div>
-            )}
-            <p className="text-xl text-center mb-4">
-              The forest is degraded. Use your tools to restore it!
-            </p>
-            {/* Simplified Display */}
-            <div className="grid grid-cols-3 gap-4">
-               <div
-                className="text-center cursor-pointer p-2 hover:bg-white/10 rounded-md"
-                onClick={() => {
-                  const tile = gameData.tiles.find(t => t.id === 'oak_sapling');
-                  if (tile) handleAction(tile as unknown as Tile);
-                }}
-              >
-                <div className="w-24 h-24 bg-yellow-900/50 border-2 border-dashed border-yellow-700 rounded-md flex items-center justify-center">
-                  <span className="text-yellow-400">Empty Patch</span>
-                </div>
-                <p className="text-xs mt-1">Plant trees here</p>
-              </div>
-              <div
-                className="text-center cursor-pointer p-2 hover:bg-white/10 rounded-md"
-                onClick={() => {
-                  const tile = gameData.tiles.find(t => t.id === 'invasive_shrub');
-                  if (tile) handleAction(tile as unknown as Tile);
-                }}
-              >
-                <div className="w-24 h-24 bg-purple-900/50 border-2 border-dashed border-purple-700 rounded-md flex items-center justify-center">
-                  <span className="text-purple-400">Invasive Species</span>
-                </div>
-                <p className="text-xs mt-1">Remove these</p>
-              </div>
-              <div
-                className="text-center cursor-pointer p-2 hover:bg-white/10 rounded-md"
-                onClick={() => {
-                  const tile = gameData.tiles.find(t => t.id === 'stream_restoration');
-                  if (tile) handleAction(tile as unknown as Tile);
-                }}
-              >
-                <div className="w-24 h-24 bg-blue-900/50 border-2 border-dashed border-blue-700 rounded-md flex items-center justify-center">
-                  <Trash2 className="h-8 w-8 text-blue-400" />
-                </div>
-                <p className="text-xs mt-1">Clean Waterway</p>
-              </div>
-            </div>
-          </main>
-
-          {/* Toolbar */}
-          <footer className="bg-black/50 p-3 border-2 border-primary/50 rounded-md space-y-3">
-            <p className="text-center text-xs text-muted-foreground">TOOL BAR</p>
-            <div className="flex items-center justify-around gap-3">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const tile = gameData.tiles.find(t => t.id === 'oak_sapling');
-                  if (tile) handleAction(tile as unknown as Tile);
-                }}
-              >
-                <Shovel className="mr-2 h-5 w-5" /> Plant Tree
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const tile = gameData.tiles.find(t => t.id === 'root_barrier');
-                  if (tile) handleAction(tile as unknown as Tile);
-                }}
-              >
-                <Trash2 className="mr-2 h-5 w-5" /> Remove Invasive
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  const tile = gameData.tiles.find(t => t.id === 'stream_restoration');
-                  if (tile) handleAction(tile as unknown as Tile);
-                }}
-              >
-                <Droplets className="mr-2 h-5 w-5" /> Clean Waterway
-              </Button>
-            </div>
-          </footer>
-        </div>
-      </div>
-    );
+  function startGame() {
+    setCells(createInitialForest());
+    setScore(0);
+    setSeeds(STARTING_SEEDS);
+    setTimeLeft(GAME_SECONDS);
+    setActiveTool('defend');
+    setEventText('The forest is calm. Watch for threats and protect biodiversity.');
+    setPhase('playing');
   }
-  return <Desktop>{content()}</Desktop>;
+
+  function actOnCell(cell: Cell) {
+    if (phase !== 'playing') {
+      return;
+    }
+
+    if (activeTool === 'defend') {
+      if (cell.state === 'threatened') {
+        setCells((prev) =>
+          prev.map((item) =>
+            item.id === cell.id
+              ? { ...item, state: 'healthy', threatType: null, decayAt: null }
+              : item
+          )
+        );
+        setScore((prev) => prev + 80);
+        setEventText('Threat neutralized with rapid defense.');
+      }
+      return;
+    }
+
+    if (activeTool === 'plant') {
+      if (cell.state === 'felled' && seeds >= 3) {
+        setSeeds((prev) => prev - 3);
+        setCells((prev) =>
+          prev.map((item) =>
+            item.id === cell.id
+              ? {
+                  ...item,
+                  tree: TREE_TYPES[Math.floor(Math.random() * TREE_TYPES.length)],
+                  state: 'healthy',
+                  threatType: null,
+                  decayAt: null,
+                }
+              : item
+          )
+        );
+        setScore((prev) => prev + 50);
+        setEventText('Sapling planted. Canopy recovery in progress.');
+      } else if (cell.state === 'felled' && seeds < 3) {
+        setEventText('Not enough seeds for planting. Wait for seed regeneration.');
+      }
+      return;
+    }
+
+    if (activeTool === 'water') {
+      if (cell.state === 'threatened') {
+        if (seeds < 2) {
+          setEventText('Need 2 seeds to deploy water treatment.');
+          return;
+        }
+
+        setSeeds((prev) => prev - 2);
+        setCells((prev) =>
+          prev.map((item) =>
+            item.id === cell.id
+              ? { ...item, state: 'healthy', threatType: null, decayAt: null }
+              : item
+          )
+        );
+        setScore((prev) => prev + 60);
+        setEventText('Water intervention successful. Stress reduced.');
+      }
+      return;
+    }
+
+    if (activeTool === 'extinguish') {
+      if (cell.state === 'fire') {
+        if (seeds < 5) {
+          setEventText('Need 5 seeds to activate fire suppression.');
+          return;
+        }
+
+        setSeeds((prev) => prev - 5);
+        setCells((prev) =>
+          prev.map((item) =>
+            item.id === cell.id
+              ? { ...item, state: 'healthy', threatType: null, decayAt: null }
+              : item
+          )
+        );
+        setScore((prev) => prev + 120);
+        setEventText('Fire suppressed. Immediate canopy damage prevented.');
+      }
+    }
+  }
+
+  const summary = useMemo(() => {
+    if (forestHealth >= 75) return 'Forest recovered. Habitat corridors are functioning.';
+    if (forestHealth >= 45) return 'Partial recovery achieved. More intervention required.';
+    return 'Canopy collapse risk remains high. Try a faster defense cycle.';
+  }, [forestHealth]);
+
+  return (
+    <Desktop>
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 p-5 pb-24 md:p-8 md:pb-28">
+        {phase === 'home' && (
+          <Card className="border-primary/30 bg-gradient-to-br from-card via-card to-emerald-900/20">
+            <CardHeader>
+              <CardTitle className="text-4xl font-headline uppercase tracking-wider text-primary md:text-5xl">Forest Defender</CardTitle>
+              <CardDescription className="text-base md:text-lg">
+                Protect a living biome under pressure from logging, wildfire, invasive pests, and development.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="rounded-lg border border-primary/25 bg-background/50 p-5 text-base text-muted-foreground md:text-lg">
+                Defend threatened trees, extinguish wildfire cells, use water interventions, and plant new saplings to stabilize forest health.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={() => setPhase('rules')} size="lg" className="text-base">Read Rules</Button>
+                <Button variant="outline" onClick={startGame} size="lg" className="text-base">Enter Forest</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {phase === 'rules' && (
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl uppercase tracking-wide md:text-3xl">Mission Rules</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-base text-muted-foreground md:text-lg">
+              <p>1. A new threat wave appears every few seconds and marks multiple healthy trees.</p>
+              <p>2. Threatened and burning trees collapse into felled land if you do not act before the timer expires.</p>
+              <p>3. Use Defend for general threats, Water for stressed trees, Extinguish for fire, and Plant to restore felled plots.</p>
+              <p>4. Tools consume seeds except Defend. Seeds regenerate over time, so budget them carefully.</p>
+              <div className="flex flex-wrap gap-3 pt-3">
+                <Button onClick={startGame} size="lg" className="text-base">Start Mission</Button>
+                <Button variant="ghost" onClick={() => setPhase('home')} size="lg" className="text-base">Back</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {phase === 'playing' && (
+          <>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+              <Card className="border-primary/20"><CardContent className="p-4 md:p-5"><p className="text-xs uppercase text-muted-foreground md:text-sm">Score</p><p className="text-3xl font-bold text-primary">{score}</p></CardContent></Card>
+              <Card className="border-primary/20"><CardContent className="p-4 md:p-5"><p className="text-xs uppercase text-muted-foreground md:text-sm">Seeds</p><p className="text-3xl font-bold text-amber-500">{seeds}</p></CardContent></Card>
+              <Card className="border-primary/20"><CardContent className="p-4 md:p-5"><p className="text-xs uppercase text-muted-foreground md:text-sm">Time</p><p className="text-3xl font-bold">{timeLeft}s</p></CardContent></Card>
+              <Card className="border-primary/20"><CardContent className="p-4 md:p-5"><p className="text-xs uppercase text-muted-foreground md:text-sm">Standing Trees</p><p className="text-3xl font-bold text-emerald-500">{standingCount}</p></CardContent></Card>
+            </div>
+
+            <Card className="border-primary/20">
+              <CardHeader className="space-y-3">
+                <CardTitle className="flex items-center gap-2 text-xl font-headline uppercase tracking-wide md:text-2xl">
+                  <Trees className="h-6 w-6 text-primary" /> Canopy Status
+                </CardTitle>
+                <CardDescription className="text-base md:text-lg">{eventText}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <Progress value={forestHealth} indicatorClassName={forestHealth > 50 ? 'bg-emerald-500' : 'bg-rose-500'} />
+                <div className={`grid gap-2 md:gap-3`} style={{ gridTemplateColumns: `repeat(${GRID_COLUMNS}, minmax(0, 1fr))` }}>
+                  {cells.map((cell) => (
+                    <button
+                      key={cell.id}
+                      onClick={() => actOnCell(cell)}
+                      className={[
+                        'flex aspect-square items-center justify-center rounded-lg border text-2xl transition md:text-3xl',
+                        cell.state === 'healthy' && 'border-emerald-500/35 bg-emerald-500/15',
+                        cell.state === 'threatened' && 'animate-pulse border-amber-500/55 bg-amber-500/20',
+                        cell.state === 'fire' && 'animate-pulse border-red-500/70 bg-red-500/20',
+                        cell.state === 'felled' && 'border-zinc-700 bg-zinc-900/60',
+                      ].join(' ')}
+                      type="button"
+                    >
+                      {cell.state === 'healthy' && cell.tree}
+                      {cell.state === 'threatened' && '⚠️'}
+                      {cell.state === 'fire' && '🔥'}
+                      {cell.state === 'felled' && '🪵'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="rounded-lg border border-primary/20 bg-background/40 p-4">
+                  <p className="text-base text-muted-foreground md:text-lg">
+                    Forest Health: <span className="font-semibold text-foreground">{forestHealth}%</span> | Healthy Cells: <span className="font-semibold text-foreground">{healthyCount}</span>
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Button
+                    variant={activeTool === 'defend' ? 'default' : 'outline'}
+                    onClick={() => setActiveTool('defend')}
+                    className="h-14 text-base"
+                  >
+                    <Shield className="mr-2 h-5 w-5" /> Defend
+                  </Button>
+                  <Button
+                    variant={activeTool === 'plant' ? 'default' : 'outline'}
+                    onClick={() => setActiveTool('plant')}
+                    className="h-14 text-base"
+                  >
+                    <Sprout className="mr-2 h-5 w-5" /> Plant (3)
+                  </Button>
+                  <Button
+                    variant={activeTool === 'water' ? 'default' : 'outline'}
+                    onClick={() => setActiveTool('water')}
+                    className="h-14 text-base"
+                  >
+                    <Droplets className="mr-2 h-5 w-5" /> Water (2)
+                  </Button>
+                  <Button
+                    variant={activeTool === 'extinguish' ? 'default' : 'outline'}
+                    onClick={() => setActiveTool('extinguish')}
+                    className="h-14 text-base"
+                  >
+                    <Flame className="mr-2 h-5 w-5" /> Extinguish (5)
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {phase === 'result' && (
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-3xl font-headline uppercase tracking-wide text-primary">
+                <AlertTriangle className="h-7 w-7" /> Guardian Report
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-6xl font-black text-primary">{score}</p>
+              <p className="text-base text-muted-foreground md:text-lg">Forest health ended at {forestHealth}% with {standingCount} standing trees.</p>
+              <p className="text-base text-muted-foreground md:text-lg">{summary}</p>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={startGame} size="lg" className="text-base">Defend Again</Button>
+                <Button variant="outline" onClick={() => setPhase('home')} size="lg" className="text-base">Back to Briefing</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </Desktop>
+  );
 }

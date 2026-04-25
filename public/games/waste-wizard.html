@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waste Wizard</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0d0d;--panel:#1a1a1a;--border:#333;
+  --green:#39ff14;--blue:#00b4ff;--yellow:#ffd700;
+  --red:#ff3131;--purple:#bf5fff;--white:#eee;
+  --crt:rgba(0,255,0,0.02);
+}
+body{
+  font-family:'VT323',monospace;
+  background:var(--bg);
+  color:var(--green);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  position:relative;
+}
+/* CRT scanline effect */
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);
+  pointer-events:none;z-index:999;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.4) 100%);
+  pointer-events:none;z-index:998;
+}
+
+#app{
+  width:min(540px,98vw);
+  border:3px solid var(--green);
+  box-shadow:0 0 30px rgba(57,255,20,0.3),inset 0 0 30px rgba(0,0,0,0.5);
+  border-radius:4px;
+  overflow:hidden;
+  position:relative;z-index:1;
+}
+
+.screen{display:none;flex-direction:column;align-items:center;gap:0}
+.screen.active{display:flex}
+
+/* Header bar */
+.arcade-header{
+  width:100%;background:var(--panel);
+  border-bottom:2px solid var(--green);
+  padding:16px 20px;
+  text-align:center;
+}
+.game-title{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(14px,3.5vw,22px);
+  color:var(--yellow);
+  text-shadow:0 0 10px rgba(255,215,0,0.5);
+  letter-spacing:2px;
+  margin-bottom:6px;
+}
+.title-sub{font-size:clamp(14px,3vw,18px);color:var(--green);letter-spacing:2px}
+
+/* Start screen */
+.start-body{padding:24px 20px;width:100%;background:var(--bg)}
+.pixel-divider{
+  border:none;border-top:2px dashed var(--border);
+  margin:16px 0;
+}
+.instruction-box{
+  background:var(--panel);
+  border:1px solid var(--border);
+  padding:14px;font-size:clamp(13px,2.5vw,16px);
+  line-height:2;color:#aaa;
+}
+.bin-preview{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  margin:16px 0;
+}
+.bin-badge{
+  border:2px solid;border-radius:4px;padding:8px 12px;
+  font-size:clamp(12px,2vw,15px);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.bin-badge span:first-child{font-size:22px}
+.play-btn{
+  display:block;width:100%;
+  background:var(--green);color:#000;
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(10px,2.5vw,14px);
+  padding:14px;border:none;cursor:pointer;
+  letter-spacing:2px;
+  box-shadow:0 4px 0 #1a7a00;
+  transition:all 0.1s;
+  margin-top:20px;
+}
+.play-btn:hover{box-shadow:0 2px 0 #1a7a00;transform:translateY(2px)}
+
+/* Game screen */
+.game-hud{
+  width:100%;background:var(--panel);
+  padding:10px 20px;
+  display:flex;justify-content:space-between;
+  border-bottom:2px solid var(--border);
+  font-size:clamp(14px,3vw,18px);
+}
+.hud-seg{display:flex;flex-direction:column;align-items:center;gap:2px}
+.hud-lbl{font-size:clamp(10px,2vw,12px);color:#666;font-family:'Press Start 2P',monospace}
+.hud-n{color:var(--yellow)}
+
+/* Drop zone */
+.drop-zone{
+  width:100%;
+  height:clamp(140px,30vw,200px);
+  background:var(--bg);
+  border-bottom:2px solid var(--border);
+  position:relative;
+  overflow:hidden;
+}
+/* falling item */
+.falling-item{
+  position:absolute;
+  font-size:clamp(28px,6vw,42px);
+  cursor:grab;
+  user-select:none;
+  transition:left 0.1s;
+  filter:drop-shadow(0 0 8px rgba(57,255,20,0.3));
+  top:-50px;
+  animation:fall linear;
+}
+.falling-item:active{cursor:grabbing}
+@keyframes fall{0%{top:-50px}100%{top:100%}}
+
+/* Lane guides */
+.lane-guide{
+  position:absolute;top:0;bottom:0;width:25%;
+  border-right:1px dashed rgba(255,255,255,0.05);
+}
+
+/* Bins */
+.bins-row{
+  display:flex;width:100%;
+  border-top:2px solid var(--border);
+}
+.bin{
+  flex:1;
+  padding:14px 8px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.15s;
+  position:relative;
+  border-right:2px solid var(--border);
+  user-select:none;
+}
+.bin:last-child{border-right:none}
+.bin:hover{filter:brightness(1.3)}
+.bin:active{transform:scale(0.96)}
+.bin-icon{font-size:clamp(24px,5vw,34px);display:block;margin-bottom:4px}
+.bin-name{font-size:clamp(9px,2vw,12px);letter-spacing:1px}
+.bin.flash-correct{animation:correctFlash 0.4s}
+.bin.flash-wrong{animation:wrongFlash 0.4s}
+@keyframes correctFlash{0%,100%{background:transparent}50%{background:rgba(57,255,20,0.3)}}
+@keyframes wrongFlash{0%,100%{background:transparent}50%{background:rgba(255,49,49,0.3)}}
+
+/* Fact ticker */
+.ticker{
+  width:100%;background:var(--panel);
+  padding:8px 16px;border-top:2px solid var(--border);
+  font-size:clamp(12px,2.5vw,15px);
+  color:var(--blue);
+  white-space:nowrap;overflow:hidden;
+  position:relative;
+}
+.ticker-inner{
+  display:inline-block;
+  animation:ticker 18s linear infinite;
+}
+@keyframes ticker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+
+/* Result overlay */
+.result-flash{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(28px,6vw,48px);
+  font-family:'Press Start 2P',monospace;
+  pointer-events:none;
+  opacity:0;transition:opacity 0.2s;
+  z-index:10;
+}
+.result-flash.show{opacity:1}
+.result-flash.good{color:var(--green);text-shadow:0 0 20px var(--green)}
+.result-flash.bad{color:var(--red);text-shadow:0 0 20px var(--red)}
+
+/* End */
+.end-body{padding:24px 20px;width:100%;background:var(--bg);text-align:center}
+.end-score{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(32px,8vw,60px);
+  color:var(--yellow);
+  text-shadow:0 0 20px rgba(255,215,0,0.5);
+  margin:16px 0;
+}
+.end-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;
+}
+.stat-box{
+  background:var(--panel);border:1px solid var(--border);
+  padding:12px;
+}
+.stat-n{font-size:28px;color:var(--green)}
+.stat-l{font-size:11px;color:#666;font-family:'Press Start 2P',monospace;line-height:1.4}
+.end-fact{
+  background:var(--panel);border:1px solid var(--blue);
+  padding:12px;font-size:clamp(12px,2.5vw,15px);color:var(--blue);
+  line-height:1.6;margin:10px 0;text-align:left;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START -->
+  <div class="screen active" id="start-screen">
+    <div class="arcade-header">
+      <div class="game-title">♻ WASTE WIZARD ♻</div>
+      <div class="title-sub">[ RECYCLE OR REGRET ]</div>
+    </div>
+    <div class="start-body">
+      <div class="instruction-box">
+        > ITEMS FALL FROM THE SKY<br>
+        > CLICK THE CORRECT BIN<br>
+        > WRONG BIN = LOSE LIFE<br>
+        > SPEED INCREASES EACH LEVEL
+      </div>
+      <hr class="pixel-divider">
+      <div class="bin-preview">
+        <div class="bin-badge" style="border-color:#4caf50;color:#4caf50"><span>♻️</span>RECYCLE</div>
+        <div class="bin-badge" style="border-color:#888;color:#888"><span>🗑️</span>LANDFILL</div>
+        <div class="bin-badge" style="border-color:#795548;color:#795548"><span>🌱</span>COMPOST</div>
+        <div class="bin-badge" style="border-color:#e91e63;color:#e91e63"><span>☢️</span>HAZARDOUS</div>
+      </div>
+      <hr class="pixel-divider">
+      <div class="instruction-box" style="font-size:13px">
+        FACT: ONLY 9% OF ALL PLASTIC EVER MADE HAS BEEN RECYCLED. EVERY CORRECT SORT = 1 LESS ITEM IN LANDFILL.
+      </div>
+      <button class="play-btn" onclick="startGame()">▶ INSERT COIN</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="game-screen">
+    <div class="game-hud">
+      <div class="hud-seg"><span class="hud-lbl">SCORE</span><span class="hud-n" id="score">0</span></div>
+      <div class="hud-seg"><span class="hud-lbl">LIVES</span><span class="hud-n" id="lives">❤️❤️❤️</span></div>
+      <div class="hud-seg"><span class="hud-lbl">LEVEL</span><span class="hud-n" id="level">1</span></div>
+      <div class="hud-seg"><span class="hud-lbl">SORTED</span><span class="hud-n" id="sorted">0</span></div>
+    </div>
+    <div class="drop-zone" id="drop-zone">
+      <div class="lane-guide" style="left:0%"></div>
+      <div class="lane-guide" style="left:25%"></div>
+      <div class="lane-guide" style="left:50%"></div>
+      <div class="lane-guide" style="left:75%"></div>
+      <div class="result-flash" id="result-flash"></div>
+    </div>
+    <div class="bins-row">
+      <div class="bin" style="color:#4caf50" onclick="sort('recycle',this)">
+        <span class="bin-icon">♻️</span><span class="bin-name">RECYCLE</span>
+      </div>
+      <div class="bin" style="color:#888" onclick="sort('landfill',this)">
+        <span class="bin-icon">🗑️</span><span class="bin-name">LANDFILL</span>
+      </div>
+      <div class="bin" style="color:#795548" onclick="sort('compost',this)">
+        <span class="bin-icon">🌱</span><span class="bin-name">COMPOST</span>
+      </div>
+      <div class="bin" style="color:#e91e63" onclick="sort('hazard',this)">
+        <span class="bin-icon">☢️</span><span class="bin-name">HAZARD</span>
+      </div>
+    </div>
+    <div class="ticker"><span class="ticker-inner" id="ticker-text">♻ Sorting waste correctly reduces landfill by up to 75% ♻ The average American produces 4.4 lbs of trash per day ♻ Composting food waste cuts methane emissions by 45%</span></div>
+  </div>
+
+  <!-- END -->
+  <div class="screen" id="end-screen">
+    <div class="arcade-header">
+      <div class="game-title" style="color:var(--red)">GAME OVER</div>
+    </div>
+    <div class="end-body">
+      <div class="end-score" id="final-score">0</div>
+      <div id="end-impact" style="font-size:16px;color:var(--green);margin-bottom:16px"></div>
+      <div class="end-stats">
+        <div class="stat-box"><div class="stat-n" id="stat-sorted">0</div><div class="stat-l">ITEMS<br>SORTED</div></div>
+        <div class="stat-box"><div class="stat-n" id="stat-acc">0%</div><div class="stat-l">ACCURACY<br>RATE</div></div>
+      </div>
+      <div class="end-fact">📊 FACT: Recycling 1 tonne of paper saves 17 trees, 380 gallons of oil, and 3 cubic yards of landfill space. Your sorting skills matter.</div>
+      <div class="end-fact" style="border-color:var(--yellow);color:var(--yellow)">💡 TIP: Learn your local recycling rules — contamination (putting wrong items in recycling) ruins entire batches. When in doubt, leave it out.</div>
+      <button class="play-btn" onclick="startGame()">▶ PLAY AGAIN</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ITEMS=[
+  {e:'📰',n:'Newspaper',cat:'recycle'},{e:'🍶',n:'Glass Bottle',cat:'recycle'},
+  {e:'📦',n:'Cardboard',cat:'recycle'},{e:'🥫',n:'Tin Can',cat:'recycle'},
+  {e:'🧴',n:'Plastic Bottle',cat:'recycle'},{e:'📄',n:'Paper',cat:'recycle'},
+  {e:'🍌',n:'Banana Peel',cat:'compost'},{e:'🥦',n:'Veggie Scraps',cat:'compost'},
+  {e:'☕',n:'Coffee Grounds',cat:'compost'},{e:'🍂',n:'Dead Leaves',cat:'compost'},
+  {e:'🍎',n:'Apple Core',cat:'compost'},{e:'🥚',n:'Eggshells',cat:'compost'},
+  {e:'🛍️',n:'Plastic Bag',cat:'landfill'},{e:'🩺',n:'Medical Waste',cat:'landfill'},
+  {e:'🧻',n:'Used Tissue',cat:'landfill'},{e:'🍕',n:'Greasy Box',cat:'landfill'},
+  {e:'💿',n:'Old CD',cat:'landfill'},{e:'🧲',n:'Broken Toy',cat:'landfill'},
+  {e:'🔋',n:'Battery',cat:'hazard'},{e:'💡',n:'CFL Bulb',cat:'hazard'},
+  {e:'🖥️',n:'Old Monitor',cat:'hazard'},{e:'🧴',n:'Paint Can',cat:'hazard'},
+  {e:'🔌',n:'Electronics',cat:'hazard'},{e:'🧪',n:'Chemical Bottle',cat:'hazard'},
+];
+
+let score=0,lives=3,level=1,sorted=0,totalAttempts=0,correct=0;
+let currentItem=null,fallTimer=null,spawnTimer=null,speed=8000;
+let gameActive=false;
+
+function startGame(){
+  score=0;lives=3;level=1;sorted=0;totalAttempts=0;correct=0;speed=8000;
+  gameActive=true;currentItem=null;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('game-screen').classList.add('active');
+  updateHUD();
+  clearTimeout(spawnTimer);
+  document.querySelectorAll('.falling-item').forEach(i=>i.remove());
+  spawnItem();
+}
+
+function spawnItem(){
+  if(!gameActive)return;
+  if(document.querySelector('.falling-item'))return;
+  const item=ITEMS[Math.floor(Math.random()*ITEMS.length)];
+  currentItem=item;
+  const zone=document.getElementById('drop-zone');
+  const el=document.createElement('div');
+  el.className='falling-item';
+  el.textContent=item.e;
+  el.title=item.n;
+  el.style.left=(5+Math.random()*80)+'%';
+  el.style.animationDuration=speed+'ms';
+  el.style.animationFillMode='forwards';
+  zone.appendChild(el);
+  clearTimeout(fallTimer);
+  fallTimer=setTimeout(()=>{
+    if(el.parentNode){
+      el.remove();
+      // missed = wrong landfill by default
+      loseLife();
+      currentItem=null;
+      spawnTimer=setTimeout(spawnItem,800);
+    }
+  },speed);
+}
+
+function sort(bin,binEl){
+  if(!gameActive||!currentItem)return;
+  clearTimeout(fallTimer);
+  const el=document.querySelector('.falling-item');
+  totalAttempts++;
+  if(bin===currentItem.cat){
+    correct++;
+    score+=100*level;sorted++;
+    flash('✓ CORRECT!','good');
+    binEl.classList.add('flash-correct');
+    setTimeout(()=>binEl.classList.remove('flash-correct'),400);
+    if(sorted%5===0){level++;speed=Math.max(2500,speed-600);}
+  }else{
+    loseLife();
+    flash('✗ WRONG!','bad');
+    binEl.classList.add('flash-wrong');
+    setTimeout(()=>binEl.classList.remove('flash-wrong'),400);
+  }
+  if(el)el.remove();
+  currentItem=null;
+  updateHUD();
+  if(gameActive)spawnTimer=setTimeout(spawnItem,600);
+}
+
+function loseLife(){
+  lives--;
+  updateHUD();
+  if(lives<=0){endGame();}
+}
+
+function flash(text,type){
+  const f=document.getElementById('result-flash');
+  f.textContent=text;f.className='result-flash show '+type;
+  setTimeout(()=>f.className='result-flash',500);
+}
+
+function updateHUD(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('lives').textContent='❤️'.repeat(Math.max(0,lives));
+  document.getElementById('level').textContent=level;
+  document.getElementById('sorted').textContent=sorted;
+}
+
+function endGame(){
+  gameActive=false;
+  clearTimeout(fallTimer);clearTimeout(spawnTimer);
+  document.querySelectorAll('.falling-item').forEach(i=>i.remove());
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('end-screen').classList.add('active');
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('stat-sorted').textContent=sorted;
+  const acc=totalAttempts>0?Math.round((correct/totalAttempts)*100):0;
+  document.getElementById('stat-acc').textContent=acc+'%';
+  let impact;
+  if(sorted>=20)impact=`♻ You diverted ~${sorted} items from landfill! That's a real difference.`;
+  else if(sorted>=10)impact=`✓ ${sorted} items sorted correctly. You're learning!`;
+  else impact=`⚠ ${sorted} sorted. Study the bins and try again!`;
+  document.getElementById('end-impact').textContent=impact;
+}
+</script>
+</body>
+</html>

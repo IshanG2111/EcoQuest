@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forest Defender</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bark:#2d1b00;--moss:#1a472a;--leaf:#2d6a4f;--bright:#52b788;
+  --gold:#f4a261;--danger:#e63946;--sky:#87ceeb;--white:#f0fff4;
+  --shadow:rgba(0,0,0,0.4);
+}
+body{
+  font-family:'Lato',sans-serif;
+  background:var(--bark);
+  color:var(--white);
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+/* forest bg layers */
+.forest-bg{position:fixed;inset:0;z-index:0}
+.sky-layer{
+  position:absolute;top:0;left:0;right:0;height:55%;
+  background:linear-gradient(180deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+}
+.canopy-layer{
+  position:absolute;bottom:0;left:0;right:0;height:65%;
+  background:linear-gradient(180deg,var(--leaf) 0%,var(--moss) 60%,#0a2211 100%);
+}
+.tree-silhouette{
+  position:absolute;bottom:0;
+  width:0;height:0;
+  border-left:solid transparent;border-right:solid transparent;border-bottom:solid;
+  opacity:0.3;
+}
+.moon{
+  position:absolute;top:40px;right:60px;
+  width:48px;height:48px;
+  background:radial-gradient(circle,#fff9c4,#f9a825);
+  border-radius:50%;
+  box-shadow:0 0 30px rgba(249,168,37,0.4);
+}
+.stars{position:absolute;top:0;left:0;width:100%;height:55%}
+.star{position:absolute;background:white;border-radius:50%;animation:twinkle 3s infinite alternate}
+@keyframes twinkle{0%{opacity:0.3;transform:scale(0.8)}100%{opacity:1;transform:scale(1)}}
+
+#app{position:relative;z-index:1;width:min(640px,98vw)}
+.screen{display:none;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.screen.active{display:flex}
+
+/* Start */
+.logo{
+  font-family:'Cinzel',serif;
+  font-size:clamp(30px,7vw,54px);
+  font-weight:900;
+  color:var(--bright);
+  text-shadow:0 0 20px rgba(82,183,136,0.5),0 2px 4px rgba(0,0,0,0.5);
+  line-height:1.1;
+}
+.intro{
+  background:rgba(0,0,0,0.4);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(82,183,136,0.3);
+  border-radius:16px;
+  padding:20px 26px;
+  max-width:480px;
+  font-size:15px;line-height:1.7;
+}
+.fact-banner{
+  background:rgba(82,183,136,0.15);
+  border:1px solid var(--bright);
+  border-radius:10px;
+  padding:12px 20px;font-size:13px;
+  color:var(--bright);max-width:440px;
+}
+.start-btn{
+  background:linear-gradient(135deg,var(--leaf),var(--bright));
+  color:var(--bark);font-family:'Cinzel',serif;font-weight:700;
+  font-size:16px;border:none;cursor:pointer;
+  padding:14px 44px;border-radius:8px;
+  box-shadow:0 4px 20px rgba(82,183,136,0.4);
+  transition:all 0.2s;letter-spacing:1px;
+}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(82,183,136,0.6)}
+
+/* HUD */
+.hud{
+  width:100%;
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(0,0,0,0.5);
+  border:1px solid rgba(82,183,136,0.3);
+  border-radius:12px;padding:10px 18px;
+  backdrop-filter:blur(4px);
+}
+.hud-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.hud-lbl{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
+.hud-n{font-family:'Cinzel',serif;font-size:22px;color:var(--gold)}
+.hud-n.danger{color:var(--danger)}
+
+/* Forest health bar */
+.health-bar-wrap{width:100%}
+.health-bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;opacity:0.6}
+.health-track{width:100%;height:16px;background:rgba(0,0,0,0.4);border-radius:20px;overflow:hidden;border:1px solid rgba(82,183,136,0.2)}
+.health-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--danger),var(--gold),var(--bright));
+  background-size:300%;
+  border-radius:20px;
+  transition:width 0.5s,background-position 0.5s;
+}
+
+/* Game canvas */
+.game-canvas{
+  width:100%;
+  background:rgba(0,0,0,0.3);
+  border:1px solid rgba(82,183,136,0.2);
+  border-radius:16px;
+  padding:12px;
+  position:relative;
+  overflow:hidden;
+}
+.canvas-title{
+  font-family:'Cinzel',serif;font-size:11px;
+  color:rgba(82,183,136,0.4);letter-spacing:3px;
+  margin-bottom:10px;
+}
+
+/* Tree grid */
+.tree-grid{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  gap:6px;
+  margin-bottom:12px;
+}
+.tree{
+  aspect-ratio:1;
+  font-size:clamp(20px,4vw,30px);
+  display:flex;align-items:center;justify-content:center;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.05);
+  user-select:none;
+}
+.tree:hover{background:rgba(82,183,136,0.15);border-color:var(--bright)}
+.tree.healthy{filter:none}
+.tree.threatened{animation:tremble 0.5s infinite;filter:sepia(0.5)}
+.tree.felled{filter:grayscale(1) brightness(0.4);cursor:not-allowed}
+.tree.planted{animation:grow 0.4s ease-out}
+@keyframes tremble{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@keyframes grow{0%{transform:scale(0)}100%{transform:scale(1)}}
+
+/* Threat indicators */
+.tree.threatened::after{
+  content:'⚠';
+  position:absolute;top:-4px;right:-4px;
+  font-size:11px;
+  animation:pulse-warn 0.8s infinite;
+}
+@keyframes pulse-warn{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Event panel */
+.event-panel{
+  background:rgba(0,0,0,0.4);
+  border:1px solid rgba(244,162,97,0.3);
+  border-radius:12px;
+  padding:14px 18px;
+  font-size:13px;
+  line-height:1.5;
+  text-align:left;
+  min-height:60px;
+}
+.event-title{
+  font-family:'Cinzel',serif;
+  font-size:14px;color:var(--gold);
+  margin-bottom:6px;
+}
+.event-desc{color:rgba(255,255,255,0.7)}
+
+/* Actions */
+.action-row{
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+}
+.act-btn{
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:10px;padding:8px 14px;
+  cursor:pointer;color:var(--white);
+  font-family:'Lato',sans-serif;font-weight:700;
+  font-size:12px;transition:all 0.2s;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.act-btn:hover{background:rgba(82,183,136,0.2);border-color:var(--bright)}
+.act-btn.active{background:rgba(82,183,136,0.25);border-color:var(--bright);box-shadow:0 0 10px rgba(82,183,136,0.3)}
+.act-btn .icon{font-size:20px}
+.act-btn .cost{font-size:10px;color:var(--gold);opacity:0.8}
+
+/* particles */
+.leaf-particle{
+  position:absolute;font-size:14px;
+  pointer-events:none;z-index:20;
+  animation:leafFall 1.2s forwards;
+}
+@keyframes leafFall{
+  0%{opacity:1;transform:translateY(0) rotate(0deg)}
+  100%{opacity:0;transform:translateY(40px) rotate(180deg)}
+}
+
+/* End */
+.end-title{
+  font-family:'Cinzel',serif;
+  font-size:clamp(28px,7vw,52px);font-weight:900;
+  color:var(--bright);
+  text-shadow:0 0 30px rgba(82,183,136,0.5);
+}
+.end-score{
+  font-family:'Cinzel',serif;
+  font-size:clamp(56px,14vw,96px);
+  color:var(--gold);
+  text-shadow:0 0 30px rgba(244,162,97,0.4);
+  line-height:1;
+}
+.end-card{
+  background:rgba(0,0,0,0.4);border:1px solid rgba(82,183,136,0.3);
+  border-radius:14px;padding:16px 22px;
+  font-size:13px;color:rgba(255,255,255,0.8);
+  max-width:460px;line-height:1.6;text-align:left;
+}
+.end-card strong{color:var(--bright)}
+</style>
+</head>
+<body>
+
+<!-- Forest background -->
+<div class="forest-bg">
+  <div class="sky-layer"></div>
+  <div class="moon"></div>
+  <div class="stars" id="stars"></div>
+  <div class="canopy-layer"></div>
+</div>
+
+<div id="app">
+
+  <!-- START -->
+  <div class="screen active" id="start-screen">
+    <div class="logo">🌲 Forest<br>Defender</div>
+    <div class="intro">
+      A pristine rainforest is under attack from <strong>loggers, wildfires, and invasive species</strong>. As the forest guardian, you must protect your trees, replant fallen ones, and respond to ecological threats before biodiversity collapses.
+      <br><br>
+      🌳 <strong>Click threatened trees</strong> to defend them &nbsp;|&nbsp; 🌱 <strong>Plant</strong> to restore &nbsp;|&nbsp; 🔥 <strong>Fight fires</strong> fast!
+    </div>
+    <div class="fact-banner">🌍 Tropical forests absorb ~2.6 billion tonnes of CO₂ per year — they are Earth's lungs</div>
+    <button class="start-btn" onclick="startGame()">🌲 Enter the Forest</button>
+  </div>
+
+  <!-- GAME -->
+  <div class="screen" id="game-screen">
+    <div class="hud">
+      <div class="hud-item"><span class="hud-lbl">Score</span><span class="hud-n" id="score">0</span></div>
+      <div class="hud-item"><span class="hud-lbl">Seeds</span><span class="hud-n" id="seeds">20🌱</span></div>
+      <div class="hud-item"><span class="hud-lbl">Time</span><span class="hud-n" id="time">90s</span></div>
+      <div class="hud-item"><span class="hud-lbl">Trees</span><span class="hud-n" id="alive">0🌳</span></div>
+    </div>
+    <div class="health-bar-wrap">
+      <div class="health-bar-label"><span>☠️ Deforested</span><span>Forest Health: <span id="health-pct">80</span>%</span><span>🌲 Pristine</span></div>
+      <div class="health-track"><div class="health-fill" id="health-fill" style="width:80%"></div></div>
+    </div>
+    <div class="game-canvas" id="game-canvas">
+      <div class="canvas-title">THE RAINFOREST</div>
+      <div class="tree-grid" id="tree-grid"></div>
+      <div class="event-panel">
+        <div class="event-title" id="event-title">🌳 The forest is calm...</div>
+        <div class="event-desc" id="event-desc">Watch for threats. Defend threatened trees. Plant in empty spots.</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="act-btn active" id="tool-defend" onclick="setTool('defend')">
+        <span class="icon">🛡️</span><span>Defend</span><span class="cost">Free</span>
+      </button>
+      <button class="act-btn" id="tool-plant" onclick="setTool('plant')">
+        <span class="icon">🌱</span><span>Plant</span><span class="cost">Cost: 3🌱</span>
+      </button>
+      <button class="act-btn" id="tool-water" onclick="setTool('water')">
+        <span class="icon">💧</span><span>Water</span><span class="cost">Cost: 2🌱</span>
+      </button>
+      <button class="act-btn" id="tool-fire" onclick="setTool('fire')">
+        <span class="icon">🧯</span><span>Extinguish</span><span class="cost">Cost: 5🌱</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="screen" id="end-screen">
+    <div class="end-title">🌿 Guardian Report</div>
+    <div class="end-score" id="final-score">0</div>
+    <div id="end-msg" style="font-size:16px;font-weight:700;color:var(--gold)"></div>
+    <div class="end-card">
+      🔬 <strong>Fact:</strong> Since 1970, monitored wildlife populations have declined by an average of 69% (WWF Living Planet Report). Deforestation is the #1 driver, destroying habitats that support millions of species.
+    </div>
+    <div class="end-card" style="border-color:rgba(244,162,97,0.4)">
+      💡 <strong>Real Action:</strong> Support certified deforestation-free products (FSC wood, RSPO palm oil). One hectare of tropical forest sequesters ~100 tonnes of carbon over its lifetime. Every tree matters.
+    </div>
+    <button class="start-btn" onclick="startGame()">🌲 Defend Again</button>
+  </div>
+
+</div>
+
+<script>
+// Stars
+const starsEl=document.getElementById('stars');
+for(let i=0;i<60;i++){
+  const s=document.createElement('div');s.className='star';
+  const sz=1+Math.random()*2.5;
+  s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;
+  starsEl.appendChild(s);
+}
+
+const TREE_TYPES=['🌲','🌳','🎄','🌴','🌵','🪵','🌾','🎋'];
+const THREATS=[
+  {name:'🪓 Loggers Incoming!',desc:'Armed with chainsaws, loggers are targeting your trees. Click threatened trees to defend them!',type:'log'},
+  {name:'🔥 Wildfire Spreading!',desc:'A fire has broken out! Use the Extinguish tool on burning trees before it spreads.',type:'fire'},
+  {name:'🐛 Invasive Pest!',desc:'Invasive beetles are killing trees from the inside. Water them to flush out pests.',type:'pest'},
+  {name:'🌪 Storm Warning!',desc:'High winds are uprooting saplings. Defend young trees before they fall.',type:'storm'},
+  {name:'🏗 Development Creep',desc:'Construction is encroaching. Defend border trees to hold the treeline!',type:'dev'},
+];
+
+const GRID_SIZE=24;
+let trees=[],score=0,seeds=20,timeLeft=90,health=80,activeTool='defend';
+let gameTimer=null,threatTimer=null,seedTimer=null;
+
+function startGame(){
+  score=0;seeds=20;timeLeft=90;health=80;activeTool='defend';
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('game-screen').classList.add('active');
+  buildForest();updateHUD();
+  clearInterval(gameTimer);clearInterval(threatTimer);clearInterval(seedTimer);
+  gameTimer=setInterval(tick,1000);
+  threatTimer=setInterval(spawnThreat,6000);
+  seedTimer=setInterval(()=>{seeds=Math.min(50,seeds+1);updateHUD();},4000);
+  setTool('defend');
+}
+
+function buildForest(){
+  const grid=document.getElementById('tree-grid');
+  grid.innerHTML='';trees=[];
+  for(let i=0;i<GRID_SIZE;i++){
+    const alive=Math.random()>0.2;
+    const type=TREE_TYPES[Math.floor(Math.random()*TREE_TYPES.length)];
+    const tree={idx:i,alive,type,state:'healthy',el:null};
+    const el=document.createElement('div');
+    el.className='tree '+(alive?'healthy':'felled');
+    el.textContent=alive?type:'🪵';
+    el.onclick=()=>interact(i);
+    el.setAttribute('aria-label',alive?`${type} tree`:'Empty spot');
+    grid.appendChild(el);
+    tree.el=el;
+    trees.push(tree);
+  }
+  updateAlive();
+}
+
+function interact(idx){
+  const tree=trees[idx];
+  if(activeTool==='defend'){
+    if(!tree.alive||tree.state==='healthy')return;
+    tree.state='healthy';
+    tree.el.className='tree healthy';
+    tree.el.textContent=tree.type;
+    score+=80;sparkle(tree.el,'🌿');
+  }else if(activeTool==='plant'){
+    if(tree.alive)return;
+    if(seeds<3){showEvent('🌱 Not enough seeds!','Collect more seeds by letting the timer tick.');return;}
+    seeds-=3;
+    tree.alive=true;tree.state='healthy';
+    tree.type=TREE_TYPES[Math.floor(Math.random()*TREE_TYPES.length)];
+    tree.el.className='tree planted healthy';
+    tree.el.textContent=tree.type;
+    health=Math.min(100,health+3);score+=50;
+    sparkle(tree.el,'✨');
+    setTimeout(()=>tree.el.classList.remove('planted'),500);
+  }else if(activeTool==='water'){
+    if(!tree.alive||tree.state==='healthy')return;
+    if(seeds<2){showEvent('💧 Not enough seeds!','Wait a moment...');return;}
+    seeds-=2;tree.state='healthy';
+    tree.el.className='tree healthy';score+=60;
+    sparkle(tree.el,'💧');
+  }else if(activeTool==='fire'){
+    if(!tree.alive||tree.state!=='fire')return;
+    if(seeds<5){showEvent('🧯 Need more seeds!','Urgently get more!');return;}
+    seeds-=5;tree.state='healthy';
+    tree.el.className='tree healthy';
+    tree.el.textContent=tree.type;score+=120;
+    sparkle(tree.el,'🧯');
+  }
+  updateHUD();updateAlive();
+}
+
+function spawnThreat(){
+  if(!document.getElementById('game-screen').classList.contains('active'))return;
+  const threat=THREATS[Math.floor(Math.random()*THREATS.length)];
+  const alive=trees.filter(t=>t.alive&&t.state==='healthy');
+  if(alive.length===0)return;
+  const count=Math.min(alive.length,2+Math.floor(Math.random()*3));
+  showEvent(threat.name,threat.desc);
+
+  for(let i=0;i<count;i++){
+    const target=alive[Math.floor(Math.random()*alive.length)];
+    if(threat.type==='fire'){
+      target.state='fire';
+      target.el.className='tree threatened';
+      target.el.textContent='🔥';
+      setTimeout(()=>{if(target.state==='fire'){target.alive=false;target.state='dead';target.el.className='tree felled';target.el.textContent='🪵';health=Math.max(0,health-8);updateHUD();updateAlive();}},4000);
+    }else{
+      target.state='threatened';
+      target.el.className='tree threatened';
+      setTimeout(()=>{if(target.state==='threatened'){target.alive=false;target.state='dead';target.el.className='tree felled';target.el.textContent='🪵';health=Math.max(0,health-5);updateHUD();updateAlive();}},5000);
+    }
+  }
+}
+
+function showEvent(title,desc){
+  document.getElementById('event-title').textContent=title;
+  document.getElementById('event-desc').textContent=desc;
+}
+
+function setTool(t){
+  activeTool=t;
+  document.querySelectorAll('.act-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tool-'+t).classList.add('active');
+}
+
+function sparkle(el,emoji){
+  const canvas=document.getElementById('game-canvas');
+  const elRect=el.getBoundingClientRect();
+  const canvasRect=canvas.getBoundingClientRect();
+  const p=document.createElement('div');
+  p.className='leaf-particle';
+  p.textContent=emoji;
+  p.style.left=(elRect.left-canvasRect.left+elRect.width/2-10)+'px';
+  p.style.top=(elRect.top-canvasRect.top)+'px';
+  canvas.appendChild(p);
+  setTimeout(()=>p.remove(),1200);
+}
+
+function updateAlive(){
+  const count=trees.filter(t=>t.alive).length;
+  document.getElementById('alive').textContent=count+'🌳';
+}
+
+function updateHUD(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('seeds').textContent=seeds+'🌱';
+  document.getElementById('time').textContent=timeLeft+'s';
+  document.getElementById('health-pct').textContent=Math.round(health);
+  const fill=document.getElementById('health-fill');
+  fill.style.width=health+'%';
+  fill.style.backgroundPosition=`${100-health}% 50%`;
+  document.getElementById('time').className='hud-n'+(timeLeft<=15?' danger':'');
+}
+
+function tick(){
+  timeLeft--;
+  if(timeLeft<=0||health<=0){endGame();return;}
+  updateHUD();
+  score+=trees.filter(t=>t.alive&&t.state==='healthy').length;
+  updateHUD();
+}
+
+function endGame(){
+  clearInterval(gameTimer);clearInterval(threatTimer);clearInterval(seedTimer);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('end-screen').classList.add('active');
+  document.getElementById('final-score').textContent=score;
+  const alive=trees.filter(t=>t.alive).length;
+  let msg;
+  if(health>70)msg=`🌳 ${alive} trees standing! The forest thrives — biodiversity is safe.`;
+  else if(health>40)msg=`⚠️ ${alive} trees remain. The forest is recovering but still fragile.`;
+  else msg=`☠️ Only ${alive} trees left. The ecosystem collapsed. Try harder next time.`;
+  document.getElementById('end-msg').textContent=msg;
+}
+</script>
+</body>
+</html>

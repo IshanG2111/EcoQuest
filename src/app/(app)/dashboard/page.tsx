@@ -96,8 +96,8 @@ export default function DashboardPage() {
           </div>
           <div className="lg:col-span-2">
             <div>
-              <h1 className="text-3xl font-bold">Welcome Back, {username}!</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-headline tracking-tight uppercase">Welcome Back, {username}!</h1>
+              <p className="text-muted-foreground font-body">
                 Continue your journey to make the world a greener place.
               </p>
             </div>
@@ -105,17 +105,17 @@ export default function DashboardPage() {
               {stats.map((stat, index) => (
                 <Card
                   key={stat.title}
-                  className="animate-fade-in-up"
+                  className="animate-fade-in-up retro-window group hover:scale-[1.02] transition-all"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 bg-secondary/10 border-b border-border/10">
+                    <CardTitle className="text-[10px] font-headline tracking-widest uppercase">
                       {stat.title}
                     </CardTitle>
-                    <stat.icon className={cn('h-5 w-5', stat.color)} />
+                    <stat.icon className={cn('h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity', stat.color)} />
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
+                  <CardContent className="pt-4">
+                    <div className="text-2xl font-headline tracking-tighter">{stat.value}</div>
                   </CardContent>
                 </Card>
               ))}
@@ -126,12 +126,12 @@ export default function DashboardPage() {
 
         <div className="grid gap-8 md:grid-cols-2">
           <Card
-            className="animate-fade-in-up"
+            className="animate-fade-in-up retro-window"
             style={{ animationDelay: '300ms' }}
           >
-            <CardHeader>
-              <CardTitle>Your Badges</CardTitle>
-              <CardDescription>
+            <CardHeader className="bg-secondary/10 border-b border-border/10">
+              <CardTitle className="font-headline text-sm tracking-widest uppercase">Your Badges</CardTitle>
+              <CardDescription className="font-body text-xs">
                 A collection of your achievements so far. Keep it up!
               </CardDescription>
             </CardHeader>
@@ -154,15 +154,15 @@ export default function DashboardPage() {
           </Card>
 
           <Card
-            className="animate-fade-in-up"
+            className="animate-fade-in-up retro-window"
             style={{ animationDelay: '400ms' }}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="text-accent h-6 w-6" />
+            <CardHeader className="bg-secondary/10 border-b border-border/10">
+              <CardTitle className="flex items-center gap-2 font-headline text-sm tracking-widest uppercase">
+                <Sparkles className="text-accent h-4 w-4" />
                 For You
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="font-body text-xs">
                 Personalized learning suggestions based on your interests.
               </CardDescription>
             </CardHeader>
@@ -194,24 +194,25 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <Card className="animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="animate-fade-in-up retro-window" style={{ animationDelay: '500ms' }}>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-secondary/10 border-b border-border/10">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
+              <CardTitle className="flex items-center gap-2 font-headline text-sm tracking-widest uppercase">
+                <Bell className="h-4 w-4 text-primary" />
                 Notifications
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="font-body text-xs">
                 {unreadCount > 0 ? `${unreadCount} unread updates` : 'You are all caught up.'}
               </CardDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
+              className="font-headline text-[10px] h-7 tracking-tighter"
               disabled={unreadCount === 0}
               onClick={markAllAsRead}
             >
-              Mark all as read
+              MARK_ALL_AS_READ
             </Button>
           </CardHeader>
           <CardContent>

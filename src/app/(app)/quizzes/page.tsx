@@ -29,8 +29,8 @@ export default async function QuizzesPage() {
     <Desktop>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">Knowledge Library</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-headline tracking-tight uppercase">Knowledge Library</h1>
+          <p className="text-muted-foreground font-body">
             Read articles and test your knowledge to earn points!
           </p>
         </div>
@@ -42,31 +42,31 @@ export default async function QuizzesPage() {
             {quizzes.map((quiz: any) => (
               <Card
                 key={quiz._id.toString()}
-                className="flex flex-col overflow-hidden transform hover:-translate-y-1 transition-transform duration-300"
+                className="flex flex-col overflow-hidden retro-window hover:shadow-2xl transition-all duration-300"
               >
-                <CardHeader>
+                <CardHeader className="bg-secondary/10 border-b border-border/10">
                   <div className="flex items-start gap-4">
-                    <BookOpen className="h-8 w-8 text-accent flex-shrink-0 mt-1" />
+                    <BookOpen className="h-6 w-6 text-accent flex-shrink-0 mt-1" />
                     <div>
-                      <CardTitle className="mb-2">{quiz.title}</CardTitle>
-                      <CardDescription>{quiz.description || `Learn about ${quiz.topic}`}</CardDescription>
+                      <CardTitle className="mb-2 font-headline text-sm tracking-widest uppercase">{quiz.title}</CardTitle>
+                      <CardDescription className="font-body text-xs">{quiz.description || `Learn about ${quiz.topic}`}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1">
+                <CardContent className="flex-1 pt-4">
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{quiz.topic}</Badge>
-                    <Badge variant="outline">{quiz.difficulty}</Badge>
-                    <Badge className="bg-primary/20 text-primary hover:bg-primary/30">
-                      {quiz.points_value} pts
+                    <Badge variant="secondary" className="font-headline text-[9px] tracking-widest uppercase">{quiz.topic}</Badge>
+                    <Badge variant="outline" className="font-headline text-[9px] tracking-widest uppercase">{quiz.difficulty}</Badge>
+                    <Badge className="bg-primary text-primary-foreground font-headline text-[9px] tracking-widest uppercase">
+                      {quiz.points_value} PTS
                     </Badge>
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="bg-secondary/10 border-t border-border/10">
                   <Link href={`/learn/quiz/${quiz._id.toString()}`} className="w-full">
-                    <Button className="w-full">
+                    <Button className="w-full font-headline text-xs tracking-widest h-10">
                       <FileQuestion className="mr-2 h-4 w-4" />
-                      Read & Practice
+                      READ_AND_PRACTICE
                     </Button>
                   </Link>
                 </CardFooter>

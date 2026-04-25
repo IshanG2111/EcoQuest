@@ -1,247 +1,231 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Trash2,
-  Recycle,
-  Apple,
-  Sparkles,
-  BookOpen,
-  Box,
-  Droplets,
-  Zap,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useEffect, useMemo, useState } from 'react';
 import { Desktop } from '@/components/desktop';
-import gameData from '@/lib/game-data/recycle_rally.json';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
+import { Recycle, Timer, Trash2, Trophy } from 'lucide-react';
 
-type Item = typeof gameData.items[0];
-type BinType = 'Recycle' | 'Landfill' | 'Compost' | 'E-Waste' | 'Hazardous' | 'Textile' | 'Bulk';
+type Phase = 'home' | 'rules' | 'playing' | 'result';
+type Bin = 'recycle' | 'compost' | 'landfill' | 'hazard';
 
+type FallingItem = {
+  emoji: string;
+  name: string;
+  bin: Bin;
+};
 
-const binIcons: Record<BinType, React.ElementType> = {
-    Recycle: Recycle,
-    Compost: Apple,
-    Landfill: Trash2,
-    'E-Waste': Zap,
-    Hazardous: Sparkles,
-    Textile: Box,
-    Bulk: Box
-}
+const ITEMS: FallingItem[] = [
+  { emoji: '📰', name: 'Newspaper', bin: 'recycle' },
+  { emoji: '🍶', name: 'Glass Bottle', bin: 'recycle' },
+  { emoji: '🍌', name: 'Banana Peel', bin: 'compost' },
+  { emoji: '☕', name: 'Coffee Grounds', bin: 'compost' },
+  { emoji: '🧻', name: 'Used Tissue', bin: 'landfill' },
+  { emoji: '🧸', name: 'Broken Toy', bin: 'landfill' },
+  { emoji: '🔋', name: 'Battery', bin: 'hazard' },
+  { emoji: '💡', name: 'CFL Bulb', bin: 'hazard' },
+];
+
+const ROUND_TIME = 65;
 
 export default function RecycleRallyPage() {
-  const [gameState, setGameState] = useState<'home' | 'rules' | 'playing' | 'end'>('home');
+  const [phase, setPhase] = useState<Phase>('home');
   const [score, setScore] = useState(0);
-  const [shuffledItems, setShuffledItems] = useState<Item[]>([]);
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [feedback, setFeedback] = useState('');
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(ROUND_TIME);
+  const [lives, setLives] = useState(3);
+  const [sorted, setSorted] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [speed, setSpeed] = useState(3000);
+  const [item, setItem] = useState<FallingItem | null>(null);
+  const [feedback, setFeedback] = useState('Sort the incoming waste item into the correct bin.');
+
+  const accuracy = useMemo(() => {
+    if (sorted === 0) return 0;
+    return Math.round((correct / sorted) * 100);
+  }, [correct, sorted]);
 
   useGameSessionTracker({
     gameSlug: 'recycle-rally',
-    isPlaying: gameState === 'playing',
-    isFinished: gameState === 'end',
+    isPlaying: phase === 'playing',
+    isFinished: phase === 'result',
     score,
-    metadata: { streak },
+    metadata: { sorted, accuracy, lives },
   });
 
-  const currentItem = shuffledItems[currentItemIndex];
+  useEffect(() => {
+    if (phase !== 'playing') {
+      return;
+    }
+
+    if (timeLeft <= 0 || lives <= 0) {
+      setPhase('result');
+      return;
+    }
+
+    const timer = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [phase, timeLeft, lives]);
 
   useEffect(() => {
-    if (gameState === 'playing') {
-       // Shuffle items at the start of the game
-      setShuffledItems([...gameData.items].sort(() => Math.random() - 0.5));
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-            if (prev <= 1) {
-                setGameState('end');
-                clearInterval(timer);
-                return 0;
-            }
-            return prev - 1
-        });
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [gameState]);
-
-
-  const handleSort = (bin: BinType) => {
-    if (gameState !== 'playing') return;
-
-    if (bin === currentItem.bin) {
-      setScore((prev) => prev + 10 * (streak + 1));
-      setStreak((prev) => prev + 1);
-      setFeedback('Correct!');
-    } else {
-      setScore((prev) => Math.max(0, prev - 10));
-      setStreak(0);
-      setFeedback('Wrong bin!');
+    if (phase !== 'playing') {
+      return;
     }
 
-    setTimeout(() => {
-      setFeedback('');
-      setCurrentItemIndex((prev) => (prev + 1) % shuffledItems.length);
-    }, 800);
-  };
-  
-  const startGame = () => {
-    setGameState('playing');
-    setTimeLeft(30);
+    const spawn = setInterval(() => {
+      setItem(ITEMS[Math.floor(Math.random() * ITEMS.length)]);
+    }, speed);
+
+    return () => clearInterval(spawn);
+  }, [phase, speed]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || !item) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setLives((prev) => prev - 1);
+      setSorted((prev) => prev + 1);
+      setFeedback('Missed item. Contamination risk increased.');
+      setItem(null);
+    }, Math.max(900, speed - 400));
+
+    return () => clearTimeout(timeout);
+  }, [phase, item, speed]);
+
+  function startGame() {
     setScore(0);
-    setStreak(0);
-    setCurrentItemIndex(0);
-    setFeedback('');
+    setTimeLeft(ROUND_TIME);
+    setLives(3);
+    setSorted(0);
+    setCorrect(0);
+    setSpeed(3000);
+    setItem(null);
+    setFeedback('Sort the incoming waste item into the correct bin.');
+    setPhase('playing');
   }
 
-  const content = () => {
-    if (gameState === 'home') {
-      return (
-        <div className="flex flex-col h-full w-full font-code text-white bg-yellow-900/80 items-center justify-center text-center p-8 relative overflow-hidden">
-          <video
-            src="/videos/recycle-rally.mp4"
-            autoPlay
-            loop
-            muted
-            className="absolute top-0 left-0 w-full h-full object-cover z-0"
-          ></video>
-          <div className="absolute inset-0 bg-black/50 z-10"></div>
-          <div className="z-20 animate-fade-in-up">
-            <h1 className="text-6xl font-headline text-primary mb-4 animate-zoom-in">
-              Recycle Rally
-            </h1>
-            <p className="text-xl mb-8">The Waste Management Challenge</p>
-            <Button
-              size="lg"
-              onClick={() => setGameState('rules')}
-              className="font-bold text-lg"
-            >
-              Start Sorting
-            </Button>
-          </div>
-        </div>
-      );
+  function choose(bin: Bin) {
+    if (phase !== 'playing' || !item) {
+      return;
     }
 
-    if (gameState === 'rules') {
-      return (
-        <div className="flex flex-col h-full w-full font-code text-white bg-yellow-900/80 items-center justify-center text-center p-8">
-          <Card className="bg-background/80 text-foreground max-w-2xl animate-fade-in-up">
-              <CardHeader>
-                  <CardTitle className="flex items-center justify-center gap-2 text-2xl"><BookOpen /> Sorting Guide</CardTitle>
-                  <CardDescription>Your goal is to sort as much waste as possible before time runs out!</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-left">
-                  <p><span className="font-bold text-primary">1. Identify:</span> An item will appear at the top of the screen.</p>
-                  <p><span className="font-bold text-primary">2. Sort:</span> Click the correct bin for the item. More bins will appear as you score higher!</p>
-                  <p><span className="font-bold text-primary">3. Streak:</span> Correct sorts build a score multiplier. Don't break the chain!</p>
-                  <p><span className="font-bold text-primary">4. Level Up:</span> As you do well, the game gets faster and trickier!</p>
-              </CardContent>
-              <div className="p-6 pt-0">
-                  <Button className="w-full font-bold" onClick={startGame}>Let's Go!</Button>
-              </div>
-          </Card>
-        </div>
-      );
+    setSorted((prev) => prev + 1);
+    if (item.bin === bin) {
+      setCorrect((prev) => prev + 1);
+      setScore((prev) => prev + 100 + Math.max(0, 3200 - speed) / 20);
+      setFeedback(`Correct sort: ${item.name}.`);
+      if ((sorted + 1) % 5 === 0) {
+        setSpeed((prev) => Math.max(1400, prev - 250));
+      }
+    } else {
+      setLives((prev) => prev - 1);
+      setFeedback(`Wrong bin. ${item.name} belongs in ${item.bin}.`);
     }
-    
-    if (gameState === 'end') {
-        return (
-             <div className="flex flex-col h-full w-full font-code text-white bg-yellow-900/80 items-center justify-center text-center p-8">
-              <Card className="bg-background/80 text-foreground max-w-lg animate-fade-in-up">
-                  <CardHeader>
-                      <CardTitle className="text-4xl text-primary">Time's Up!</CardTitle>
-                      <CardDescription>Great rally! Here's how you did.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                      <p className="text-5xl font-bold">{score}</p>
-                      <p>You sorted items with a top streak of {streak}!</p>
-                  </CardContent>
-                  <div className="p-6 pt-0">
-                      <Button className="w-full font-bold" onClick={startGame}>Play Again</Button>
-                  </div>
-              </Card>
-            </div>
-        )
-    }
+    setItem(null);
+  }
 
-    const availableBins = (score < 100) ? ['Recycle', 'Compost', 'Landfill'] : (score < 300) ? ['Recycle', 'Compost', 'Landfill', 'E-Waste'] : ['Recycle', 'Compost', 'Landfill', 'E-Waste', 'Hazardous', 'Textile'];
+  const outcome = useMemo(() => {
+    if (accuracy >= 85) return 'Excellent sorting discipline. Material recovery remained high.';
+    if (accuracy >= 60) return 'Good baseline sorting. Improve contamination control for better outcomes.';
+    return 'Sorting errors were costly. Re-run the drill and improve bin decisions.';
+  }, [accuracy]);
 
-    return (
-      <div className="flex flex-col h-full w-full font-code text-white bg-black/80 relative overflow-hidden">
-        <div className="z-20 p-4 flex flex-col flex-1 gap-4">
-          {/* Header */}
-          <header className="grid grid-cols-3 gap-4 items-center bg-black/50 p-2 border-2 border-primary/50 rounded-md">
-            <div className="text-left">
-              <p className="text-2xl font-bold text-accent">{timeLeft}s</p>
-              <p className="text-xs text-muted-foreground">Time Left</p>
-            </div>
-            <div className="text-center">
-              <h1 className="text-lg font-headline text-primary">
-                Recycle Rally
-              </h1>
-              <p className="text-xs text-muted-foreground">Streak: {streak}x</p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-accent">
-                {score.toLocaleString()}
+  return (
+    <Desktop>
+      <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 p-6">
+        {phase === 'home' && (
+          <Card className="border-primary/30 bg-gradient-to-br from-card to-lime-950/20">
+            <CardHeader>
+              <CardTitle className="text-4xl font-headline uppercase tracking-widest text-primary">Waste Wizard</CardTitle>
+              <CardDescription>Fast recycling triage under rising processing pressure.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="rounded-lg border border-primary/20 bg-background/40 p-4 text-sm text-muted-foreground">
+                Identify the correct bin for each item. Speed increases every five successful sorts.
               </p>
-              <p className="text-xs text-muted-foreground">Recycle Points</p>
-            </div>
-          </header>
+              <div className="flex gap-3">
+                <Button onClick={() => setPhase('rules')}>Rules</Button>
+                <Button variant="outline" onClick={startGame}>Start Shift</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Game Area */}
-          <main className="flex-1 flex flex-col items-center justify-center bg-yellow-800/30 p-4 border-2 border-primary/50 rounded-md">
-            <div className="h-24 flex items-center justify-center">
-             {feedback ? (
-                <p
-                  className={cn(
-                    'text-4xl font-bold animate-ping',
-                    feedback === 'Correct!' ? 'text-success' : 'text-error'
+        {phase === 'rules' && (
+          <Card className="border-primary/30">
+            <CardHeader><CardTitle className="font-headline uppercase tracking-wide">Sorting Protocol</CardTitle></CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <p>1. One waste item appears at a time in the sorter lane.</p>
+              <p>2. Select a bin before item timeout to avoid a life penalty.</p>
+              <p>3. Wrong bin choices also cost one life.</p>
+              <p>4. Every 5 sorted items increases processing speed.</p>
+              <div className="flex gap-3 pt-2">
+                <Button onClick={startGame}>Begin Shift</Button>
+                <Button variant="ghost" onClick={() => setPhase('home')}>Back</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {phase === 'playing' && (
+          <>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Card className="border-primary/20"><CardContent className="p-4"><p className="text-xs uppercase text-muted-foreground">Score</p><p className="text-2xl font-bold text-primary">{Math.round(score)}</p></CardContent></Card>
+              <Card className="border-primary/20"><CardContent className="p-4"><p className="text-xs uppercase text-muted-foreground">Lives</p><p className="text-2xl font-bold text-rose-500">{'❤️'.repeat(Math.max(0, lives)) || '0'}</p></CardContent></Card>
+              <Card className="border-primary/20"><CardContent className="p-4"><p className="text-xs uppercase text-muted-foreground">Time</p><p className="flex items-center gap-2 text-2xl font-bold text-amber-500"><Timer className="h-5 w-5" />{timeLeft}s</p></CardContent></Card>
+              <Card className="border-primary/20"><CardContent className="p-4"><p className="text-xs uppercase text-muted-foreground">Accuracy</p><p className="text-2xl font-bold text-emerald-500">{accuracy}%</p></CardContent></Card>
+            </div>
+
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline uppercase tracking-wide"><Recycle className="h-5 w-5 text-primary" /> Sorting Lane</CardTitle>
+                <CardDescription>{feedback}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex min-h-32 items-center justify-center rounded-lg border border-primary/20 bg-background/40 text-center">
+                  {item ? (
+                    <div>
+                      <p className="text-6xl">{item.emoji}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">{item.name}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Waiting for next waste item...</p>
                   )}
-                >
-                  {feedback}
-                </p>
-              ) : currentItem ? (
-                <Card className="bg-background/80 border-2 border-dashed p-4">
-                  <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
-                    <p className="font-bold text-foreground text-center">
-                      {currentItem.name}
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : <p>Loading items...</p>}
-            </div>
-          </main>
+                </div>
+                <Progress value={(timeLeft / ROUND_TIME) * 100} indicatorClassName="bg-primary" />
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Button variant="outline" onClick={() => choose('recycle')}><Recycle className="mr-2 h-4 w-4" /> Recycle</Button>
+                  <Button variant="outline" onClick={() => choose('compost')}>🌱 Compost</Button>
+                  <Button variant="outline" onClick={() => choose('landfill')}><Trash2 className="mr-2 h-4 w-4" /> Landfill</Button>
+                  <Button variant="outline" onClick={() => choose('hazard')}>☢️ Hazard</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
-          {/* Bins */}
-          <footer className="bg-black/50 p-3 border-2 border-primary/50 rounded-md">
-            <div className={`grid grid-cols-${availableBins.length} gap-3`}>
-              {availableBins.map(bin => {
-                const Icon = binIcons[bin as BinType];
-                return (
-                  <Button
-                    key={bin}
-                    variant="outline"
-                    className="h-20 flex-col gap-2 bg-gray-800/50 hover:bg-gray-700/50 border-gray-500"
-                    onClick={() => handleSort(bin as BinType)}
-                    disabled={gameState !== 'playing'}
-                  >
-                    <Icon size={24} /> <span>{bin}</span>
-                  </Button>
-                )
-              })}
-            </div>
-          </footer>
-        </div>
+        {phase === 'result' && (
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-3xl font-headline uppercase tracking-wide text-primary">
+                <Trophy className="h-7 w-7" /> Shift Complete
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-6xl font-black text-primary">{Math.round(score)}</p>
+              <p className="text-sm text-muted-foreground">Sorted: {sorted} items | Accuracy: {accuracy}%</p>
+              <p className="text-sm text-muted-foreground">{outcome}</p>
+              <div className="flex gap-3">
+                <Button onClick={startGame}>Play Again</Button>
+                <Button variant="outline" onClick={() => setPhase('home')}>Back to Briefing</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    );
-  }
-
-  return <Desktop>{content()}</Desktop>;
+    </Desktop>
+  );
 }

@@ -1,289 +1,317 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { BookOpen, AlertTriangle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Desktop } from '@/components/desktop';
-import gameData from '@/lib/game-data/carbon_quest.json';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
+import { Clock3, Leaf, Factory, Trophy, BookOpen } from 'lucide-react';
 
+type Phase = 'home' | 'rules' | 'playing' | 'result';
 
-type Policy = typeof gameData.policies[0];
-type GameEvent = typeof gameData.events[0];
+type Choice = {
+  label: string;
+  carbonCost: number;
+  reason: string;
+};
 
+type Round = {
+  title: string;
+  prompt: string;
+  choices: Choice[];
+};
 
-function shuffle(array: any[]) {
-  let currentIndex = array.length,  randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]];
-  }
-  return array;
-}
+const TIME_PER_ROUND = 15;
+const TOTAL_ROUNDS = 8;
 
+const rounds: Round[] = [
+  {
+    title: 'Daily Commute',
+    prompt: 'You need to travel 8 km to school. What do you choose?',
+    choices: [
+      { label: 'Drive alone', carbonCost: 9, reason: 'Highest per-person emissions for short trips.' },
+      { label: 'Take a public bus', carbonCost: 4, reason: 'Shared transport spreads emissions per rider.' },
+      { label: 'Cycle', carbonCost: 1, reason: 'Near-zero direct emissions and health benefits.' },
+    ],
+  },
+  {
+    title: 'Lunch Plan',
+    prompt: 'Pick lunch for your team meeting.',
+    choices: [
+      { label: 'Beef burgers', carbonCost: 10, reason: 'Beef has one of the highest food footprints.' },
+      { label: 'Chicken wraps', carbonCost: 6, reason: 'Lower than beef but still significant.' },
+      { label: 'Bean bowls', carbonCost: 2, reason: 'Plant proteins usually emit far less.' },
+    ],
+  },
+  {
+    title: 'Home Power',
+    prompt: 'Your block can fund one upgrade this year.',
+    choices: [
+      { label: 'Coal backup plant', carbonCost: 10, reason: 'Coal is among the most carbon-intensive sources.' },
+      { label: 'Grid efficiency retrofits', carbonCost: 4, reason: 'Efficiency lowers demand quickly.' },
+      { label: 'Solar microgrid', carbonCost: 2, reason: 'Low lifecycle emissions and local resilience.' },
+    ],
+  },
+  {
+    title: 'Shopping',
+    prompt: 'You need a jacket for winter.',
+    choices: [
+      { label: 'Fast-fashion new', carbonCost: 8, reason: 'Short lifecycle and production impact are high.' },
+      { label: 'Durable local brand', carbonCost: 5, reason: 'Better quality reduces replacement frequency.' },
+      { label: 'Second-hand', carbonCost: 2, reason: 'Reusing products avoids new production emissions.' },
+    ],
+  },
+  {
+    title: 'Weekend Trip',
+    prompt: 'You are planning a 400 km trip.',
+    choices: [
+      { label: 'Short-haul flight', carbonCost: 10, reason: 'Flights are high-emission per passenger-km.' },
+      { label: 'Electric carpool', carbonCost: 4, reason: 'Shared EV travel cuts per-person impact.' },
+      { label: 'Train', carbonCost: 2, reason: 'Rail is often one of the lowest-carbon options.' },
+    ],
+  },
+  {
+    title: 'Heating',
+    prompt: 'A cold week is coming. Best plan?',
+    choices: [
+      { label: 'Crank thermostat to 26C', carbonCost: 9, reason: 'Heating demand rises sharply with high setpoints.' },
+      { label: 'Keep 20C + insulation', carbonCost: 3, reason: 'Efficiency and insulation reduce energy waste.' },
+      { label: 'Heat one room only', carbonCost: 4, reason: 'Targeted heating helps but comfort is limited.' },
+    ],
+  },
+  {
+    title: 'Delivery Choices',
+    prompt: 'Your household orders essentials online.',
+    choices: [
+      { label: 'Same-day separate orders', carbonCost: 8, reason: 'Fragmented logistics increase delivery emissions.' },
+      { label: 'Weekly bundled order', carbonCost: 3, reason: 'Consolidation improves route efficiency.' },
+      { label: 'Pickup while commuting', carbonCost: 2, reason: 'Combining errands avoids extra trips.' },
+    ],
+  },
+  {
+    title: 'Appliance Upgrade',
+    prompt: 'Your old fridge broke. Which replacement?',
+    choices: [
+      { label: 'Cheapest basic model', carbonCost: 7, reason: 'Low efficiency raises long-term emissions.' },
+      { label: 'Energy-star efficient model', carbonCost: 2, reason: 'Efficient devices reduce lifetime power use.' },
+      { label: 'Refurbished older unit', carbonCost: 5, reason: 'Re-use helps, but old units can be energy-heavy.' },
+    ],
+  },
+];
 
 export default function CarbonQuestPage() {
-  const [gameState, setGameState] = useState<'home' | 'rules' | 'playing' | 'end'>(
-    'home'
-  );
-  const [year, setYear] = useState(gameData.presets.steady_start.year);
-  const [co2, setCo2] = useState(gameData.presets.steady_start.co2);
-  const [approval, setApproval] = useState(gameData.presets.steady_start.approval);
-  const [budget, setBudget] = useState(gameData.presets.steady_start.budget);
-  const [policyChoices, setPolicyChoices] = useState<Policy[]>([]);
-  const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null);
-  const [log, setLog] = useState('A new year begins. Choose a policy.');
+  const [phase, setPhase] = useState<Phase>('home');
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(TIME_PER_ROUND);
+  const [score, setScore] = useState(0);
+  const [carbonLevel, setCarbonLevel] = useState(55);
+  const [locked, setLocked] = useState(false);
+  const [feedback, setFeedback] = useState('Choose the lowest-carbon option before time expires.');
 
-  const estimatedScore = Math.max(
-    0,
-    (year - gameData.presets.steady_start.year) * 60 + (500 - co2) + approval + budget
-  );
+  const currentRound = rounds[roundIndex];
+  const progress = Math.round((roundIndex / TOTAL_ROUNDS) * 100);
 
   useGameSessionTracker({
     gameSlug: 'carbon-quest',
-    isPlaying: gameState === 'playing',
-    isFinished: gameState === 'end',
-    score: estimatedScore,
-    metadata: { year, co2, approval, budget },
+    isPlaying: phase === 'playing',
+    isFinished: phase === 'result',
+    score,
+    metadata: { carbonLevel, roundsCleared: roundIndex },
   });
 
   useEffect(() => {
-    if (gameState === 'playing') {
-      setPolicyChoices(shuffle([...gameData.policies]).slice(0, 4));
-
-      // Trigger a random event
-      const randomEvent = gameData.events.find(e => Math.random() < e.probability);
-      if (randomEvent) {
-          setCurrentEvent(randomEvent);
-          setLog(`Event: ${randomEvent.name}!`);
-          if (randomEvent.effects.co2) setCo2(prev => prev + randomEvent.effects.co2!);
-          if (randomEvent.effects.approval) setApproval(prev => prev + randomEvent.effects.approval!);
-          if (randomEvent.effects.budget) setBudget(prev => prev + randomEvent.effects.budget!);
-      } else {
-          setCurrentEvent(null);
-      }
+    if (phase !== 'playing' || locked) {
+      return;
     }
-  }, [year, gameState]);
 
-  useEffect(() => {
-    if (co2 > 500 || approval <= 0 || budget < -100) {
-      setGameState('end');
+    if (timeLeft <= 0) {
+      setLocked(true);
+      setCarbonLevel((prev) => Math.min(100, prev + 10));
+      setFeedback('Time expired. Carbon levels rose in the district.');
+      const timeout = setTimeout(nextRound, 1200);
+      return () => clearTimeout(timeout);
     }
-  }, [co2, approval, budget])
 
-  const handlePolicyChoice = (policy: Policy) => {
-    if (budget >= policy.cost) {
-      setBudget((prev) => prev - policy.cost + 50); // economic growth
-      setCo2((prev) => prev + policy.co2);
-      setApproval((prev) => Math.min(100, Math.max(0, prev + policy.approval)));
-      setYear((prev) => prev + 1);
-      setLog(`Year ${year + 1}: ${policy.title} enacted.`);
-    } else {
-      setLog('Not enough budget for that policy!');
-    }
-  };
-  
-  const startGame = () => {
-      setGameState('playing');
-      setYear(gameData.presets.steady_start.year);
-      setCo2(gameData.presets.steady_start.co2);
-      setApproval(gameData.presets.steady_start.approval);
-      setBudget(gameData.presets.steady_start.budget);
-      setLog('A new year begins. Choose a policy.');
+    const timer = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [phase, timeLeft, locked]);
+
+  const finalMessage = useMemo(() => {
+    if (score >= 900) return 'City atmosphere stabilized. You are an EcoQuest climate strategist.';
+    if (score >= 600) return 'Good mitigation choices. The city is improving, but still vulnerable.';
+    return 'High emissions remained. Re-run the simulation to test cleaner strategies.';
+  }, [score]);
+
+  function startGame() {
+    setRoundIndex(0);
+    setTimeLeft(TIME_PER_ROUND);
+    setScore(0);
+    setCarbonLevel(55);
+    setFeedback('Choose the lowest-carbon option before time expires.');
+    setLocked(false);
+    setPhase('playing');
   }
 
-  const getCo2Color = () => {
-    if (co2 > 500) return 'text-error animate-pulse';
-    if (co2 > 450) return 'text-error';
-    if (co2 < 350) return 'text-success';
-    return 'text-yellow-400';
-  };
+  function nextRound() {
+    setLocked(false);
+    setTimeLeft(TIME_PER_ROUND);
+    setFeedback('Choose the lowest-carbon option before time expires.');
+    setRoundIndex((prev) => {
+      const next = prev + 1;
+      if (next >= TOTAL_ROUNDS) {
+        setPhase('result');
+        return prev;
+      }
+      return next;
+    });
+  }
 
-  const content = () => {
-    if (gameState === 'home') {
-      return (
-        <div className="flex flex-col h-full w-full font-code text-white bg-indigo-900/80 items-center justify-center text-center p-8 relative overflow-hidden">
-          <video
-            src="/videos/carbon-quest.mp4"
-            autoPlay
-            loop
-            muted
-            className="absolute top-0 left-0 w-full h-full object-cover z-0"
-          ></video>
-          <div className="absolute inset-0 bg-black/50 z-10"></div>
-          <div className="z-20 animate-fade-in-up">
-            <h1 className="text-6xl font-headline text-primary mb-4 animate-zoom-in">
-              Carbon Quest
-            </h1>
-            <p className="text-xl mb-8">The Climate Challenge</p>
-            <Button
-              size="lg"
-              onClick={() => setGameState('rules')}
-              className="font-bold text-lg"
-            >
-              Start Mission
-            </Button>
-          </div>
-        </div>
-      );
+  function choose(choice: Choice) {
+    if (locked || phase !== 'playing') {
+      return;
     }
 
-    if (gameState === 'rules') {
-      return (
-        <div className="flex flex-col h-full w-full font-code text-white bg-indigo-900/80 items-center justify-center text-center p-8">
-          <Card className="bg-background/80 text-foreground max-w-2xl animate-fade-in-up">
+    setLocked(true);
+    const roundChoices = rounds[roundIndex].choices;
+    const bestCost = Math.min(...roundChoices.map((item) => item.carbonCost));
+    const delta = choice.carbonCost - bestCost;
+    const gained = Math.max(30, timeLeft * 12 - delta * 28);
+
+    setScore((prev) => prev + gained);
+    setCarbonLevel((prev) => Math.min(100, Math.max(0, prev + choice.carbonCost - 5)));
+    setFeedback(choice.reason);
+
+    setTimeout(nextRound, 1200);
+  }
+
+  return (
+    <Desktop>
+      <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 p-6 pb-24 md:p-8 md:pb-28">
+        {phase === 'home' && (
+          <Card className="border-primary/30 bg-gradient-to-br from-card to-secondary/10">
             <CardHeader>
-              <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-                <BookOpen /> Mission Briefing
-              </CardTitle>
-              <CardDescription>
-                Your goal is to balance the budget, public approval, and CO₂
-                levels to prevent climate catastrophe.
+              <CardTitle className="text-4xl font-headline uppercase tracking-widest text-primary md:text-5xl">Carbon Quest</CardTitle>
+              <CardDescription className="max-w-2xl text-base md:text-lg">
+                Simulate urban lifestyle decisions, reduce emissions, and keep your district breathable.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-left">
-              <p>
-                <span className="font-bold text-primary">1. Analyze Data:</span>{' '}
-                Each turn represents one year. Review global CO₂, public
-                approval, and your budget.
-              </p>
-              <p>
-                <span className="font-bold text-primary">2. Choose Policy:</span>{' '}
-                Select one policy card per year from a random selection. Each card has trade-offs.
-              </p>
-              <p>
-                <span className="font-bold text-primary">3. Handle Events:</span> Random global events can help or hinder your progress. Adapt your strategy!
-              </p>
-              <p>
-                <span className="font-bold text-primary">4. Survive:</span> Keep CO₂ levels from rising too high, and don't let approval or budget fall too low, or it's game over.
-              </p>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border border-primary/20 bg-background/40 p-4 text-base text-muted-foreground md:text-lg">
+                8 rapid rounds. 15 seconds each. Lower carbon cost means stronger city resilience and higher score.
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={() => setPhase('rules')} size="lg" className="font-headline text-base uppercase tracking-wide">
+                  <BookOpen className="mr-2 h-4 w-4" /> Mission Brief
+                </Button>
+                <Button variant="outline" onClick={startGame} size="lg" className="font-headline text-base uppercase tracking-wide">
+                  Begin Simulation
+                </Button>
+              </div>
             </CardContent>
-            <div className="p-6 pt-0">
-              <Button
-                className="w-full font-bold"
-                onClick={startGame}
-              >
-                Begin Quest
-              </Button>
-            </div>
           </Card>
-        </div>
-      );
-    }
+        )}
 
-    if (gameState === 'end') {
-        return (
-             <div className="flex flex-col h-full w-full font-code text-white bg-indigo-900/80 items-center justify-center text-center p-8">
-              <Card className="bg-background/80 text-foreground max-w-lg animate-fade-in-up">
-                  <CardHeader>
-                      <CardTitle className="text-4xl text-primary">Game Over</CardTitle>
-                      <CardDescription>
-                          {co2 > 500 && "Catastrophic climate change has occurred."}
-                          {approval <= 0 && "You've been voted out of office."}
-                          {budget < -100 && "The economy has collapsed."}
-                      </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                      <p className="text-2xl">You made it to the year <span className="font-bold text-accent">{year}</span>.</p>
-                  </CardContent>
-                  <div className="p-6 pt-0">
-                      <Button className="w-full font-bold" onClick={startGame}>Try Again</Button>
-                  </div>
+        {phase === 'rules' && (
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="font-headline text-2xl uppercase tracking-wide md:text-3xl">How Carbon Quest Works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-base text-muted-foreground md:text-lg">
+              <p>1. Read each scenario and choose one action before the timer runs out.</p>
+              <p>2. Lower-carbon options improve city air quality and score multipliers.</p>
+              <p>3. High-carbon choices increase emissions, making recovery harder.</p>
+              <p>4. Final score converts directly to Eco Points through session tracking.</p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button onClick={startGame} size="lg" className="font-headline text-base uppercase tracking-wide">Launch</Button>
+                <Button variant="ghost" onClick={() => setPhase('home')} size="lg" className="text-base">Back</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {phase === 'playing' && currentRound && (
+          <>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Card className="border-primary/20">
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Score</p>
+                  <p className="text-2xl font-bold text-primary">{score}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-primary/20">
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Round</p>
+                  <p className="text-2xl font-bold">{roundIndex + 1}/{TOTAL_ROUNDS}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-primary/20">
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Timer</p>
+                  <p className="flex items-center gap-2 text-2xl font-bold text-amber-500">
+                    <Clock3 className="h-5 w-5" /> {timeLeft}s
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-primary/20">
+                <CardContent className="p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Carbon Level</p>
+                  <p className="flex items-center gap-2 text-2xl font-bold text-rose-500">
+                    <Factory className="h-5 w-5" /> {carbonLevel}%
+                  </p>
+                </CardContent>
               </Card>
             </div>
-        )
-    }
 
-    return (
-      <div className="flex flex-col h-full w-full font-code text-white bg-black/80 relative overflow-hidden">
-        <div className="z-20 p-4 flex flex-col flex-1 gap-4">
-          {/* Header */}
-          <header className="grid grid-cols-3 gap-4 items-center bg-black/50 p-2 border-2 border-primary/50 rounded-md">
-            <div className="text-left">
-              <p className="text-2xl font-bold text-accent">${budget}B</p>
-              <p className="text-xs text-muted-foreground">Budget</p>
-            </div>
-            <div className="text-center">
-              <h1 className="text-lg font-headline text-primary">
-                Carbon Quest
-              </h1>
-              <p className="text-lg font-bold">{year}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Public Approval</p>
-              <Progress value={approval} className="h-3 border border-secondary" />
-            </div>
-          </header>
-
-          {/* Game Area */}
-          <main className="flex-1 flex flex-col items-center justify-center bg-indigo-800/30 p-4 border-2 border-primary/50 rounded-md">
-            <div className={`w-full text-center p-2 bg-black/50 border rounded-md mb-4 ${currentEvent ? 'border-red-500' : 'border-gray-500'}`}>
-              <p className="font-bold">{log}</p>
-            </div>
-            <p className="text-xl text-center mb-4">
-              Choose a policy for the year:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-              {policyChoices.map((card) => (
-                <Card
-                  key={card.id}
-                  className="bg-background/80 border-2 text-foreground text-center"
-                >
-                  <CardHeader className="p-3">
-                    <CardTitle className="text-base">{card.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm p-3">
-                    <p
-                      className={
-                        card.co2 > 0 ? 'text-error' : 'text-success'
-                      }
-                    >
-                      CO₂: {card.co2 > 0 ? '+' : ''}
-                      {card.co2}ppm
-                    </p>
-                    <p
-                      className={
-                        card.approval >= 0 ? 'text-success' : 'text-error'
-                      }
-                    >
-                      Approval: {card.approval >= 0 ? '+' : ''}
-                      {card.approval}%
-                    </p>
-                    <p>Cost: ${card.cost}B</p>
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="font-headline text-2xl uppercase tracking-wide">{currentRound.title}</CardTitle>
+                <CardDescription className="text-base md:text-lg">{currentRound.prompt}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Progress value={100 - carbonLevel} indicatorClassName={carbonLevel > 70 ? 'bg-red-500' : 'bg-emerald-500'} />
+                <p className="text-base text-muted-foreground md:text-lg">{feedback}</p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {currentRound.choices.map((choice) => (
                     <Button
-                      className="w-full mt-2"
-                      onClick={() => handlePolicyChoice(card)}
-                      disabled={budget < card.cost}
+                      key={choice.label}
+                      variant="outline"
+                      className="h-auto min-h-20 whitespace-normal p-4 text-left text-base md:min-h-24 md:text-lg"
+                      onClick={() => choose(choice)}
+                      disabled={locked}
                     >
-                      Enact
+                      {choice.label}
                     </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </main>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">Mission Progress</p>
+                <Progress value={progress} indicatorClassName="bg-primary" />
+              </CardContent>
+            </Card>
+          </>
+        )}
 
-          {/* Meters */}
-          <footer className="bg-black/50 p-3 border-2 border-primary/50 rounded-md">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Global CO₂:</p>
-              <p className={`font-bold text-lg ${getCo2Color()}`}>{co2} ppm</p>
-            </div>
-          </footer>
-        </div>
+        {phase === 'result' && (
+          <Card className="border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-3xl font-headline uppercase tracking-wide text-primary">
+                <Trophy className="h-7 w-7" /> Mission Results
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-6xl font-black text-primary">{score}</p>
+              <p className="text-sm text-muted-foreground">{finalMessage}</p>
+              <p className="flex items-center gap-2 text-sm text-emerald-500">
+                <Leaf className="h-4 w-4" /> High-efficiency choices are the fastest path to cleaner cities.
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={startGame} className="font-headline uppercase tracking-wide">Replay</Button>
+                <Button variant="outline" onClick={() => setPhase('home')}>Back to Briefing</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    );
-  }
-
-  return <Desktop>{content()}</Desktop>;
+    </Desktop>
+  );
 }

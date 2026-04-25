@@ -24,21 +24,21 @@ export default function LeaderboardPage() {
     <Desktop>
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold">Leaderboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-headline tracking-tight uppercase">Leaderboard</h1>
+          <p className="text-muted-foreground font-body">
             See who's leading the charge in the quest for a greener planet.
           </p>
         </div>
 
         {currentUser && (
-          <Card className="p-4 flex items-center gap-4 bg-secondary/50">
-            <span className="text-sm font-semibold">Your Rank:</span>
-            <span className="text-2xl font-bold text-primary">#{currentUser.rank}</span>
-            <span className="text-sm text-muted-foreground">with {currentUser.total_points.toLocaleString()} Eco Points</span>
+          <Card className="p-4 flex items-center gap-4 bg-primary/10 retro-window border-primary/20">
+            <span className="text-[10px] font-headline tracking-widest uppercase opacity-70">Your Rank:</span>
+            <span className="text-2xl font-headline text-primary tracking-tighter">#{currentUser.rank}</span>
+            <span className="text-xs font-body text-muted-foreground">with {currentUser.total_points.toLocaleString()} Eco Points</span>
           </Card>
         )}
 
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden retro-window">
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -47,11 +47,11 @@ export default function LeaderboardPage() {
             <div className="text-center py-16 text-destructive">Failed to load leaderboard. Please refresh.</div>
           ) : (
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-secondary/10">
                 <TableRow>
-                  <TableHead className="w-16 text-center">Rank</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead className="text-right">Eco Points</TableHead>
+                  <TableHead className="w-16 text-center font-headline text-[10px] tracking-widest">RANK</TableHead>
+                  <TableHead className="font-headline text-[10px] tracking-widest">USER</TableHead>
+                  <TableHead className="text-right font-headline text-[10px] tracking-widest">ECO_POINTS</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

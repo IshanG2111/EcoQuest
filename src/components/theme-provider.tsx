@@ -44,7 +44,12 @@ export function ThemeProvider({
     if (typeof window === 'undefined') {
       return defaultTheme;
     }
-    return localStorage.getItem(storageKey) || defaultTheme;
+    const stored = localStorage.getItem(storageKey);
+    const validThemes = ['the-verdant-grove', 'the-ember-hearth', 'the-abyssal-tide', 'system', 'light', 'dark'];
+    if (stored && !validThemes.includes(stored)) {
+      return defaultTheme;
+    }
+    return stored || defaultTheme;
   });
 
   React.useEffect(() => {
