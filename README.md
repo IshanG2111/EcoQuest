@@ -2,63 +2,66 @@
 
 [![EcoQuest Preview](https://lh3.googleusercontent.com/d/1OiK1YyheQw5NHd1ZOy66rhT6SLbvd30F)](https://drive.google.com/file/d/1OiK1YyheQw5NHd1ZOy66rhT6SLbvd30F/view?usp=sharing)
 
-> **"Saving the planet, one pixel at a time."**
+> **"Pioneering the future of environmental education through self-paced, interactive mastery."**
 
-**EcoQuest** is a next-generation gamified learning platform designed as a retro-inspired "Edu-OS." It transforms complex environmental sustainability concepts into engaging, interactive experiences for students while providing powerful analytics for educators.
+**EcoQuest** is a next-generation gamified learning platform reimagined as a retro-inspired "Edu-OS." It transforms complex sustainability concepts into an interactive, LeetCode-style progression system, blending high-fidelity UI design with data-driven educational mechanics.
 
 ---
 
 ## 🚀 Key Features
 
+### 🤖 EcoBot: Interactive Authentication
+Experience a conversational gateway to the platform.
+*   **Chat-Based Onboarding:** No traditional forms. Interact with **EcoBot**, a terminal-style state machine that handles registration and login through a fluid, messaging-based interface.
+*   **Contextual Feedback:** Real-time validation and error handling built directly into the chat flow.
+
 ### 🖥️ Immersive "Edu-OS" Desktop
-Step into a fully functional, draggable, and resizable window-based operating system.
-*   **Themed Experiences:** Switch between three distinct aesthetics:
-    *   **The TVA Archives:** A nostalgic parchment-and-amber temporal aesthetic.
-    *   **The Vault-Ed Program:** A high-contrast green phosphor terminal experience.
-    *   **The Lumon Method:** A clean, corporate minimalist blue-and-white design.
-*   **Interactive Widgets:** Real-time environmental facts, daily briefings, and weather-aware sustainability tips.
-*   **Draggable Windows:** Manage your learning space just like a classic desktop.
+A fully functional, window-based operating system designed for focus and immersion.
+*   **Themed Environments:** Seamlessly toggle between three distinct visual aesthetics:
+    *   **The TVA Archives:** A nostalgic, amber-hued temporal archive.
+    *   **The Vault-Ed Program:** A high-contrast, green phosphor terminal for the true retro enthusiast.
+    *   **The Lumon Method:** A clean, minimalist "corporate-clinical" blue-and-white design.
+*   **Dynamic Widgets:** Real-time environmental facts, "Word of the Day," and weather-synced sustainability tips.
+*   **Window Management:** Draggable and resizable interfaces that mimic a classic desktop environment.
 
 ### 🎮 The Game Suite (Learning through Play)
-Five data-driven games with randomized scenarios and progressive difficulty:
-1.  **Forest Guardian:** Restore a degraded virtual forest and manage ecosystem health.
-2.  **Ocean Explorer:** Clean up coral reefs using specialized marine tools in a race against time.
-3.  **Eco City Builder:** A policy-driven simulation where you balance population, happiness, and green energy.
-4.  **Recycle Rally:** A high-speed waste-sorting challenge to build real-world recycling habits.
-5.  **Carbon Quest:** Step into the shoes of a global policymaker to avert climate crisis through strategic decisions.
+A collection of data-driven simulations with progressive difficulty and randomized scenarios:
+1.  **Migration Map [NEW]:** Trace climate-sensitive wildlife routes and analyze ecological drivers.
+2.  **Forest Guardian:** Restore degraded ecosystems and manage multi-variable health metrics.
+3.  **Ocean Explorer:** Race against time to clean coral reefs using specialized marine equipment.
+4.  **Eco City Builder:** A policy-driven sim balancing population growth, happiness, and green energy.
+5.  **Recycle Rally:** A high-speed waste-sorting challenge to build real-world recycling habits.
 
-### 🧠 Advanced Learning System
-*   **Terminal Auth:** A unified, terminal-style chat interface for seamless login and signup.
-*   **Knowledge Library:** Interactive quizzes with dynamic question pools and instant visual feedback.
-*   **Leaderboards:** Compete globally and climb the ranks of "Eco-Champions."
-*   **Personalized Progress:** Earn points, maintain daily streaks, and unlock unique achievement badges.
-
-### 👩‍🏫 Educator Suite
-*   **Teacher Dashboard:** Comprehensive analytics to monitor student performance, engagement levels, and quiz results.
-*   **Content Management:** Tools to manage quizzes and track classroom progress at scale.
+### 🧠 Self-Paced Mastery (LeetCode Style)
+*   **Challenge Roadmap:** Progress through structured modules with increasing complexity.
+*   **Streaks & Levels:** Maintain daily engagement streaks and level up your "Eco-Champion" rank.
+*   **Performance Metrics:** Detailed analytics on quiz accuracy, game session time, and ecological impact literacy.
+*   **Leaderboards:** Compete globally and see how you rank against the EcoQuest community.
 
 ---
 
 ## 🛠️ Technical Excellence
 
-Built with a cutting-edge modern stack designed for performance and scalability:
+Built with a state-of-the-art stack optimized for performance, security, and scalability:
 
-*   **Frontend:** [Next.js 15](https://nextjs.org/) (App Router) + [TypeScript](https://www.typescriptlang.org/)
-*   **Backend:** [MongoDB](https://www.mongodb.com/) (Database) + [NextAuth.js](https://next-auth.js.org/) (Authentication)
-*   **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [ShadCN UI](https://ui.shadcn.com/)
-*   **Animations:** [CSS Keyframes](https://developer.mozilla.org/en-US/docs/Web/CSS/animation) + [React Draggable](https://github.com/react-grid-layout/react-draggable)
-*   **Charts:** [Recharts](https://recharts.org/) for performance analytics.
+*   **Framework:** [Next.js 15](https://nextjs.org/) (App Router & Turbopack)
+*   **Logic:** [TypeScript](https://www.typescriptlang.org/) for type-safe development.
+*   **Database:** [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/) for flexible, document-based storage.
+*   **Auth:** [NextAuth.js v5](https://next-auth.js.org/) (Beta) for secure, session-based authentication.
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [ShadCN UI](https://ui.shadcn.com/) for a modular design system.
+*   **Motion:** [React Draggable](https://github.com/react-grid-layout/react-draggable) + [Tailwind Animate](https://github.com/jamiebuilds/tailwindcss-animate).
+*   **Insights:** [Vercel Speed Insights](https://vercel.com/docs/speed-insights) for real-time performance monitoring.
 
 ---
 
-## 📂 Project Structure & Documentation
+## 📂 Documentation & Architecture
 
-Detailed documentation is available in the [`/docs`](./docs) directory:
+Dive deeper into the mechanics and design of EcoQuest:
 
-- [**OVERVIEW.md**](./docs/OVERVIEW.md): Comprehensive software demonstration script and architecture breakdown.
-- [**TECHSTACK.md**](./docs/TECHSTACK.md): Detailed look at our technology choices and libraries.
-- [**GAMERULES.md**](./docs/GAMERULES.md): In-depth breakdown of the logic and mechanics behind every game.
-- [**ARCHITECT.md**](./docs/ARCHITECT.md): The original design vision and UI/UX blueprint.
+- [**OVERVIEW.md**](./docs/OVERVIEW.md): Architecture breakdown and demonstration scripts.
+- [**TECHSTACK.md**](./docs/TECHSTACK.md): Detailed library choices and technical rationale.
+- [**GAMERULES.md**](./docs/GAMERULES.md): Logic and mechanics behind every interactive module.
+- [**ARCHITECT.md**](./docs/ARCHITECT.md): Original design vision and UI/UX blueprint.
 
 ---
 
@@ -66,7 +69,7 @@ Detailed documentation is available in the [`/docs`](./docs) directory:
 
 ### Prerequisites
 - Node.js (v18+)
-- MongoDB (Local or Atlas)
+- MongoDB instance (Local or Atlas)
 
 ### Setup
 1.  **Clone the repository:**
@@ -79,12 +82,17 @@ Detailed documentation is available in the [`/docs`](./docs) directory:
     npm install
     ```
 3.  **Configure environment variables:**
-    Create a `.env.local` file based on `.env.local.example` and add your MongoDB URI and NextAuth secrets.
+    Create a `.env.local` file in the root directory:
+    ```env
+    MONGODB_URI=your_mongodb_connection_string
+    AUTH_SECRET=your_nextauth_secret
+    # Additional keys as required by .env.local.example
+    ```
 4.  **Run the development server:**
     ```bash
     npm run dev
     ```
-    Access the app at [http://localhost:3000](http://localhost:3000).
+    Access the app at [http://localhost:9002](http://localhost:9002).
 
 ---
 
@@ -92,4 +100,4 @@ Detailed documentation is available in the [`/docs`](./docs) directory:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Developed with ❤️ for a Greener Future.
+Developed with ❤️ by [IshanG2111](https://github.com/IshanG2111).
