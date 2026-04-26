@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 import { Compass, MapPinned, Timer, Trophy } from 'lucide-react';
+import { GameBriefingShell } from '@/components/game-briefing-shell';
 
 type Phase = 'home' | 'rules' | 'playing' | 'result';
 
@@ -173,6 +174,30 @@ export default function MigrationMapPage() {
     if (correct >= 4) return 'Solid map literacy. Keep refining ecological route awareness.';
     return 'Expedition incomplete. Review species cues and route logic for a stronger run.';
   }, [correct]);
+
+  if (phase === 'home' || phase === 'rules') {
+    return (
+      <Desktop>
+        <GameBriefingShell
+          phase={phase}
+          title="Migration Map"
+          subtitle="Trace climate-sensitive wildlife routes across global habitats."
+          videoSrc="/videos/games/migration.mp4"
+          rulesTitle="Field Protocol"
+          rules={[
+            'Each round shows an animal profile and migration cue.',
+            'Choose the most accurate destination or migration driver.',
+            'Faster correct answers yield higher score.',
+            'Final report summarizes route accuracy and eco-impact literacy.',
+          ]}
+          openLabel="Read Field Notes"
+          startLabel="Deploy"
+          onOpenRules={() => setPhase('rules')}
+          onStart={startGame}
+        />
+      </Desktop>
+    );
+  }
 
   return (
     <Desktop>

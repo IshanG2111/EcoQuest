@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 import { Fish, ShieldCheck, Thermometer, Waves } from 'lucide-react';
+import { GameBriefingShell } from '@/components/game-briefing-shell';
 
 type Phase = 'home' | 'rules' | 'playing' | 'result';
 type CoralState = 'healthy' | 'bleached' | 'dead';
@@ -150,6 +151,30 @@ export default function OceanExplorerPage() {
     if (reefHealth >= 45) return 'Reef stabilized but vulnerable. Continue targeted restoration.';
     return 'Reef remains in critical condition. Prioritize faster interventions next run.';
   }, [reefHealth]);
+
+  if (phase === 'home' || phase === 'rules') {
+    return (
+      <Desktop>
+        <GameBriefingShell
+          phase={phase}
+          title="Reef Rescue"
+          subtitle="Rebuild coral health while managing heat stress and collapse risk."
+          videoSrc="/videos/games/ocean-explorer.mp4"
+          rulesTitle="Reef Operations"
+          rules={[
+            'Heat stress continuously bleaches healthy coral.',
+            'Bleached coral can become dead if untreated.',
+            'Use tools based on severity and point cost.',
+            'Health and score improve by restoring cells to healthy state.',
+          ]}
+          openLabel="Mission Rules"
+          startLabel="Start Dive"
+          onOpenRules={() => setPhase('rules')}
+          onStart={startGame}
+        />
+      </Desktop>
+    );
+  }
 
   return (
     <Desktop>

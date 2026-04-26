@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 import { AlertTriangle, Droplets, Flame, Shield, Sprout, Trees } from 'lucide-react';
+import { GameBriefingShell } from '@/components/game-briefing-shell';
 
 type Phase = 'home' | 'rules' | 'playing' | 'result';
 type Tool = 'defend' | 'plant' | 'water' | 'extinguish';
@@ -290,6 +291,30 @@ export default function ForestGuardianPage() {
     if (forestHealth >= 45) return 'Partial recovery achieved. More intervention required.';
     return 'Canopy collapse risk remains high. Try a faster defense cycle.';
   }, [forestHealth]);
+
+  if (phase === 'home' || phase === 'rules') {
+    return (
+      <Desktop>
+        <GameBriefingShell
+          phase={phase}
+          title="Forest Defender"
+          subtitle="Protect a living biome under pressure from logging, wildfire, invasive pests, and development."
+          videoSrc="/videos/games/forest-guardian.mp4"
+          rulesTitle="Mission Rules"
+          rules={[
+            'A new threat wave appears every few seconds and marks multiple healthy trees.',
+            'Threatened and burning trees collapse into felled land if you do not act before the timer expires.',
+            'Use Defend for general threats, Water for stressed trees, Extinguish for fire, and Plant to restore felled plots.',
+            'Tools consume seeds except Defend. Seeds regenerate over time, so budget them carefully.',
+          ]}
+          openLabel="Read Rules"
+          startLabel="Start Mission"
+          onOpenRules={() => setPhase('rules')}
+          onStart={startGame}
+        />
+      </Desktop>
+    );
+  }
 
   return (
     <Desktop>

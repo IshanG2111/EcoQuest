@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 import { Clock3, Leaf, Factory, Trophy, BookOpen } from 'lucide-react';
+import { GameBriefingShell } from '@/components/game-briefing-shell';
 
 type Phase = 'home' | 'rules' | 'playing' | 'result';
 
@@ -183,6 +184,30 @@ export default function CarbonQuestPage() {
     setFeedback(choice.reason);
 
     setTimeout(nextRound, 1200);
+  }
+
+  if (phase === 'home' || phase === 'rules') {
+    return (
+      <Desktop>
+        <GameBriefingShell
+          phase={phase}
+          title="Carbon Quest"
+          subtitle="Simulate urban lifestyle decisions, reduce emissions, and keep your district breathable."
+          videoSrc="/videos/games/carbon-quest.mp4"
+          rulesTitle="How Carbon Quest Works"
+          rules={[
+            'Read each scenario and choose one action before the timer runs out.',
+            'Lower-carbon options improve city air quality and score multipliers.',
+            'High-carbon choices increase emissions, making recovery harder.',
+            'Final score converts directly to Eco Points through session tracking.',
+          ]}
+          openLabel="Mission Brief"
+          startLabel="Launch"
+          onOpenRules={() => setPhase('rules')}
+          onStart={startGame}
+        />
+      </Desktop>
+    );
   }
 
   return (

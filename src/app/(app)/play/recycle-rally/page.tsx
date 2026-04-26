@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
 import { Recycle, Timer, Trash2, Trophy } from 'lucide-react';
+import { GameBriefingShell } from '@/components/game-briefing-shell';
 
 type Phase = 'home' | 'rules' | 'playing' | 'result';
 type Bin = 'recycle' | 'compost' | 'landfill' | 'hazard';
@@ -132,6 +133,30 @@ export default function RecycleRallyPage() {
     if (accuracy >= 60) return 'Good baseline sorting. Improve contamination control for better outcomes.';
     return 'Sorting errors were costly. Re-run the drill and improve bin decisions.';
   }, [accuracy]);
+
+  if (phase === 'home' || phase === 'rules') {
+    return (
+      <Desktop>
+        <GameBriefingShell
+          phase={phase}
+          title="Waste Wizard"
+          subtitle="Fast recycling triage under rising processing pressure."
+          videoSrc="/videos/games/recycle-rally.mp4"
+          rulesTitle="Sorting Protocol"
+          rules={[
+            'One waste item appears at a time in the sorter lane.',
+            'Select a bin before item timeout to avoid a life penalty.',
+            'Wrong bin choices also cost one life.',
+            'Every 5 sorted items increases processing speed.',
+          ]}
+          openLabel="Rules"
+          startLabel="Begin Shift"
+          onOpenRules={() => setPhase('rules')}
+          onStart={startGame}
+        />
+      </Desktop>
+    );
+  }
 
   return (
     <Desktop>

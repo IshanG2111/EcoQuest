@@ -78,7 +78,7 @@ export const games: Game[] = [
     title: 'Migration Map',
     description:
       'Global map puzzle challenge. Help endangered species navigate climate-driven habitat loss and reach safety in this strategic world map game.',
-    video: '/videos/games/carbon-quest.mp4', // Placeholder video
+    video: '/videos/games/migration.mp4', // Placeholder video
     imageHint: 'world map',
     tags: ['climate change', 'migration', 'habitats'],
     icon: MapIcon,

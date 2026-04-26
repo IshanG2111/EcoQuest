@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Desktop } from '@/components/desktop';
 import gameData from '@/lib/game-data/eco_city_builder.json';
 import { useGameSessionTracker } from '@/hooks/useGameSessionTracker';
+import { GameBriefingShell } from '@/components/game-briefing-shell';
 
 type Building = typeof gameData.buildings[0];
 type GameEvent = typeof gameData.events[0];
@@ -57,6 +58,30 @@ export default function EcoCityBuilderPage() {
 
     }
   };
+
+  if (gameState === 'home' || gameState === 'rules') {
+    return (
+      <Desktop>
+        <GameBriefingShell
+          phase={gameState}
+          title="Eco City Builder"
+          subtitle="Sustainable Urban Planning"
+          videoSrc="/videos/eco-city-builder.mp4"
+          rulesTitle="City Planner's Handbook"
+          rules={[
+            'Keep an eye on your population, budget, happiness, and CO2 levels.',
+            'Choose from a variety of buildings. Each has a cost and affects your city\'s stats.',
+            'Random events like heatwaves or economic booms will challenge your planning.',
+            'A happy city will grow, creating new demands. Keep balancing to succeed!',
+          ]}
+          openLabel="Become Mayor"
+          startLabel="Start Building"
+          onOpenRules={() => setGameState('rules')}
+          onStart={() => setGameState('playing')}
+        />
+      </Desktop>
+    );
+  }
 
   const content = () => {
     if (gameState === 'home') {
