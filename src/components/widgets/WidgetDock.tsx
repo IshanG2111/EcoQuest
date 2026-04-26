@@ -4,10 +4,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { FactWidget } from './FactWidget';
 import { DailyBriefingWidget } from './DailyBriefingWidget';
 import { PixelWeatherWidget } from './PixelWeatherWidget';
+import { EcoTilesCalendarWidget } from './EcoTilesCalendarWidget';
 import { WidgetCard } from './WidgetCard';
-import { Lightbulb, Newspaper, CloudSun } from 'lucide-react';
+import { Lightbulb, Newspaper, CloudSun, CalendarDays } from 'lucide-react';
 
-type WidgetType = 'fact' | 'briefing' | 'weather';
+type WidgetType = 'fact' | 'briefing' | 'weather' | 'ecoTiles';
 
 interface WidgetDockProps {
     isOpen: boolean;
@@ -20,6 +21,7 @@ const availableWidgets: {id: WidgetType, title: string, icon: React.ElementType,
     { id: 'fact', title: 'Eco Fact', icon: Lightbulb, component: FactWidget },
     { id: 'briefing', title: 'Daily Briefing', icon: Newspaper, component: DailyBriefingWidget },
     { id: 'weather', title: 'Pixel Weather', icon: CloudSun, component: PixelWeatherWidget },
+    { id: 'ecoTiles', title: 'Eco Tiles Calendar', icon: CalendarDays, component: EcoTilesCalendarWidget },
 ];
 
 export function WidgetDock({ isOpen, onOpenChange, activeWidgets, toggleWidget }: WidgetDockProps) {

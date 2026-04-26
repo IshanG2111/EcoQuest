@@ -1,6 +1,6 @@
 # 🌿 EcoQuest: The Immersive Sustainability Edu-OS
 
-[![EcoQuest Preview](https://lh3.googleusercontent.com/d/1OiK1YyheQw5NHd1ZOy66rhT6SLbvd30F)](https://drive.google.com/file/d/1OiK1YyheQw5NHd1ZOy66rhT6SLbvd30F/view?usp=sharing)
+![EcoQuest Preview](./demo.png)
 
 > **"Pioneering the future of environmental education through self-paced, interactive mastery."**
 
@@ -21,8 +21,8 @@ A fully functional, window-based operating system designed for focus and immersi
     *   **The TVA Archives:** A nostalgic, amber-hued temporal archive.
     *   **The Vault-Ed Program:** A high-contrast, green phosphor terminal for the true retro enthusiast.
     *   **The Lumon Method:** A clean, minimalist "corporate-clinical" blue-and-white design.
-*   **Dynamic Widgets:** Real-time environmental facts, "Word of the Day," and weather-synced sustainability tips.
-*   **Window Management:** Draggable and resizable interfaces that mimic a classic desktop environment.
+*   **Dynamic Widgets:** Draggable desktop widgets including Eco Fact, Daily Briefing, Pixel Weather, and the new **Eco Tiles Calendar** with activity heatmaps, streak paths, quick logging, and predictive tiles.
+*   **Window Management:** Draggable, snap-aligned interfaces that mimic a classic desktop environment.
 
 ### 🎮 The Game Suite (Learning through Play)
 A collection of data-driven simulations with progressive difficulty and randomized scenarios:
