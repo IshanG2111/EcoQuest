@@ -1,40 +1,59 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Flame, Star, Award, Sparkles, BookOpen, AlertTriangle, Loader2, Bell } from 'lucide-react';
+import {
+  Flame, Star, Award, Sparkles, BookOpen, AlertTriangle,
+  Loader2, Bell, Copy, BarChart2, ChevronRight, Leaf,
+  Globe, Zap, Shield, Clock, TrendingUp, CheckCircle2
+} from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { cn, getAvatarUrl } from '@/lib/utils';
 import { Desktop } from '@/components/desktop';
-import ProfileCard from '@/components/profile-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
-// Helper to generate a unique avatar URL based on user id or name using RoboHash
-function getUniqueAvatarUrl(user: { id?: string; name?: string | null } | null) {
-  // Use a hash or the id/name as a seed for the avatar
-  const seed = user?.id || user?.name || Math.random().toString(36).substring(2, 10);
-  // Use RoboHash avatar service
-  return `https://robohash.org/${encodeURIComponent(seed)}.png?set=set3`;
+// Eco Points progress percentage
+function xpPercent(points: number) {
+  const level = Math.floor(points / 500) + 1;
+  const levelMin = (level - 1) * 500;
+  const levelMax = level * 500;
+  return { level, pct: Math.round(((points - levelMin) / (levelMax - levelMin)) * 100), levelMax };
 }
 
+const LEVEL_NAMES = ['Seedling', 'Sprout', 'Sapling', 'Eco Warrior', 'Green Knight', 'Earth Guardian', 'Planet Protector'];
+
+const SUGGESTIONS = [
+  {
+    title: 'Sustainable Cities: Innovations for Urban Living',
+    desc: 'Learn how cities are becoming greener and smarter.',
+    readTime: '12 min read',
+    tag: 'RECOMMENDED',
+    href: '/quizzes',
+    img: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=160&q=80',
+  },
+  {
+    title: 'Marine Ecosystems and Ocean Stewardship',
+    desc: 'Dive deep into ocean conservation strategies.',
+    readTime: '8 min read',
+    tag: 'POPULAR',
+    href: '/quizzes',
+    img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=160&q=80',
+  },
+  {
+    title: 'Forests: Biodiversity and Conservation',
+    desc: 'Explore why forests are the lungs of the Earth.',
+    readTime: '10 min read',
+    tag: 'NEW',
+    href: '/quizzes',
+    img: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=160&q=80',
+  },
+];
+
 export default function DashboardPage() {
-  const [suggestions] = useState<string[]>([
-    'Sustainable Cities: Innovations for Urban Living',
-    'Marine Ecosystems and Ocean Stewardship',
-    'Forests: Biodiversity and Conservation',
-  ]);
-  const [error] = useState<string | null>(null);
-  const [isLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const { progress, isLoading: progressLoading } = useUserProgress();
@@ -45,210 +64,261 @@ export default function DashboardPage() {
     markAsRead,
     markAllAsRead,
   } = useNotifications(6);
-  const avatarUrl = getUniqueAvatarUrl(user);
+
+  const avatarUrl = getAvatarUrl(user?.id || user?.name);
   const username = user?.name ?? 'Eco-Champion';
+  const handle = (user?.name ?? 'eco_champion').toLowerCase().replace(/\s+/g, '_');
+
+  const pts = progress?.points ?? 0;
+  const streak = progress?.streak ?? 0;
+  const badges = progress?.badges ?? [];
+  const { level, pct, levelMax } = xpPercent(pts);
+  const levelName = LEVEL_NAMES[Math.min(level - 1, LEVEL_NAMES.length - 1)] ?? 'Eco Warrior';
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
+    if (!user) router.push('/login');
   }, [user, router]);
 
-  const stats = [
-    {
-      title: 'Eco Points',
-      value: progressLoading ? '...' : (progress?.points ?? 0).toLocaleString(),
-      icon: Star,
-      color: 'text-yellow-500',
-    },
-    {
-      title: 'Daily Streak',
-      value: progressLoading ? '...' : `${progress?.streak ?? 0} Days`,
-      icon: Flame,
-      color: 'text-orange-500',
-    },
-    {
-      title: 'Badges Earned',
-      value: progressLoading ? '...' : (progress?.badges.length ?? 0),
-      icon: Award,
-      color: 'text-blue-500',
-    },
-  ];
+  function handleCopy() {
+    navigator.clipboard.writeText(`@${handle}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <Desktop>
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 flex justify-center items-center">
-            <ProfileCard
-              name={username}
-              title="Eco-Champion"
-              handle={user?.name?.toLowerCase() ?? 'eco_champion'}
-              avatarUrl={avatarUrl}
-              miniAvatarUrl={avatarUrl}
-              status='Online'
-              contactText="View Stats"
-              grainUrl=""
-              behindGradient=""
-              innerGradient=""
-            />
+      <div className="dash-root">
+        {/* ── LEFT PANEL ── */}
+        <aside className="dash-sidebar">
+          {/* name + title */}
+          <div className="dash-profile-header">
+            <div className="dash-profile-name">{username}</div>
+            <div className="dash-profile-title">
+              <Leaf className="dash-leaf-icon" />
+              Eco-Champion
+            </div>
           </div>
-          <div className="lg:col-span-2">
-            <div>
-              <h1 className="text-3xl font-headline tracking-tight uppercase">Welcome Back, {username}!</h1>
-              <p className="text-muted-foreground font-body">
-                Continue your journey to make the world a greener place.
+
+          {/* avatar */}
+          <div className="dash-avatar-ring">
+            <div className="dash-avatar-glow" />
+            <img
+              src={avatarUrl}
+              alt={username}
+              className="dash-avatar-img"
+              onError={e => { (e.target as HTMLImageElement).style.opacity = '0.4'; }}
+            />
+            <div className="dash-avatar-badge">
+              <Leaf className="h-3 w-3 text-white" />
+            </div>
+          </div>
+
+          {/* status row */}
+          <div className="dash-status-row">
+            <span className="dash-online-dot" />
+            <span className="dash-online-text">Online</span>
+          </div>
+
+          {/* handle */}
+          <div className="dash-handle-row">
+            <span className="dash-handle-text">@{handle}</span>
+            <button
+              className="dash-copy-btn"
+              onClick={handleCopy}
+              title="Copy handle"
+            >
+              {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+
+          {/* view stats btn */}
+          <Link href="/leaderboard" className="dash-view-stats-btn">
+            <BarChart2 className="h-4 w-4" />
+            View Stats
+            <ChevronRight className="h-4 w-4 ml-auto" />
+          </Link>
+
+          {/* level card */}
+          <div className="dash-level-card">
+            <div className="dash-level-badge">{level}</div>
+            <div className="dash-level-info">
+              <div className="dash-level-name">{levelName}</div>
+              <div className="dash-xp-bar-wrap">
+                <div className="dash-xp-bar" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="dash-xp-label">
+                {progressLoading ? '…' : `${pts.toLocaleString()} / ${levelMax.toLocaleString()} XP`}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* ── MAIN CONTENT ── */}
+        <main className="dash-main">
+          {/* ── TOP BAR ── */}
+          <div className="dash-topbar">
+            <div className="dash-topbar-date">
+              <span className="dash-topbar-date-icon">📅</span>
+              {dateStr}
+            </div>
+            <div className="dash-topbar-right">
+              <button className="dash-bell-btn" aria-label="Notifications">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="dash-bell-badge">{unreadCount}</span>
+                )}
+              </button>
+              <div className="dash-points-chip">
+                <Leaf className="h-4 w-4 text-green-400" />
+                <span>{progressLoading ? '…' : pts.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── WELCOME HERO ── */}
+          <section className="dash-hero">
+            <div className="dash-hero-text">
+              <h1 className="dash-hero-title">
+                Welcome Back,<br />
+                <span className="dash-hero-username">{username.toUpperCase()}!</span>
+              </h1>
+              <p className="dash-hero-sub">
+                Continue your journey to make the world a greener place.<br />
+                <span className="dash-hero-highlight">Every action counts.</span>
               </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-3 mt-6">
-              {stats.map((stat, index) => (
-                <Card
-                  key={stat.title}
-                  className="animate-fade-in-up retro-window group hover:scale-[1.02] transition-all"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <CardHeader className="flex flex-row items-center justify-between pb-2 bg-secondary/10 border-b border-border/10">
-                    <CardTitle className="text-[10px] font-headline tracking-widest uppercase">
-                      {stat.title}
-                    </CardTitle>
-                    <stat.icon className={cn('h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity', stat.color)} />
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="text-2xl font-headline tracking-tighter">{stat.value}</div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="dash-hero-globe" aria-hidden>
+              <Globe className="h-24 w-24 text-cyan-400 opacity-80" />
+              <Leaf className="dash-hero-leaf dash-hero-leaf-1" />
+              <Leaf className="dash-hero-leaf dash-hero-leaf-2" />
+            </div>
+          </section>
+
+          {/* ── STAT CARDS ── */}
+          <div className="dash-stats-grid">
+            {/* Eco Points */}
+            <div className="dash-stat-card dash-stat-green">
+              <div className="dash-stat-icon-wrap dash-stat-icon-green">
+                <Star className="h-5 w-5" />
+              </div>
+              <div className="dash-stat-label">ECO POINTS</div>
+              <div className="dash-stat-value">
+                {progressLoading ? <Loader2 className="animate-spin h-6 w-6" /> : pts.toLocaleString()}
+              </div>
+              <div className="dash-stat-sub">
+                <TrendingUp className="h-3 w-3" />
+                +320 this week
+              </div>
+            </div>
+
+            {/* Daily Streak */}
+            <div className="dash-stat-card dash-stat-orange">
+              <div className="dash-stat-icon-wrap dash-stat-icon-orange">
+                <Flame className="h-5 w-5" />
+              </div>
+              <div className="dash-stat-label">DAILY STREAK</div>
+              <div className="dash-stat-value">
+                {progressLoading ? <Loader2 className="animate-spin h-6 w-6" /> : (
+                  <><span>{streak}</span><span className="dash-stat-unit"> Day{streak !== 1 ? 's' : ''}</span></>
+                )}
+              </div>
+              <div className="dash-stat-sub dash-streak-dots">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={cn('dash-streak-dot', i < Math.min(streak, 5) && 'dash-streak-dot-active')} />
+                ))}
+              </div>
+            </div>
+
+            {/* Badges Earned */}
+            <div className="dash-stat-card dash-stat-blue">
+              <div className="dash-stat-icon-wrap dash-stat-icon-blue">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div className="dash-stat-label">BADGES EARNED</div>
+              <div className="dash-stat-value">
+                {progressLoading ? <Loader2 className="animate-spin h-6 w-6" /> : badges.length}
+              </div>
+              <Link href="/badges" className="dash-stat-sub dash-stat-link">
+                View all badges <ChevronRight className="h-3 w-3" />
+              </Link>
             </div>
           </div>
-        </div>
 
+          {/* ── BOTTOM GRID ── */}
+          <div className="dash-bottom-grid">
+            {/* YOUR BADGES */}
+            <div className="dash-panel">
+              <div className="dash-panel-header">
+                <div className="dash-panel-title">
+                  <Leaf className="h-4 w-4 text-green-400" />
+                  YOUR BADGES
+                </div>
+                <Link href="/badges" className="dash-panel-link">View All <ChevronRight className="h-3 w-3" /></Link>
+              </div>
+              <p className="dash-panel-desc">A collection of your achievements so far. Keep it up!</p>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          <Card
-            className="animate-fade-in-up retro-window"
-            style={{ animationDelay: '300ms' }}
-          >
-            <CardHeader className="bg-secondary/10 border-b border-border/10">
-              <CardTitle className="font-headline text-sm tracking-widest uppercase">Your Badges</CardTitle>
-              <CardDescription className="font-body text-xs">
-                A collection of your achievements so far. Keep it up!
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-4">
               {progressLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="animate-spin w-4 h-4" /> Loading badges...</div>
-              ) : progress?.badges.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No badges yet. Complete quizzes to earn some!</p>
-              ) : (
-                progress?.badges.map((badge) => (
-                  <div key={badge.id} className="flex flex-col items-center gap-2" title={badge.description}>
-                    <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
-                      <Award className="w-8 h-8 text-accent" />
-                    </div>
-                    <span className="text-xs font-medium text-center w-16 truncate">{badge.name}</span>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card
-            className="animate-fade-in-up retro-window"
-            style={{ animationDelay: '400ms' }}
-          >
-            <CardHeader className="bg-secondary/10 border-b border-border/10">
-              <CardTitle className="flex items-center gap-2 font-headline text-sm tracking-widest uppercase">
-                <Sparkles className="text-accent h-4 w-4" />
-                For You
-              </CardTitle>
-              <CardDescription className="font-body text-xs">
-                Personalized learning suggestions based on your interests.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p className="text-muted-foreground">Generating suggestions...</p>
-              ) : error ? (
-                <div className="flex items-center gap-3 text-destructive">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span className="font-medium">{error}</span>
+                <div className="flex items-center gap-2 text-muted-foreground py-4">
+                  <Loader2 className="animate-spin w-4 h-4" /> Loading badges...
+                </div>
+              ) : badges.length === 0 ? (
+                <div className="dash-empty-badges">
+                  <Award className="h-10 w-10 opacity-30" />
+                  <p>No badges yet. Complete quizzes to earn some!</p>
                 </div>
               ) : (
-                <ul className="space-y-3">
-                  {suggestions.slice(0, 3).map((suggestion) => {
-                    return (
-                      <li key={suggestion}>
-                        <Link href="/quizzes">
-                          <div className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary transition-colors cursor-pointer">
-                            <BookOpen className="h-5 w-5 text-primary" />
-                            <span className="font-medium">{suggestion}</span>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="animate-fade-in-up retro-window" style={{ animationDelay: '500ms' }}>
-          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-secondary/10 border-b border-border/10">
-            <div>
-              <CardTitle className="flex items-center gap-2 font-headline text-sm tracking-widest uppercase">
-                <Bell className="h-4 w-4 text-primary" />
-                Notifications
-              </CardTitle>
-              <CardDescription className="font-body text-xs">
-                {unreadCount > 0 ? `${unreadCount} unread updates` : 'You are all caught up.'}
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-headline text-[10px] h-7 tracking-tighter"
-              disabled={unreadCount === 0}
-              onClick={markAllAsRead}
-            >
-              MARK_ALL_AS_READ
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {notificationsLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading notifications...
-              </div>
-            ) : notifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No notifications yet. Complete activities to get updates.</p>
-            ) : (
-              <ul className="space-y-3">
-                {notifications.map((notification) => (
-                  <li
-                    key={notification.id}
-                    className={cn(
-                      'rounded-lg border p-3 transition-colors',
-                      notification.is_read ? 'bg-muted/30' : 'bg-primary/5 border-primary/30'
-                    )}
-                  >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="font-semibold">{notification.title}</p>
-                        <p className="text-sm text-muted-foreground">{notification.message}</p>
+                <div className="dash-badges-grid">
+                  {badges.map((badge, i) => (
+                    <div key={badge.id} className="dash-badge-item" title={badge.description}>
+                      <div className={cn('dash-badge-ring', i % 3 === 0 ? 'dash-badge-green' : i % 3 === 1 ? 'dash-badge-teal' : 'dash-badge-gray')}>
+                        <Award className="h-7 w-7" />
                       </div>
-                      {!notification.is_read && (
-                        <Button size="sm" variant="ghost" onClick={() => markAsRead(notification.id)}>
-                          Mark read
-                        </Button>
-                      )}
+                      <span className="dash-badge-name">{badge.name}</span>
+                      <span className="dash-badge-date">{badge.description?.slice(0, 22)}</span>
                     </div>
-                  </li>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* FOR YOU */}
+            <div className="dash-panel">
+              <div className="dash-panel-header">
+                <div className="dash-panel-title">
+                  <Sparkles className="h-4 w-4 text-cyan-400" />
+                  FOR YOU
+                </div>
+              </div>
+              <p className="dash-panel-desc">Personalized learning suggestions based on your interests.</p>
+
+              <div className="dash-suggestions">
+                {SUGGESTIONS.slice(0, 2).map((s) => (
+                  <Link key={s.title} href={s.href} className="dash-suggestion-card group">
+                    <img src={s.img} alt={s.title} className="dash-suggestion-img" />
+                    <div className="dash-suggestion-body">
+                      <span className="dash-suggestion-tag">{s.tag}</span>
+                      <p className="dash-suggestion-title group-hover:text-primary transition-colors">{s.title}</p>
+                      <p className="dash-suggestion-desc">{s.desc}</p>
+                      <div className="dash-suggestion-footer">
+                        <span className="dash-suggestion-time"><Clock className="h-3 w-3" /> {s.readTime}</span>
+                        <span className="dash-suggestion-cta">Start Learning <ChevronRight className="h-3 w-3" /></span>
+                      </div>
+                    </div>
+                  </Link>
                 ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            </div>
+          </div>
+
+          {/* ── FOOTER ── */}
+          <footer className="dash-footer">
+            <Leaf className="h-4 w-4 text-green-400" />
+            Together, we build a better planet.
+          </footer>
+        </main>
       </div>
     </Desktop>
   );

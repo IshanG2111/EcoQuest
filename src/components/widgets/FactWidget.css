@@ -56,7 +56,7 @@
 }
 
 .fact-widget-face h4 {
-    font-size: 12px;
+    font-size: 0.72rem;
     text-transform: uppercase;
     color: hsl(var(--primary));
     font-family: var(--font-headline);
@@ -80,30 +80,89 @@
   position: absolute;
   bottom: 8px;
   right: 8px;
-  z-index: 3; /* Ensure it's above the card faces */
+  z-index: 3;
   background: transparent;
   border: none;
   color: hsl(var(--foreground));
   opacity: 0.7;
   transition: opacity 0.2s, transform 0.2s;
 }
-
-.fact-widget-refresh-btn:hover {
-  opacity: 1;
-  transform: rotate(90deg);
-}
+.fact-widget-refresh-btn:hover { opacity: 1; transform: rotate(90deg); }
 
 .fact-widget-close-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 3;
-    background: transparent;
-    border: none;
-    color: hsl(var(--foreground));
-    opacity: 0.7;
-    transition: opacity 0.2s, transform 0.2s;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  background: transparent;
+  border: none;
+  color: hsl(var(--foreground));
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
-.fact-widget-close-btn:hover {
-    opacity: 1;
+.fact-widget-close-btn:hover { opacity: 1; }
+
+/* ── New enriched fact widget styles ── */
+.fw-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.fw-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-headline), monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 2px 7px;
+  opacity: 0.9;
+}
+
+.fw-difficulty {
+  font-family: var(--font-headline), monospace;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+}
+
+.fw-flip-hint {
+  font-size: 0.68rem !important;
+  color: hsl(var(--muted-foreground));
+  margin-top: 10px !important;
+  opacity: 0.6;
+  font-style: normal !important;
+}
+
+.fw-buttons {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.fw-back-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fw-back-heading {
+  font-size: 0.72rem !important;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  font-family: var(--font-headline), monospace;
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  display: flex;
+  align-items: center;
 }

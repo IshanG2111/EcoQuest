@@ -2,107 +2,116 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Lightbulb, CheckCircle, X } from 'lucide-react';
+import { RefreshCw, Lightbulb, CheckCircle, X, Leaf, Zap, Droplets, Fish, TreePine, Recycle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import './FactWidget.css';
-import mockFacts from '@/lib/game-data/random-facts.json';
 
 interface Fact {
+  id: number;
   fact: string;
   explanation: string;
   tip: string;
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
-export function FactWidget({ onClose }: { onClose?: () => void }) {
-  const [factData, setFactData] = useState<Fact | null>(null);
-  const [isFlipped, setIsFlipped] = useState(false);
+const CATEGORY_ICONS: Record<string, typeof Leaf> = {
+  waste: Recycle, ocean: Fish, energy: Zap, water: Droplets,
+  forests: TreePine, wildlife: Leaf, food: Leaf, fashion: Leaf,
+  transport: Leaf, pollution: Leaf, climate: Leaf, soil: Leaf,
+};
+const DIFFICULTY_COLOR: Record<string, string> = {
+  easy: '#22c55e', medium: '#f97316', hard: '#ef4444',
+};
 
-  const fetchFact = useCallback(() => {
+export function FactWidget({ onClose }: { onClose?: () => void }) {
+  const [fact, setFact] = useState<Fact | null>(null);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchFact = useCallback(async () => {
     setIsFlipped(false);
-    // Directly use the mock data
-    const randomFact = mockFacts[Math.floor(Math.random() * mockFacts.length)];
-    setFactData(randomFact);
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/eco-facts?random=true');
+      if (!res.ok) throw new Error();
+      const data: Fact = await res.json();
+      setFact(data);
+    } catch {
+      // fallback inline
+      setFact({ id: 0, fact: "Recycling one aluminum can saves enough energy to run a TV for three hours.", explanation: "Recycling aluminum uses only ~5% of the energy needed to produce new aluminum from raw bauxite ore.", tip: "Always recycle your aluminum cans.", category: "waste", difficulty: "easy" });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  useEffect(() => {
-    fetchFact();
-  }, [fetchFact]);
+  useEffect(() => { fetchFact(); }, [fetchFact]);
 
-  const handleRefresh = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    fetchFact();
-  };
-  
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Only flip if the click is not on a button
-    if (e.target === e.currentTarget || !(e.target as HTMLElement).closest('button')) {
-      if (factData) {
-        setIsFlipped(!isFlipped);
-      }
-    }
-  }
-
-  const renderButtons = () => (
-    <>
-      {onClose && (
-        <Button
-            variant="ghost"
-            size="icon"
-            className="fact-widget-close-btn"
-            onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-            }}
-            aria-label="Close Widget"
-        >
-            <X className="h-4 w-4" />
-        </Button>
-      )}
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="fact-widget-refresh-btn"
-        onClick={handleRefresh}
-        aria-label="Refresh Fact"
-      >
-        <RefreshCw className="h-5 w-5" />
-      </Button>
-    </>
-  );
+  const Icon = fact ? (CATEGORY_ICONS[fact.category] ?? Leaf) : Leaf;
 
   return (
     <div className="fact-widget-container">
-      <div 
+      <div
         className={cn("fact-widget-card", { 'is-flipped': isFlipped })}
-        onClick={handleCardClick}
+        onClick={e => { if (!(e.target as HTMLElement).closest('button')) setIsFlipped(f => !f); }}
       >
-        {/* Front Face of the Card */}
+        {/* Front */}
         <div className="fact-widget-face fact-widget-face--front">
-          {!factData ? (
-            <p className="font-body text-card-foreground">Loading a fresh fact...</p>
+          {fact && (
+            <div className="fw-category-row">
+              <span className="fw-cat-badge" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
+                <Icon className="h-3 w-3" />
+                {fact.category.toUpperCase()}
+              </span>
+              <span className="fw-difficulty" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
+                {fact.difficulty.toUpperCase()}
+              </span>
+            </div>
+          )}
+          {isLoading ? (
+            <p className="font-body text-card-foreground opacity-60">Fetching eco fact...</p>
           ) : (
-            <blockquote className="text-lg font-medium font-body italic text-card-foreground">
-              "{factData.fact}"
+            <blockquote className="text-base font-medium font-body italic text-card-foreground leading-snug">
+              "{fact?.fact}"
             </blockquote>
           )}
-          {renderButtons()}
+          <p className="fw-flip-hint">Tap card to reveal explanation →</p>
+          <div className="fw-buttons">
+            <Button variant="ghost" size="icon" className="fact-widget-refresh-btn" onClick={e => { e.stopPropagation(); fetchFact(); }} disabled={isLoading}>
+              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="icon" className="fact-widget-close-btn" onClick={e => { e.stopPropagation(); onClose(); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Back Face of the Card */}
+        {/* Back */}
         <div className="fact-widget-face fact-widget-face--back font-body">
-            {factData && (
-                <>
-                    <div>
-                        <h4><Lightbulb className="inline-block mr-2 h-4 w-4"/>Explanation</h4>
-                        <p className="text-card-foreground">{factData.explanation}</p>
-                    </div>
-                    <div>
-                        <h4><CheckCircle className="inline-block mr-2 h-4 w-4"/>Actionable Tip</h4>
-                        <p className="text-card-foreground">{factData.tip}</p>
-                    </div>
-                </>
+          {fact && (
+            <>
+              <div className="fw-back-section">
+                <h4 className="fw-back-heading"><Lightbulb className="inline-block mr-1.5 h-4 w-4" />Why It Matters</h4>
+                <p className="text-card-foreground text-sm leading-relaxed">{fact.explanation}</p>
+              </div>
+              <div className="fw-back-section">
+                <h4 className="fw-back-heading"><CheckCircle className="inline-block mr-1.5 h-4 w-4 text-green-400" />Your Action</h4>
+                <p className="text-card-foreground text-sm leading-relaxed">{fact.tip}</p>
+              </div>
+            </>
+          )}
+          <div className="fw-buttons">
+            <Button variant="ghost" size="icon" className="fact-widget-refresh-btn" onClick={e => { e.stopPropagation(); fetchFact(); }}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            {onClose && (
+              <Button variant="ghost" size="icon" className="fact-widget-close-btn" onClick={e => { e.stopPropagation(); onClose(); }}>
+                <X className="h-4 w-4" />
+              </Button>
             )}
-            {renderButtons()}
+          </div>
         </div>
       </div>
     </div>

@@ -34,6 +34,7 @@ import Draggable from 'react-draggable';
 import { WidgetDock } from '@/components/widgets/WidgetDock';
 import { DailyBriefingWidget } from '@/components/widgets/DailyBriefingWidget';
 import { PixelWeatherWidget } from '@/components/widgets/PixelWeatherWidget';
+import { EcoNewsWidget } from '@/components/widgets/EcoNewsWidget';
 import { DailyBriefingIcon } from '@/lib/user-data';
 import { CommsIcon, RankingsIcon, ThemesIcon } from '@/lib/user-data';
 import { AuthGuard } from '@/hooks/use-auth';
@@ -52,19 +53,20 @@ const themes = [
   { name: 'Abyssal Tide (Water)', id: 'the-abyssal-tide' },
 ];
 
-type WidgetType = 'fact' | 'briefing' | 'weather';
+type WidgetType = 'fact' | 'briefing' | 'weather' | 'news';
 
 const widgetComponents: Record<WidgetType, React.FC<any>> = {
   fact: FactWidget,
   briefing: DailyBriefingWidget,
   weather: PixelWeatherWidget,
+  news: EcoNewsWidget,
 };
 
 export default function DesktopHomePage() {
   const [time, setTime] = React.useState('');
   const [date, setDate] = React.useState('');
   const [isWidgetDockOpen, setIsWidgetDockOpen] = useState(false);
-  const [desktopWidgets, setDesktopWidgets] = useState<WidgetType[]>(['fact']);
+  const [desktopWidgets, setDesktopWidgets] = useState<WidgetType[]>(['fact', 'news']);
   const { user, logout } = useAuth();
   const router = useRouter();
   const { theme: activeTheme, setTheme } = useTheme();
@@ -159,9 +161,11 @@ export default function DesktopHomePage() {
   
   const DraggableWidget = ({ id, component: Component, onClose, defaultPosition }: { id: WidgetType, component: React.FC<any>, onClose: (id: string) => void, defaultPosition: {x: number, y: number} }) => {
     const nodeRef = useRef(null);
+    // Each widget has its own drag handle class (e.g. .handle for most, .enw-titlebar for news)
+    const handleSel = id === 'news' ? '.enw-titlebar' : '.handle';
     return (
-      <Draggable nodeRef={nodeRef} handle=".handle" bounds="parent" defaultPosition={defaultPosition} grid={[20, 20]}>
-        <div ref={nodeRef} className="handle absolute w-auto cursor-move">
+      <Draggable nodeRef={nodeRef} handle={handleSel} bounds="parent" defaultPosition={defaultPosition} grid={[10, 10]}>
+        <div ref={nodeRef} className="absolute" style={{ zIndex: 20 }}>
           <Component onClose={() => onClose(id)} theme={id === 'weather' ? 'forest' : undefined} />
         </div>
       </Draggable>
@@ -236,13 +240,16 @@ export default function DesktopHomePage() {
           
           {desktopWidgets.map((widgetId, index) => {
             const Component = widgetComponents[widgetId];
+            const defaultPos = widgetId === 'news'
+              ? { x: typeof window !== 'undefined' ? Math.max(window.innerWidth - 420, 400) : 700, y: 60 }
+              : { x: 200 + index * 280, y: 150 };
             return (
-              <DraggableWidget 
+              <DraggableWidget
                 key={widgetId}
                 id={widgetId}
                 component={Component}
                 onClose={() => toggleWidget(widgetId)}
-                defaultPosition={{ x: 200 + index * 300, y: 150 }}
+                defaultPosition={defaultPos}
               />
             );
           })}

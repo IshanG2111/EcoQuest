@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { Award, Flame, Star } from 'lucide-react';
 import { userProgress } from '@/lib/user-data';
-import { cn } from '@/lib/utils';
+import { cn, getAvatarUrl } from '@/lib/utils';
 import './profile-card.css';
 
 const DEFAULT_BEHIND_GRADIENT =
@@ -47,7 +47,7 @@ interface ProfileCardProps {
 }
 
 const ProfileCardComponent: React.FC<ProfileCardProps> = ({
-  avatarUrl = 'public/img/8d80ac310f8cc213371c3ea847a46860.jpg',
+  avatarUrl = getAvatarUrl('Javi'),
   iconUrl = '/tva-logo.svg',
   grainUrl,
   behindGradient,

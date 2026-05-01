@@ -67,17 +67,17 @@ export function Desktop({ children }: { children: React.ReactNode }) {
     "retro-window absolute",
     {
       'top-[10%] left-[15%] w-full max-w-4xl': windowState === 'open' && !isClosing,
-      'inset-0 w-full h-full max-w-full max-h-full rounded-none border-none': windowState === 'maximized',
+      'inset-0 w-full h-full max-w-full max-h-full rounded-none border-none flex flex-col': windowState === 'maximized',
       'animate-crt-open': !isClosing,
       'animate-crt-close': isClosing,
     }
   );
   
   const contentClasses = cn(
-    "window-content bg-card overflow-auto",
+    "window-content bg-card",
      {
-      'max-h-[70vh]': windowState === 'open',
-      'h-[calc(100vh-56px)] pb-20': windowState === 'maximized',
+      'max-h-[70vh] overflow-y-auto': windowState === 'open',
+      'flex-1 min-h-0 overflow-y-auto': windowState === 'maximized',
     }
   );
 

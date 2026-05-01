@@ -49,6 +49,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var scale = localStorage.getItem('ecoquest_font_scale') || '1.08';
+                  document.documentElement.style.setProperty('--ui-font-scale', scale);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={`font-body antialiased ${poppins.variable} ${vt323.variable} ${pressStart2P.variable} ${ibmPlexMono.variable} ${robotoCondensed.variable}`}>
         <SessionProvider>
           <AuthProvider>
