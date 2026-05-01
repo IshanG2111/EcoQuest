@@ -213,48 +213,6 @@ export default function CarbonQuestPage() {
   return (
     <Desktop>
       <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 p-6 pb-24 md:p-8 md:pb-28">
-        {phase === 'home' && (
-          <Card className="border-primary/30 bg-gradient-to-br from-card to-secondary/10">
-            <CardHeader>
-              <CardTitle className="text-4xl font-headline uppercase tracking-widest text-primary md:text-5xl">Carbon Quest</CardTitle>
-              <CardDescription className="max-w-2xl text-base md:text-lg">
-                Simulate urban lifestyle decisions, reduce emissions, and keep your district breathable.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg border border-primary/20 bg-background/40 p-4 text-base text-muted-foreground md:text-lg">
-                8 rapid rounds. 15 seconds each. Lower carbon cost means stronger city resilience and higher score.
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={() => setPhase('rules')} size="lg" className="font-headline text-base uppercase tracking-wide">
-                  <BookOpen className="mr-2 h-4 w-4" /> Mission Brief
-                </Button>
-                <Button variant="outline" onClick={startGame} size="lg" className="font-headline text-base uppercase tracking-wide">
-                  Begin Simulation
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {phase === 'rules' && (
-          <Card className="border-primary/30">
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl uppercase tracking-wide md:text-3xl">How Carbon Quest Works</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-base text-muted-foreground md:text-lg">
-              <p>1. Read each scenario and choose one action before the timer runs out.</p>
-              <p>2. Lower-carbon options improve city air quality and score multipliers.</p>
-              <p>3. High-carbon choices increase emissions, making recovery harder.</p>
-              <p>4. Final score converts directly to Eco Points through session tracking.</p>
-              <div className="flex flex-wrap gap-3 pt-2">
-                <Button onClick={startGame} size="lg" className="font-headline text-base uppercase tracking-wide">Launch</Button>
-                <Button variant="ghost" onClick={() => setPhase('home')} size="lg" className="text-base">Back</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {phase === 'playing' && currentRound && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
