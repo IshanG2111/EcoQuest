@@ -34,7 +34,6 @@ import Draggable from 'react-draggable';
 import { WidgetDock } from '@/components/widgets/WidgetDock';
 import { DailyBriefingWidget } from '@/components/widgets/DailyBriefingWidget';
 import { PixelWeatherWidget } from '@/components/widgets/PixelWeatherWidget';
-import { EcoTilesCalendarWidget } from '@/components/widgets/EcoTilesCalendarWidget';
 import { DailyBriefingIcon } from '@/lib/user-data';
 import { CommsIcon, RankingsIcon, ThemesIcon } from '@/lib/user-data';
 import { AuthGuard } from '@/hooks/use-auth';
@@ -53,13 +52,12 @@ const themes = [
   { name: 'Abyssal Tide (Water)', id: 'the-abyssal-tide' },
 ];
 
-type WidgetType = 'fact' | 'briefing' | 'weather' | 'ecoTiles';
+type WidgetType = 'fact' | 'briefing' | 'weather';
 
 const widgetComponents: Record<WidgetType, React.FC<any>> = {
   fact: FactWidget,
   briefing: DailyBriefingWidget,
   weather: PixelWeatherWidget,
-  ecoTiles: EcoTilesCalendarWidget,
 };
 
 export default function DesktopHomePage() {
