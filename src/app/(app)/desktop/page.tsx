@@ -162,9 +162,9 @@ export default function DesktopHomePage() {
   const DraggableWidget = ({ id, component: Component, onClose, defaultPosition }: { id: WidgetType, component: React.FC<any>, onClose: (id: string) => void, defaultPosition: {x: number, y: number} }) => {
     const nodeRef = useRef(null);
     // Each widget has its own drag handle class (e.g. .handle for most, .enw-titlebar for news)
-    const handleSel = id === 'news' ? '.enw-titlebar' : '.handle';
+    const handleSel = '.handle';
     return (
-      <Draggable nodeRef={nodeRef} handle={handleSel} bounds="parent" defaultPosition={defaultPosition} grid={[10, 10]}>
+      <Draggable nodeRef={nodeRef} handle={handleSel} bounds="parent" defaultPosition={defaultPosition}>
         <div ref={nodeRef} className="absolute" style={{ zIndex: 20 }}>
           <Component onClose={() => onClose(id)} theme={id === 'weather' ? 'forest' : undefined} />
         </div>

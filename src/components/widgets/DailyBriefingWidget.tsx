@@ -1,9 +1,9 @@
 'use client';
 import { userProgress } from "@/lib/user-data";
-import { Award, Flame, Star } from "lucide-react";
+import { Award, Flame, Star, X } from "lucide-react";
 import './DailyBriefingWidget.css';
 
-export function DailyBriefingWidget() {
+export function DailyBriefingWidget({ onClose }: { onClose?: () => void }) {
     const stats = [
         {
           title: 'Eco Points',
@@ -27,6 +27,14 @@ export function DailyBriefingWidget() {
 
     return (
         <div className="daily-briefing-widget">
+            <div className="dbw-header handle flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+                <span className="text-[10px] font-headline tracking-widest text-primary uppercase">DAILY_BRIEFING.SYS</span>
+                {onClose && (
+                    <button onClick={onClose} className="hover:text-primary transition-colors">
+                        <X size={14} />
+                    </button>
+                )}
+            </div>
             <ul className="space-y-3">
                 {stats.map(stat => (
                     <li key={stat.title} className="flex items-center justify-between">

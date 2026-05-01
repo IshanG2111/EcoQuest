@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Lightbulb, CheckCircle, X, Leaf, Zap, Droplets, Fish, TreePine, Recycle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import './FactWidget.css';
 
 interface Fact {
@@ -27,7 +28,8 @@ const DIFFICULTY_COLOR: Record<string, string> = {
 export function FactWidget({ onClose }: { onClose?: () => void }) {
   const [fact, setFact] = useState<Fact | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   const fetchFact = useCallback(async () => {
     setIsFlipped(false);
@@ -45,36 +47,51 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
     }
   }, []);
 
-  useEffect(() => { fetchFact(); }, [fetchFact]);
+  useEffect(() => { 
+    fetchFact(); 
+    setIsMounted(true);
+  }, [fetchFact]);
 
   const Icon = fact ? (CATEGORY_ICONS[fact.category] ?? Leaf) : Leaf;
 
   return (
-    <div className="fact-widget-container">
+    <div className={cn("fact-widget-container", isMounted ? "animate-in fade-in zoom-in duration-300" : "opacity-0")}>
       <div
         className={cn("fact-widget-card", { 'is-flipped': isFlipped })}
         onClick={e => { if (!(e.target as HTMLElement).closest('button')) setIsFlipped(f => !f); }}
       >
         {/* Front */}
-        <div className="fact-widget-face fact-widget-face--front">
-          {fact && (
-            <div className="fw-category-row">
-              <span className="fw-cat-badge" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
-                <Icon className="h-3 w-3" />
-                {fact.category.toUpperCase()}
-              </span>
-              <span className="fw-difficulty" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
-                {fact.difficulty.toUpperCase()}
-              </span>
-            </div>
-          )}
-          {isLoading ? (
-            <p className="font-body text-card-foreground opacity-60">Fetching eco fact...</p>
-          ) : (
-            <blockquote className="text-base font-medium font-body italic text-card-foreground leading-snug">
-              "{fact?.fact}"
-            </blockquote>
-          )}
+        <div className="fact-widget-face fact-widget-face--front handle">
+          <div className="fw-category-row">
+            {isLoading ? (
+              <Skeleton className="h-4 w-24 bg-white/10" />
+            ) : fact && (
+              <>
+                <span className="fw-cat-badge" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
+                  <Icon className="h-3 w-3" />
+                  {fact.category.toUpperCase()}
+                </span>
+                <span className="fw-difficulty" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
+                  {fact.difficulty.toUpperCase()}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="flex-1 flex flex-col justify-center">
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full bg-white/10" />
+                <Skeleton className="h-4 w-full bg-white/10" />
+                <Skeleton className="h-4 w-3/4 bg-white/10" />
+              </div>
+            ) : (
+              <blockquote className="text-base font-medium font-body italic text-card-foreground leading-snug">
+                "{fact?.fact}"
+              </blockquote>
+            )}
+          </div>
+
           <p className="fw-flip-hint">Tap card to reveal explanation →</p>
           <div className="fw-buttons">
             <Button variant="ghost" size="icon" className="fact-widget-refresh-btn" onClick={e => { e.stopPropagation(); fetchFact(); }} disabled={isLoading}>
@@ -89,7 +106,7 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
         </div>
 
         {/* Back */}
-        <div className="fact-widget-face fact-widget-face--back font-body">
+        <div className="fact-widget-face fact-widget-face--back handle font-body">
           {fact && (
             <>
               <div className="fw-back-section">

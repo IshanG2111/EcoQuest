@@ -15,6 +15,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
+import { Skeleton } from '@/components/ui/skeleton';
+
 // Eco Points progress percentage
 function xpPercent(points: number) {
   const level = Math.floor(points / 500) + 1;
@@ -90,7 +92,7 @@ export default function DashboardPage() {
 
   return (
     <Desktop>
-      <div className="dash-root">
+      <div className="dash-root animate-in fade-in duration-500">
         {/* ── LEFT PANEL ── */}
         <aside className="dash-sidebar">
           {/* name + title */}
@@ -150,7 +152,11 @@ export default function DashboardPage() {
                 <div className="dash-xp-bar" style={{ width: `${pct}%` }} />
               </div>
               <div className="dash-xp-label">
-                {progressLoading ? '…' : `${pts.toLocaleString()} / ${levelMax.toLocaleString()} XP`}
+                {progressLoading ? (
+                  <Skeleton className="h-3 w-20 bg-primary/20" />
+                ) : (
+                  `${pts.toLocaleString()} / ${levelMax.toLocaleString()} XP`
+                )}
               </div>
             </div>
           </div>
@@ -173,7 +179,7 @@ export default function DashboardPage() {
               </button>
               <div className="dash-points-chip">
                 <Leaf className="h-4 w-4 text-green-400" />
-                <span>{progressLoading ? '…' : pts.toLocaleString()}</span>
+                <span>{progressLoading ? <Skeleton className="h-4 w-12 bg-white/10" /> : pts.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -206,7 +212,7 @@ export default function DashboardPage() {
               </div>
               <div className="dash-stat-label">ECO POINTS</div>
               <div className="dash-stat-value">
-                {progressLoading ? <Loader2 className="animate-spin h-6 w-6" /> : pts.toLocaleString()}
+                {progressLoading ? <Skeleton className="h-8 w-24 bg-white/10" /> : pts.toLocaleString()}
               </div>
               <div className="dash-stat-sub">
                 <TrendingUp className="h-3 w-3" />
@@ -221,7 +227,7 @@ export default function DashboardPage() {
               </div>
               <div className="dash-stat-label">DAILY STREAK</div>
               <div className="dash-stat-value">
-                {progressLoading ? <Loader2 className="animate-spin h-6 w-6" /> : (
+                {progressLoading ? <Skeleton className="h-8 w-24 bg-white/10" /> : (
                   <><span>{streak}</span><span className="dash-stat-unit"> Day{streak !== 1 ? 's' : ''}</span></>
                 )}
               </div>
@@ -239,7 +245,7 @@ export default function DashboardPage() {
               </div>
               <div className="dash-stat-label">BADGES EARNED</div>
               <div className="dash-stat-value">
-                {progressLoading ? <Loader2 className="animate-spin h-6 w-6" /> : badges.length}
+                {progressLoading ? <Skeleton className="h-8 w-16 bg-white/10" /> : badges.length}
               </div>
               <Link href="/badges" className="dash-stat-sub dash-stat-link">
                 View all badges <ChevronRight className="h-3 w-3" />
@@ -261,8 +267,13 @@ export default function DashboardPage() {
               <p className="dash-panel-desc">A collection of your achievements so far. Keep it up!</p>
 
               {progressLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground py-4">
-                  <Loader2 className="animate-spin w-4 h-4" /> Loading badges...
+                <div className="grid grid-cols-3 gap-3 py-4">
+                   {[...Array(3)].map((_, i) => (
+                     <div key={i} className="flex flex-col items-center gap-2">
+                        <Skeleton className="h-12 w-12 rounded-full bg-white/5" />
+                        <Skeleton className="h-3 w-16 bg-white/5" />
+                     </div>
+                   ))}
                 </div>
               ) : badges.length === 0 ? (
                 <div className="dash-empty-badges">

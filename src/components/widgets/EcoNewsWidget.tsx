@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, RefreshCw, ExternalLink, Zap, Leaf, Flame, Droplets, Wind, Globe, Recycle, Fish, AlertTriangle, Loader2, GripVertical } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import './EcoNewsWidget.css';
 
 interface NewsArticle {
@@ -86,6 +88,7 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
   const [filter, setFilter] = useState<string>('all');
   const [width, setWidth] = useState(360);
   const [height, setHeight] = useState(520);
+  const [isMounted, setIsMounted] = useState(false);
   const resizing = useRef<{ dir: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
 
   const applyArticles = useCallback((data: NewsArticle[], fetchedAt: number) => {
@@ -129,7 +132,10 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
     }
   }, [applyArticles]);
 
-  useEffect(() => { fetchNews(); }, [fetchNews]);
+  useEffect(() => { 
+    fetchNews(); 
+    setIsMounted(true);
+  }, [fetchNews]);
 
   // Auto-refresh every 4 hours in the background
   useEffect(() => {
@@ -160,7 +166,7 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
   const filtered = filter === 'all' ? articles : articles.filter(a => a.category === filter);
 
   return (
-    <div className="enw-root" style={{ width, height }}>
+    <div className={cn("enw-root", isMounted ? "animate-in fade-in zoom-in duration-300" : "opacity-0")} style={{ width, height }}>
       {/* Title bar */}
       <div className="enw-titlebar handle">
         <div className="enw-titlebar-left">
@@ -174,7 +180,7 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
         </div>
         <div className="enw-titlebar-right">
           <button className="enw-icon-btn" onClick={() => fetchNews(true)} title="Force refresh (bypass cache)" disabled={loading}>
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'enw-spin' : ''}`} />
+            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
           </button>
           {onClose && (
             <button className="enw-icon-btn enw-close-btn" onClick={onClose} title="Close">
@@ -206,9 +212,17 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
       {/* Content */}
       <div className="enw-content">
         {loading && (
-          <div className="enw-state">
-            <Loader2 className="h-6 w-6 enw-spin" />
-            <span>FETCHING_NEWS...</span>
+          <div className="flex flex-col gap-4 p-4">
+             {[...Array(3)].map((_, i) => (
+               <div key={i} className="flex gap-4">
+                  <Skeleton className="h-20 w-20 rounded-md bg-white/5" />
+                  <div className="flex-1 space-y-2">
+                     <Skeleton className="h-3 w-1/4 bg-white/5" />
+                     <Skeleton className="h-4 w-full bg-white/5" />
+                     <Skeleton className="h-3 w-3/4 bg-white/5" />
+                  </div>
+               </div>
+             ))}
           </div>
         )}
         {!loading && error && (

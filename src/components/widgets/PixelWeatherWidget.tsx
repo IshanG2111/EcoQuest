@@ -66,7 +66,7 @@ export function PixelWeatherWidget({ theme = 'forest', onClose }: PixelWeatherWi
         <div className="scene-fg"></div>
       </div>
       
-      <div className="overlay">
+      <div className="overlay handle">
         <div className="topline">
           <Icon className="w-6 h-6" />
           <div className="temp">{Math.round(weather.temp)}°</div>
