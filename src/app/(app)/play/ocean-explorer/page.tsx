@@ -179,40 +179,6 @@ export default function OceanExplorerPage() {
   return (
     <Desktop>
       <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 p-6">
-        {phase === 'home' && (
-          <Card className="border-primary/30 bg-gradient-to-br from-card to-cyan-950/20">
-            <CardHeader>
-              <CardTitle className="text-4xl font-headline uppercase tracking-widest text-primary">Reef Rescue</CardTitle>
-              <CardDescription>Rebuild coral health while managing heat stress and collapse risk.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="rounded-lg border border-primary/20 bg-background/40 p-4 text-sm text-muted-foreground">
-                Restore bleached coral, spend points wisely, and prevent reef collapse before time runs out.
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setPhase('rules')}>Mission Rules</Button>
-                <Button variant="outline" onClick={startGame}>Dive In</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {phase === 'rules' && (
-          <Card className="border-primary/30">
-            <CardHeader><CardTitle className="font-headline uppercase tracking-wide">Reef Operations</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>1. Heat stress continuously bleaches healthy coral.</p>
-              <p>2. Bleached coral can become dead if untreated.</p>
-              <p>3. Use tools based on severity and point cost.</p>
-              <p>4. Health and score improve by restoring cells to healthy state.</p>
-              <div className="flex gap-3 pt-2">
-                <Button onClick={startGame}>Start Dive</Button>
-                <Button variant="ghost" onClick={() => setPhase('home')}>Back</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {phase === 'playing' && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

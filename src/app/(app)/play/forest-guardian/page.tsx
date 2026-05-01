@@ -318,45 +318,7 @@ export default function ForestGuardianPage() {
 
   return (
     <Desktop>
-      <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 p-5 pb-24 md:p-8 md:pb-28">
-        {phase === 'home' && (
-          <Card className="border-primary/30 bg-gradient-to-br from-card via-card to-emerald-900/20">
-            <CardHeader>
-              <CardTitle className="text-4xl font-headline uppercase tracking-wider text-primary md:text-5xl">Forest Defender</CardTitle>
-              <CardDescription className="text-base md:text-lg">
-                Protect a living biome under pressure from logging, wildfire, invasive pests, and development.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="rounded-lg border border-primary/25 bg-background/50 p-5 text-base text-muted-foreground md:text-lg">
-                Defend threatened trees, extinguish wildfire cells, use water interventions, and plant new saplings to stabilize forest health.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={() => setPhase('rules')} size="lg" className="text-base">Read Rules</Button>
-                <Button variant="outline" onClick={startGame} size="lg" className="text-base">Enter Forest</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {phase === 'rules' && (
-          <Card className="border-primary/30">
-            <CardHeader>
-              <CardTitle className="font-headline text-2xl uppercase tracking-wide md:text-3xl">Mission Rules</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-base text-muted-foreground md:text-lg">
-              <p>1. A new threat wave appears every few seconds and marks multiple healthy trees.</p>
-              <p>2. Threatened and burning trees collapse into felled land if you do not act before the timer expires.</p>
-              <p>3. Use Defend for general threats, Water for stressed trees, Extinguish for fire, and Plant to restore felled plots.</p>
-              <p>4. Tools consume seeds except Defend. Seeds regenerate over time, so budget them carefully.</p>
-              <div className="flex flex-wrap gap-3 pt-3">
-                <Button onClick={startGame} size="lg" className="text-base">Start Mission</Button>
-                <Button variant="ghost" onClick={() => setPhase('home')} size="lg" className="text-base">Back</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+      <div className="mx-auto flex h-full w-full max-6xl flex-col gap-6 p-5 pb-24 md:p-8 md:pb-28">
         {phase === 'playing' && (
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">

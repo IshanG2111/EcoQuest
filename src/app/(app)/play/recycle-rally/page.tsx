@@ -161,40 +161,6 @@ export default function RecycleRallyPage() {
   return (
     <Desktop>
       <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 p-6">
-        {phase === 'home' && (
-          <Card className="border-primary/30 bg-gradient-to-br from-card to-lime-950/20">
-            <CardHeader>
-              <CardTitle className="text-4xl font-headline uppercase tracking-widest text-primary">Waste Wizard</CardTitle>
-              <CardDescription>Fast recycling triage under rising processing pressure.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="rounded-lg border border-primary/20 bg-background/40 p-4 text-sm text-muted-foreground">
-                Identify the correct bin for each item. Speed increases every five successful sorts.
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setPhase('rules')}>Rules</Button>
-                <Button variant="outline" onClick={startGame}>Start Shift</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {phase === 'rules' && (
-          <Card className="border-primary/30">
-            <CardHeader><CardTitle className="font-headline uppercase tracking-wide">Sorting Protocol</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>1. One waste item appears at a time in the sorter lane.</p>
-              <p>2. Select a bin before item timeout to avoid a life penalty.</p>
-              <p>3. Wrong bin choices also cost one life.</p>
-              <p>4. Every 5 sorted items increases processing speed.</p>
-              <div className="flex gap-3 pt-2">
-                <Button onClick={startGame}>Begin Shift</Button>
-                <Button variant="ghost" onClick={() => setPhase('home')}>Back</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {phase === 'playing' && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

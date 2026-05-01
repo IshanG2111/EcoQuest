@@ -202,40 +202,6 @@ export default function MigrationMapPage() {
   return (
     <Desktop>
       <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 p-6">
-        {phase === 'home' && (
-          <Card className="border-primary/30 bg-gradient-to-br from-card to-orange-950/20">
-            <CardHeader>
-              <CardTitle className="text-4xl font-headline uppercase tracking-widest text-primary">Migration Map</CardTitle>
-              <CardDescription>Trace climate-sensitive wildlife routes across global habitats.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="rounded-lg border border-primary/20 bg-background/40 p-4 text-sm text-muted-foreground">
-                Answer 8 field questions using species cues. Speed and accuracy determine expedition score.
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setPhase('rules')}>Read Field Notes</Button>
-                <Button variant="outline" onClick={startGame}>Begin Expedition</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {phase === 'rules' && (
-          <Card className="border-primary/30">
-            <CardHeader><CardTitle className="font-headline uppercase tracking-wide">Field Protocol</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>1. Each round shows an animal profile and migration cue.</p>
-              <p>2. Choose the most accurate destination or migration driver.</p>
-              <p>3. Faster correct answers yield higher score.</p>
-              <p>4. Final report summarizes route accuracy and eco-impact literacy.</p>
-              <div className="flex gap-3 pt-2">
-                <Button onClick={startGame}>Deploy</Button>
-                <Button variant="ghost" onClick={() => setPhase('home')}>Back</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {phase === 'playing' && question && (
           <>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
