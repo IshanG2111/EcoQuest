@@ -312,26 +312,28 @@ html {
 
   @keyframes crt-open {
     0% {
-      transform: scale(1, 0.005);
+      transform: scale(1, 0.001);
+      filter: brightness(5) contrast(2);
       opacity: 0;
-      filter: brightness(3);
     }
-    15% {
+    10% {
       transform: scale(1, 0.005);
+      filter: brightness(5) contrast(2);
       opacity: 1;
-      filter: brightness(3);
     }
-    30% {
-      transform: scale(1.05, 1.05);
+    40% {
+      transform: scale(1, 0.005);
+      filter: brightness(3) contrast(1.5);
       opacity: 1;
-      filter: brightness(1);
     }
-    35% {
-      transform: scale(1, 1);
-      opacity: 0.9;
+    70% {
+      transform: scale(1, 1.02);
+      filter: brightness(1.5) contrast(1.2);
+      opacity: 1;
     }
     100% {
       transform: scale(1, 1);
+      filter: brightness(1) contrast(1);
       opacity: 1;
     }
   }
@@ -339,20 +341,27 @@ html {
   @keyframes crt-close {
     0% {
       transform: scale(1, 1);
+      filter: brightness(1) contrast(1);
       opacity: 1;
     }
-    50% {
-      transform: scale(1, 0.005);
+    30% {
+      transform: scale(1, 1.02);
+      filter: brightness(1.5) contrast(1.2);
       opacity: 1;
-      filter: brightness(1);
     }
-    80% {
+    60% {
       transform: scale(1, 0.005);
+      filter: brightness(4) contrast(1.5);
       opacity: 1;
-      filter: brightness(3);
+    }
+    90% {
+      transform: scale(0.005, 0.005);
+      filter: brightness(6) contrast(2);
+      opacity: 1;
     }
     100% {
       transform: scale(0, 0);
+      filter: brightness(10) contrast(3);
       opacity: 0;
     }
   }
@@ -362,28 +371,11 @@ html {
   }
   
   .animate-crt-open {
-    animation: crt-open 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    animation: crt-open 0.35s cubic-bezier(0.19, 1, 0.22, 1) forwards;
   }
 
   .animate-crt-close {
-    animation: crt-close 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
-
-  @keyframes loader-slide {
-    0% {
-      transform: translateX(-130%);
-    }
-    50% {
-      transform: translateX(90%);
-    }
-    100% {
-      transform: translateX(260%);
-    }
-  }
-
-  @keyframes pixel-blink {
-    0%, 100% { opacity: 0.1; }
-    50% { opacity: 1; }
+    animation: crt-close 0.3s cubic-bezier(0.19, 1, 0.22, 1) forwards;
   }
 }
 

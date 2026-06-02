@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { AppLoader } from '@/components/ui/app-loader';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -19,10 +18,5 @@ export default function HomePage() {
     }
   }, [user, loading, router]);
 
-  return (
-    <AppLoader
-      title="Loading EcoQuest"
-      subtitle="Preparing your learning world and checking your session..."
-    />
-  );
+  return null;
 }

@@ -10,7 +10,6 @@ export function Desktop({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [windowState, setWindowState] = useState<'open' | 'minimized' | 'maximized'>('maximized');
-  const [isClosing, setIsClosing] = useState(false);
   const [isBrowser, setIsBrowser] = useState(false);
   const nodeRef = useRef(null);
 
@@ -21,7 +20,6 @@ export function Desktop({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Reset closed state when navigating to a new "app"
     if (pathname !== '/') {
-        setIsClosing(false);
         setWindowState('maximized');
     }
   }, [pathname]);
@@ -36,19 +34,12 @@ export function Desktop({ children }: { children: React.ReactNode }) {
   }
   
   const handleClose = () => {
-    setIsClosing(true);
-    // Wait for animation to finish before routing
-    setTimeout(() => {
-        router.push('/');
-    }, 500);
+    router.push('/');
   }
 
   const handleMinimize = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-        setWindowState('minimized');
-        router.push('/');
-    }, 500);
+    setWindowState('minimized');
+    router.push('/');
   }
 
   const toggleMaximize = () => {
@@ -66,10 +57,8 @@ export function Desktop({ children }: { children: React.ReactNode }) {
   const windowClasses = cn(
     "retro-window absolute pointer-events-auto",
     {
-      'top-[10%] left-[15%] w-full max-w-4xl': windowState === 'open' && !isClosing,
+      'top-[10%] left-[15%] w-full max-w-4xl': windowState === 'open',
       'inset-0 w-full h-full max-w-full max-h-full rounded-none border-none flex flex-col': windowState === 'maximized',
-      'animate-crt-open': !isClosing,
-      'animate-crt-close': isClosing,
     }
   );
   

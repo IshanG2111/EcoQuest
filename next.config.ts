@@ -8,5 +8,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  outputFileTracingRoot: __dirname,
 };
 export default nextConfig;

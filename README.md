@@ -22,6 +22,7 @@ EcoQuest hosts its entire learning interface inside a custom-themed retro operat
 *   **Draggable & Layered Windows**: Uses `React Draggable` to support fully movable window panels (Games, Dashboard, Quizzes, Settings).
 *   **CRT Aesthetics**: Styled with CRT monitor scanner lines, phosphor glow effects, custom screen flickers, and vintage retro-bezel frames.
 *   **Z-Index Focus**: Focuses active windows dynamically on-click, moving them to the front layer.
+*   **Instant Navigation**: All screen transitions and app windows load instantly without distracting loading screens or opening/closing animations, providing an extremely fast, responsive, and glitch-free user interface.
 
 ### 2. Multi-Theme Engine
 Players can toggle themes from the taskbar, modifying CSS custom variables instantly:
@@ -89,6 +90,7 @@ EcoQuest includes six interactive, data-driven games configured under `src/lib/g
 | **Forest Defender** | `/play/forest-guardian` | REST API / local event model. Plant trees, clean streams, and clear weeds. Defend against random events like wildfires and pests. | Deforestation, ecosystem restoration, and habitat protection. |
 | **Waste Wizard** | `/play/recycle-rally` | Sort waste items into Recycle, Compost, Landfill, or E-Waste in 30s. Streak multipliers reward consecutive correct answers. | Waste segregation, circular economy, and recycling rules. |
 | **Migration Map** | `/play/migration-map` | World map expedition tracing wildlife migration routes. Answer questions about migration cues under a 14s timer. | Climate-driven animal migration, habitat fragmentation, and biomes. |
+| **Physical Archive** | `/play/physical-archive` | 3D interactive cartridge shelf built with React Three Fiber and Framer Motion. Select cartridges with fly-to-front animations. | Immersive game selection hub with retro physical media aesthetics. |
 
 *Session Tracker Hook (`useGameSessionTracker`)*: Automatically tracks game session time, player scores, and custom metadata, syncs it to MongoDB, and updates student profiles.
 
@@ -137,7 +139,7 @@ EcoQuest is built using a modern, scalable web stack optimized for rapid builds 
 ## 🔌 Offline / Standalone HTML Games Spec
 
 For offline environments or simple iframe wrappers, the `/games` directory contains standalone, lightweight single-file HTML implementations:
-*   **Standalones**: `carbon-crunch.html`, `forest-defender.html`, `migration-map.html`, `reef-rescue.html`, `waste-wizard.html`.
+*   **Standalones**: `carbon-crunch.html`, `forest-defender.html`, `migration-map.html`, `physical-archive.html`, `reef-rescue.html`, `waste-wizard.html`.
 *   **Specs**: Zero-dependency bundles under 500KB. Playable with mouse/touch only. Uses Web Audio API for synthetic retro SFX, Google Fonts for styling, and includes start/play/end screens with actionable green tips.
 
 ---
