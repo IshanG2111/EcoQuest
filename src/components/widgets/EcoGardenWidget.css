@@ -1,0 +1,87 @@
+.eco-garden-widget {
+  width: 280px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 4px 4px 0px 0px hsl(var(--secondary));
+  image-rendering: pixelated;
+  display: flex;
+  flex-direction: column;
+}
+
+.egw-header {
+  font-family: var(--font-headline), monospace;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.egw-display-box {
+  background-size: 16px 16px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  position: relative;
+}
+
+.withered-bg {
+  background-color: rgba(63, 40, 40, 0.3) !important;
+}
+
+.plant-graphic {
+  filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.6));
+}
+
+.sparkles-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(16, 185, 129, 0.4);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  animation: flash 1s ease-in-out infinite;
+  z-index: 10;
+  border-radius: 4px;
+}
+
+.watering-drops {
+  position: absolute;
+  top: 10px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  animation: rainfall 1s linear infinite;
+  z-index: 5;
+  font-size: 14px;
+}
+
+.fertilizer-sparks {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  animation: float-up 1s ease-out infinite;
+  z-index: 5;
+  font-size: 12px;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes rainfall {
+  0% { transform: translateY(-20px); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(80px); opacity: 0; }
+}
+
+@keyframes float-up {
+  0% { transform: translateY(40px); opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
+}

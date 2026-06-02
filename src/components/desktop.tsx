@@ -64,7 +64,7 @@ export function Desktop({ children }: { children: React.ReactNode }) {
   }
 
   const windowClasses = cn(
-    "retro-window absolute",
+    "retro-window absolute pointer-events-auto",
     {
       'top-[10%] left-[15%] w-full max-w-4xl': windowState === 'open' && !isClosing,
       'inset-0 w-full h-full max-w-full max-h-full rounded-none border-none flex flex-col': windowState === 'maximized',

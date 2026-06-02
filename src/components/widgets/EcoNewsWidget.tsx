@@ -173,7 +173,7 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
           <span className="enw-title-dot enw-dot-red" />
           <span className="enw-title-dot enw-dot-yellow" />
           <span className="enw-title-dot enw-dot-green" />
-          <span className="enw-title-text">ECO_NEWS.RSS</span>
+          <span className="enw-title-text font-body text-sm tracking-wider">ECO_NEWS.RSS</span>
           {cacheAge && !loading && (
             <span className="enw-cache-age">· {cacheAge}</span>
           )}
@@ -198,7 +198,7 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
           return (
             <button
               key={cat}
-              className={`enw-filter-btn ${filter === cat ? 'active' : ''}`}
+              className={`enw-filter-btn font-code text-[10px] ${filter === cat ? 'active' : ''}`}
               onClick={() => setFilter(cat)}
               style={filter === cat && meta ? { borderColor: meta.color, color: meta.color } : {}}
             >
@@ -255,20 +255,20 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
               )}
               <div className="enw-article-body">
                 <div className="enw-article-meta">
-                  <span className="enw-cat-badge" style={{ color: meta.color, borderColor: `${meta.color}40` }}>
+                  <span className="enw-cat-badge font-code animate-none" style={{ color: meta.color, borderColor: `${meta.color}40` }}>
                     <Icon className="h-2.5 w-2.5" />
                     {meta.label}
                   </span>
-                  <span className="enw-source">{article.source}</span>
-                  <span className="enw-time">{timeAgo(article.publishedAt)}</span>
+                  <span className="enw-source font-code">{article.source}</span>
+                  <span className="enw-time font-code">{timeAgo(article.publishedAt)}</span>
                 </div>
-                <p className="enw-article-title">{article.title}</p>
+                <p className="enw-article-title font-code text-xs font-bold leading-snug">{article.title}</p>
                 {article.description && (
-                  <p className="enw-article-desc">{article.description}</p>
+                  <p className="enw-article-desc font-code text-[11px] leading-relaxed text-muted-foreground">{article.description}</p>
                 )}
                 <div className="enw-article-footer">
                   <ImpactBar score={article.impactScore} sentiment={article.sentiment} />
-                  <span className="enw-impact-label">IMPACT: {article.impactScore}</span>
+                  <span className="enw-impact-label font-code">IMPACT: {article.impactScore}</span>
                   <ExternalLink className="h-3 w-3 enw-ext-icon" />
                 </div>
               </div>

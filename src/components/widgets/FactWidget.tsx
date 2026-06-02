@@ -61,17 +61,21 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
         onClick={e => { if (!(e.target as HTMLElement).closest('button')) setIsFlipped(f => !f); }}
       >
         {/* Front */}
-        <div className="fact-widget-face fact-widget-face--front handle">
+        <div className="fact-widget-face fact-widget-face--front">
+          <div className="w-full flex items-center justify-between border-b border-primary/20 pb-1 mb-2 handle cursor-move text-[9px] font-mono text-muted-foreground">
+            <span>ECO_FACT.SYS</span>
+            <span className="opacity-40">:: DRAG ::</span>
+          </div>
           <div className="fw-category-row">
             {isLoading ? (
               <Skeleton className="h-4 w-24 bg-white/10" />
             ) : fact && (
               <>
-                <span className="fw-cat-badge" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
+                <span className="fw-cat-badge font-code" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
                   <Icon className="h-3 w-3" />
                   {fact.category.toUpperCase()}
                 </span>
-                <span className="fw-difficulty" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
+                <span className="fw-difficulty font-code" style={{ color: DIFFICULTY_COLOR[fact.difficulty] }}>
                   {fact.difficulty.toUpperCase()}
                 </span>
               </>
@@ -86,13 +90,13 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
                 <Skeleton className="h-4 w-3/4 bg-white/10" />
               </div>
             ) : (
-              <blockquote className="text-base font-medium font-body italic text-card-foreground leading-snug">
+              <blockquote className="text-sm font-code font-bold text-card-foreground leading-snug">
                 "{fact?.fact}"
               </blockquote>
             )}
           </div>
 
-          <p className="fw-flip-hint">Tap card to reveal explanation →</p>
+          <p className="fw-flip-hint font-code">Tap card to reveal explanation →</p>
           <div className="fw-buttons">
             <Button variant="ghost" size="icon" className="fact-widget-refresh-btn" onClick={e => { e.stopPropagation(); fetchFact(); }} disabled={isLoading}>
               <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
@@ -106,16 +110,20 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
         </div>
 
         {/* Back */}
-        <div className="fact-widget-face fact-widget-face--back handle font-body">
+        <div className="fact-widget-face fact-widget-face--back font-body">
+          <div className="w-full flex items-center justify-between border-b border-primary/20 pb-1 mb-2 handle cursor-move text-[9px] font-mono text-muted-foreground">
+            <span>ECO_FACT.SYS</span>
+            <span className="opacity-40">:: DRAG ::</span>
+          </div>
           {fact && (
             <>
               <div className="fw-back-section">
-                <h4 className="fw-back-heading"><Lightbulb className="inline-block mr-1.5 h-4 w-4" />Why It Matters</h4>
-                <p className="text-card-foreground text-sm leading-relaxed">{fact.explanation}</p>
+                <h4 className="fw-back-heading font-body text-sm"><Lightbulb className="inline-block mr-1.5 h-4 w-4" />Why It Matters</h4>
+                <p className="text-card-foreground text-xs leading-relaxed font-code">{fact.explanation}</p>
               </div>
               <div className="fw-back-section">
-                <h4 className="fw-back-heading"><CheckCircle className="inline-block mr-1.5 h-4 w-4 text-green-400" />Your Action</h4>
-                <p className="text-card-foreground text-sm leading-relaxed">{fact.tip}</p>
+                <h4 className="fw-back-heading font-body text-sm"><CheckCircle className="inline-block mr-1.5 h-4 w-4 text-green-400" />Your Action</h4>
+                <p className="text-card-foreground text-xs leading-relaxed font-code">{fact.tip}</p>
               </div>
             </>
           )}

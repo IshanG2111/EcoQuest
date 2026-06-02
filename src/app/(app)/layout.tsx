@@ -1,12 +1,16 @@
 import React from 'react';
 import { AuthGuard } from '@/hooks/use-auth';
+import { DesktopProvider } from '@/components/desktop-context';
+import { DesktopLayout } from '@/components/desktop-layout';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="h-[calc(100vh-40px)] w-full relative">
+      <DesktopProvider>
+        <DesktopLayout>
           {children}
-      </div>
+        </DesktopLayout>
+      </DesktopProvider>
     </AuthGuard>
   );
 }

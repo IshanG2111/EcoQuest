@@ -1,4 +1,4 @@
-import { Building2, Anchor, Mountain, Trees, Recycle, Map as MapIcon } from 'lucide-react';
+import { Building2, Anchor, Mountain, Trees, Recycle, Map as MapIcon, Database } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface Game {
@@ -84,5 +84,17 @@ export const games: Game[] = [
     icon: MapIcon,
     gameLink: '/play/migration-map',
     htmlPath: '/games/migration-map.html'
+  },
+  {
+    id: 'physical-archive',
+    title: 'Physical Archive',
+    description:
+      'Enter the 3D storage vault containing physical ECO-system cartridges. Hover, examine, drag, and click cartridges to load individual active conservation simulations directly.',
+    video: '/videos/games/migration.mp4',
+    imageHint: 'retro computer',
+    tags: ['arcade', 'hardware launcher', 'interactive crate'],
+    icon: Database,
+    gameLink: '/play/physical-archive',
+    htmlPath: '/games/physical-archive.html'
   },
 ];

@@ -66,13 +66,13 @@ export function PixelWeatherWidget({ theme = 'forest', onClose }: PixelWeatherWi
         <div className="scene-fg"></div>
       </div>
       
-      <div className="overlay handle">
-        <div className="topline">
+      <div className="overlay">
+        <div className="topline handle cursor-move">
           <Icon className="w-6 h-6" />
           <div className="temp">{Math.round(weather.temp)}°</div>
-          <div className="label">{theme}</div>
+          <div className="label font-code text-[10px] font-bold">{theme}</div>
         </div>
-        <div className="microfact">
+        <div className="microfact font-code text-[11px] leading-relaxed">
             {weather.facts[factIndex]?.headline || 'Environmental fact loading...'}
         </div>
       </div>

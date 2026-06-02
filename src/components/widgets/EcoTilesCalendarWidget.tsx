@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Plus, Sparkles, TreePine, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUserProgress } from '@/hooks/useUserProgress';
 
 interface EcoTilesCalendarWidgetProps {
   onClose?: () => void;
@@ -81,6 +82,7 @@ function intensityClass(level: number): string {
 }
 
 export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps) {
+  const { mutate } = useUserProgress();
   const initialTiles = useMemo(() => {
     const today = new Date();
     const history: DayTile[] = [];
@@ -107,6 +109,17 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
   }, []);
 
   const [tiles, setTiles] = useState<DayTile[]>(initialTiles);
+
+  // Load from localStorage on client-side mount
+  useEffect(() => {
+    const saved = localStorage.getItem('ecoquest_calendar_tiles');
+    if (saved) {
+      try {
+        setTiles(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
   const [selectedId, setSelectedId] = useState(initialTiles[34]?.id ?? initialTiles[0]?.id ?? '');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [playbackIndex, setPlaybackIndex] = useState<number>(0);
@@ -156,39 +169,53 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
     return () => clearInterval(interval);
   }, [isPlayback, tiles.length]);
 
-  function quickAdd(actionName: string, xpDelta: number, carbonDelta: number) {
+  async function quickAdd(actionName: string, xpDelta: number, carbonDelta: number) {
     if (!selectedTile || selectedTile.predicted) {
       return;
     }
 
-    setTiles((prev) =>
-      prev.map((tile) => {
-        if (tile.id !== selectedTile.id) {
-          return tile;
-        }
+    const updatedTiles = tiles.map((tile) => {
+      if (tile.id !== selectedTile.id) {
+        return tile;
+      }
 
-        return {
-          ...tile,
-          actions: [actionName, ...tile.actions],
-          xp: tile.xp + xpDelta,
-          carbonSavedKg: Number((tile.carbonSavedKg + carbonDelta).toFixed(2)),
-        };
-      })
-    );
+      return {
+        ...tile,
+        actions: [actionName, ...tile.actions],
+        xp: tile.xp + xpDelta,
+        carbonSavedKg: Number((tile.carbonSavedKg + carbonDelta).toFixed(2)),
+      };
+    });
+
+    setTiles(updatedTiles);
+    localStorage.setItem('ecoquest_calendar_tiles', JSON.stringify(updatedTiles));
+
+    try {
+      const response = await fetch('/api/user/progress', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pointsToAdd: xpDelta }),
+      });
+      if (response.ok) {
+        mutate();
+      }
+    } catch (e) {
+      console.error('Failed to update progress points', e);
+    }
   }
 
   return (
     <div className="w-[300px] rounded-lg border-2 border-primary/35 bg-card/95 shadow-xl shadow-black/40 backdrop-blur">
-      <div className="flex items-center justify-between border-b border-primary/20 bg-black/35 px-2.5 py-2">
+      <div className="flex items-center justify-between border-b border-primary/20 bg-black/35 px-2.5 py-2 handle cursor-move">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-primary" />
-          <p className="font-headline text-[10px] uppercase tracking-[0.14em] text-primary">Eco Tiles Calendar</p>
+          <p className="font-body text-sm uppercase tracking-wider text-primary">Eco Tiles Calendar</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 px-2 text-[9px] font-headline uppercase tracking-[0.1em]"
+            className="h-7 px-2 text-[9px] font-code uppercase tracking-tight"
             onClick={() => setIsPlayback((prev) => !prev)}
           >
             {isPlayback ? 'Pause' : 'Playback'}
@@ -210,19 +237,19 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
       <div className="max-h-[460px] space-y-3 overflow-y-auto p-2.5">
         <div className="grid grid-cols-2 gap-2 text-[10px]">
           <div className="rounded-md border border-primary/20 bg-black/25 p-2">
-            <p className="font-mono uppercase text-muted-foreground">Total XP</p>
+            <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">Total XP</p>
             <p className="overflow-hidden text-ellipsis whitespace-nowrap font-code text-lg leading-none text-primary">
               {totalXp}
             </p>
           </div>
           <div className="rounded-md border border-primary/20 bg-black/25 p-2">
-            <p className="font-mono uppercase text-muted-foreground">Carbon Saved</p>
+            <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">Carbon Saved</p>
             <p className="overflow-hidden text-ellipsis whitespace-nowrap font-code text-lg leading-none text-emerald-300">
               {totalCarbon}kg
             </p>
           </div>
           <div className="col-span-2 rounded-md border border-primary/20 bg-black/25 p-2">
-            <p className="font-mono uppercase text-muted-foreground">Streak Path</p>
+            <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">Streak Path</p>
             <p className="overflow-hidden text-ellipsis whitespace-nowrap font-code text-lg leading-none text-amber-300">
               {streakIds.size}d
             </p>
@@ -275,25 +302,25 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
         {selectedTile && (
           <div className="rounded-md border border-primary/20 bg-black/20 p-2.5">
             <div className="mb-2 flex items-center justify-between">
-              <p className="font-headline text-[10px] uppercase tracking-[0.12em] text-primary">{selectedTile.dateLabel}</p>
+              <p className="font-body text-sm uppercase tracking-wider text-primary">{selectedTile.dateLabel}</p>
               {selectedTile.predicted && (
-                <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-emerald-300">Predicted Tile</p>
+                <p className="text-[10px] font-code uppercase tracking-tight text-emerald-300">Predicted Tile</p>
               )}
             </div>
 
             <div className="mb-3 grid grid-cols-2 gap-2 text-[11px]">
-              <p className="rounded border border-primary/15 bg-black/25 px-2 py-1">XP: {selectedTile.xp}</p>
-              <p className="rounded border border-primary/15 bg-black/25 px-2 py-1">Carbon: {selectedTile.carbonSavedKg}kg</p>
+              <p className="rounded border border-primary/15 bg-black/25 px-2 py-1 font-code">XP: {selectedTile.xp}</p>
+              <p className="rounded border border-primary/15 bg-black/25 px-2 py-1 font-code">Carbon: {selectedTile.carbonSavedKg}kg</p>
             </div>
 
             <div className="mb-3 space-y-1 text-[11px]">
-              <p className="font-mono uppercase text-muted-foreground">Actions</p>
+              <p className="font-body text-[11px] uppercase text-muted-foreground">Actions</p>
               {selectedTile.actions.length === 0 ? (
-                <p className="text-muted-foreground">No activity logged.</p>
+                <p className="font-code text-muted-foreground/60 italic">No activity logged.</p>
               ) : (
                 <ul className="space-y-1">
                   {selectedTile.actions.slice(0, 3).map((action, idx) => (
-                    <li key={`${action}-${idx}`} className="rounded border border-primary/15 bg-black/25 px-2 py-1">
+                    <li key={`${action}-${idx}`} className="rounded border border-primary/15 bg-black/25 px-2 py-1 font-code">
                       {action}
                     </li>
                   ))}
@@ -304,7 +331,7 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
             <div className="grid grid-cols-3 gap-2">
               <Button
                 size="sm"
-                className="h-8 text-[9px] font-headline uppercase tracking-[0.06em]"
+                className="h-8 text-[9px] font-code font-bold uppercase tracking-tight px-1"
                 disabled={selectedTile.predicted}
                 onClick={() => quickAdd('Bike Commute', 12, 0.7)}
               >
@@ -313,7 +340,7 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 text-[9px] font-headline uppercase tracking-[0.06em]"
+                className="h-8 text-[9px] font-code font-bold uppercase tracking-tight px-1"
                 disabled={selectedTile.predicted}
                 onClick={() => quickAdd('Recycling Combo', 10, 0.45)}
               >
@@ -322,7 +349,7 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
               <Button
                 size="sm"
                 variant="secondary"
-                className="h-8 text-[9px] font-headline uppercase tracking-[0.06em]"
+                className="h-8 text-[9px] font-code font-bold uppercase tracking-tight px-1"
                 disabled={selectedTile.predicted}
                 onClick={() => quickAdd('Energy Saver Quest', 15, 0.9)}
               >

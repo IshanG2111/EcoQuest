@@ -4,10 +4,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { FactWidget } from './FactWidget';
 import { DailyBriefingWidget } from './DailyBriefingWidget';
 import { PixelWeatherWidget } from './PixelWeatherWidget';
+import { EcoTilesCalendarWidget } from './EcoTilesCalendarWidget';
+import { EcoGardenWidget } from './EcoGardenWidget';
 import { WidgetCard } from './WidgetCard';
-import { Lightbulb, Newspaper, CloudSun, Rss, Globe, Flame, Leaf, Zap, BarChart2 } from 'lucide-react';
+import { Lightbulb, Newspaper, CloudSun, Rss, Globe, Flame, Leaf, Zap, BarChart2, CalendarDays, Trees } from 'lucide-react';
 
-type WidgetType = 'fact' | 'briefing' | 'weather' | 'news';
+type WidgetType = 'fact' | 'briefing' | 'weather' | 'news' | 'calendar' | 'garden';
 
 interface WidgetDockProps {
     isOpen: boolean;
@@ -54,6 +56,8 @@ const availableWidgets: {id: WidgetType, title: string, icon: React.ElementType,
     { id: 'briefing', title: 'Daily Briefing',icon: Newspaper,  component: DailyBriefingWidget },
     { id: 'weather',  title: 'Pixel Weather', icon: CloudSun,   component: PixelWeatherWidget },
     { id: 'news',     title: 'Eco News Feed', icon: Rss,        component: () => null, preview: EcoNewsPreview },
+    { id: 'calendar', title: 'Eco Calendar',  icon: CalendarDays,component: EcoTilesCalendarWidget },
+    { id: 'garden',   title: 'Eco Garden Pet',icon: Trees,       component: EcoGardenWidget },
 ];
 
 export function WidgetDock({ isOpen, onOpenChange, activeWidgets, toggleWidget }: WidgetDockProps) {

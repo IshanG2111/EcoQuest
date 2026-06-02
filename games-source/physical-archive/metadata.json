@@ -1,0 +1,6 @@
+{
+  "name": "Physical Archive",
+  "description": "A retro-styled 3D gallery of environmental data cartridges that animate on hover.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
