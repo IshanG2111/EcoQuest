@@ -78,7 +78,8 @@ export function WidgetShell({ id, title, children, onClose, defaultX = 100, defa
         {/* Widget Border Wrapper */}
         <div
           className={cn(
-            "relative rounded-lg border-2 bg-card/90 backdrop-blur-sm overflow-hidden",
+            "relative rounded-lg border-2 bg-card/90 backdrop-blur-sm",
+            id !== 'fact' && "overflow-hidden",
             isPinned 
               ? "border-primary/20 shadow-sm" 
               : "border-primary/50 shadow-md ring-1 ring-primary/10"

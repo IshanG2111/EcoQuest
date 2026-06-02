@@ -62,10 +62,6 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
       >
         {/* Front */}
         <div className="fact-widget-face fact-widget-face--front">
-          <div className="w-full flex items-center justify-between border-b border-primary/20 pb-1 mb-2 handle cursor-move text-[9px] font-mono text-muted-foreground">
-            <span>ECO_FACT.SYS</span>
-            <span className="opacity-40">:: DRAG ::</span>
-          </div>
           <div className="fw-category-row">
             {isLoading ? (
               <Skeleton className="h-4 w-24 bg-white/10" />
@@ -101,20 +97,11 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
             <Button variant="ghost" size="icon" className="fact-widget-refresh-btn" onClick={e => { e.stopPropagation(); fetchFact(); }} disabled={isLoading}>
               <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
             </Button>
-            {onClose && (
-              <Button variant="ghost" size="icon" className="fact-widget-close-btn" onClick={e => { e.stopPropagation(); onClose(); }}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
 
         {/* Back */}
         <div className="fact-widget-face fact-widget-face--back font-body">
-          <div className="w-full flex items-center justify-between border-b border-primary/20 pb-1 mb-2 handle cursor-move text-[9px] font-mono text-muted-foreground">
-            <span>ECO_FACT.SYS</span>
-            <span className="opacity-40">:: DRAG ::</span>
-          </div>
           {fact && (
             <>
               <div className="fw-back-section">
@@ -131,11 +118,6 @@ export function FactWidget({ onClose }: { onClose?: () => void }) {
             <Button variant="ghost" size="icon" className="fact-widget-refresh-btn" onClick={e => { e.stopPropagation(); fetchFact(); }}>
               <RefreshCw className="h-4 w-4" />
             </Button>
-            {onClose && (
-              <Button variant="ghost" size="icon" className="fact-widget-close-btn" onClick={e => { e.stopPropagation(); onClose(); }}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
       </div>

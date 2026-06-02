@@ -167,27 +167,13 @@ export function EcoNewsWidget({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className={cn("enw-root", isMounted ? "animate-in fade-in zoom-in duration-300" : "opacity-0")} style={{ width, height }}>
-      {/* Title bar */}
-      <div className="enw-titlebar handle">
-        <div className="enw-titlebar-left">
-          <span className="enw-title-dot enw-dot-red" />
-          <span className="enw-title-dot enw-dot-yellow" />
-          <span className="enw-title-dot enw-dot-green" />
-          <span className="enw-title-text font-body text-sm tracking-wider">ECO_NEWS.RSS</span>
-          {cacheAge && !loading && (
-            <span className="enw-cache-age">· {cacheAge}</span>
-          )}
-        </div>
-        <div className="enw-titlebar-right">
-          <button className="enw-icon-btn" onClick={() => fetchNews(true)} title="Force refresh (bypass cache)" disabled={loading}>
-            <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-          </button>
-          {onClose && (
-            <button className="enw-icon-btn enw-close-btn" onClick={onClose} title="Close">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+      {/* Sync Status Sub-header */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-black/30 border-b border-primary/20 text-[9px] font-code text-muted-foreground flex-shrink-0">
+        {cacheAge ? <span>SYNCED: {cacheAge.toUpperCase()}</span> : <span>SYNCED: JUST NOW</span>}
+        <button className="hover:text-primary flex items-center gap-1 font-bold" onClick={() => fetchNews(true)} disabled={loading}>
+          <RefreshCw className={cn("h-2.5 w-2.5", loading && "animate-spin")} />
+          <span>FORCE REFRESH</span>
+        </button>
       </div>
 
       {/* Filter tabs */}

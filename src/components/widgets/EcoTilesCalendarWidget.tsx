@@ -205,36 +205,19 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
   }
 
   return (
-    <div className="w-[300px] rounded-lg border-2 border-primary/35 bg-card/95 shadow-xl shadow-black/40 backdrop-blur">
-      <div className="flex items-center justify-between border-b border-primary/20 bg-black/35 px-2.5 py-2 handle cursor-move">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-primary" />
-          <p className="font-body text-sm uppercase tracking-wider text-primary">Eco Tiles Calendar</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-[9px] font-code uppercase tracking-tight"
-            onClick={() => setIsPlayback((prev) => !prev)}
-          >
-            {isPlayback ? 'Pause' : 'Playback'}
-          </Button>
-          {onClose && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              aria-label="Close Eco Tiles Calendar"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+    <div className="w-[300px] font-body p-3 space-y-3">
+      {/* Controls row */}
+      <div className="flex items-center justify-between border-b border-primary/10 pb-2">
+        <span className="text-[9px] font-code text-muted-foreground font-bold">ACTIVITY LOG</span>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-6 px-2.5 text-[9px] font-code font-bold uppercase tracking-tight"
+          onClick={() => setIsPlayback((prev) => !prev)}
+        >
+          {isPlayback ? '⏸ PAUSE' : '▶ PLAYBACK'}
+        </Button>
       </div>
-
-      <div className="max-h-[460px] space-y-3 overflow-y-auto p-2.5">
         <div className="grid grid-cols-2 gap-2 text-[10px]">
           <div className="rounded-md border border-primary/20 bg-black/25 p-2">
             <p className="font-body text-[11px] uppercase tracking-wider text-muted-foreground">Total XP</p>
@@ -358,7 +341,6 @@ export function EcoTilesCalendarWidget({ onClose }: EcoTilesCalendarWidgetProps)
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

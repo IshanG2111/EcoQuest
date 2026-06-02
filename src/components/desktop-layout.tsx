@@ -80,17 +80,17 @@ const getWidgetDefaultPos = (id: WidgetType, width: number) => {
   const isRightSide = width > 1024;
   switch (id) {
     case 'fact':
-      return { x: 50, y: 50 };
+      return { x: 50, y: 120 };
     case 'weather':
-      return { x: 50, y: 280 };
+      return { x: 50, y: 350 };
     case 'briefing':
-      return { x: 380, y: 50 };
+      return { x: 380, y: 120 };
     case 'calendar':
-      return { x: 380, y: 280 };
+      return { x: 380, y: 350 };
     case 'news':
-      return { x: isRightSide ? width - 420 : 700, y: 50 };
+      return { x: isRightSide ? width - 420 : 700, y: 120 };
     case 'garden':
-      return { x: isRightSide ? width - 420 : 700, y: 350 };
+      return { x: isRightSide ? width - 420 : 700, y: 440 };
     default:
       return { x: 200, y: 200 };
   }

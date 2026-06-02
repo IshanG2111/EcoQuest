@@ -189,33 +189,17 @@ export function EcoGardenWidget({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="eco-garden-widget font-body">
-      {/* Header */}
-      <div className="egw-header handle flex items-center justify-between border-b border-primary/20 bg-black/40 px-3 py-2">
-        <div className="flex items-center gap-1.5">
-          <Trees className="h-4 w-4 text-emerald-400" />
-          <span className="font-body text-sm uppercase tracking-wider text-primary">ECO_GARDEN.SYS</span>
-        </div>
-        <div className="flex items-center gap-3">
-          {plant.treesHarvested > 0 && (
-            <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-code" title="Trees Harvested">
-              <span>🌳</span>
-              <span className="font-bold">x{plant.treesHarvested}</span>
-            </div>
-          )}
-          {onClose && (
-            <button onClick={onClose} className="text-muted-foreground hover:text-primary transition-colors">
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="egw-body p-3 flex flex-col items-center gap-3">
         {/* Plant display box */}
         <div className={cn(
           "egw-display-box relative w-full h-[140px] rounded border border-primary/15 bg-black/35 flex flex-col items-center justify-center overflow-hidden",
           isWithered && "withered-bg"
         )}>
+          {plant.treesHarvested > 0 && (
+            <div className="absolute top-2 left-2 bg-emerald-500/20 border border-emerald-500/60 rounded px-1.5 py-0.5 text-[9px] text-emerald-400 font-bold font-code z-10" title="Trees Harvested">
+              🌳 HARVESTED: x{plant.treesHarvested}
+            </div>
+          )}
           {/* Weather/sparkles animation */}
           {showSparkles && <div className="sparkles-overlay font-body text-sm tracking-wider">✨ CONGRATS ✨</div>}
           {isWatering && <div className="watering-drops">💧 💧 💧</div>}

@@ -30,13 +30,10 @@
   word-wrap: break-word; /* Ensure long words wrap */
   
   /* Pixel art styles */
-  border: 3px solid hsl(var(--foreground));
-  border-radius: 8px;
   background-color: hsl(var(--card));
   color: hsl(var(--card-foreground));
   padding: 16px;
   image-rendering: pixelated;
-  box-shadow: 4px 4px 0px 0px hsl(var(--secondary));
 }
 
 .fact-widget-face--front {

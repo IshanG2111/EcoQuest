@@ -30,6 +30,11 @@ Players can toggle themes from the taskbar, modifying CSS custom variables insta
 *   **The Vault-Ed Program**: Traditional terminal green phosphor display with high-contrast scanlines.
 *   **The Lumon Method**: Minimalist, clinical blue-and-white retro-corporate aesthetic.
 
+### 3. Unified Widgeting & Ultra-Minimal Control Panel (WIDGET_DOCK.SYS)
+*   **Unified Widget Shells**: All widgets are framed in a standardized pixel-bezel wrapper that controls dragging, pinning, and closing. The widgets themselves are streamlined—stripped of redundant titlebars, double borders, and duplicate buttons for a highly polished, unified look.
+*   **Ultra-Minimal Right-Sidebar Library**: Access the widget controller via a slim, high-contrast right-sidebar control panel (`WIDGET_DOCK.SYS`). Its space-efficient profile lets you toggle widgets on/off instantly while maintaining full visibility and control of your active desktop.
+*   **Overlapping Prevention**: Desktop widgets possess coordinate restrictions to ensure they always spawn safely at or below `y: 120px`—vertical clearance that completely prevents clashing with the horizontal desktop icons grid.
+
 ---
 
 ## 🤖 EcoBot: Chat-Based Onboarding & Terminal Authentication

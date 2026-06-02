@@ -43,14 +43,6 @@ export function DailyBriefingWidget({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="daily-briefing-widget font-body">
-      <div className="dbw-header handle flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-        <span className="text-[10px] font-headline tracking-widest text-primary uppercase">DAILY_BRIEFING.SYS</span>
-        {onClose && (
-          <button onClick={onClose} className="hover:text-primary transition-colors">
-            <X size={14} />
-          </button>
-        )}
-      </div>
 
       {isLoading ? (
         <div className="space-y-3 py-2">
