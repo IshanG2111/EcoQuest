@@ -9,7 +9,6 @@ const RegisterSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     displayName: z.string().min(2, 'Username must be at least 2 characters').max(30),
-    role: z.enum(['user', 'admin']).optional().default('user'),
 });
 
 export async function POST(request: Request) {
@@ -24,7 +23,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const { email, password, displayName, role } = parsed.data;
+        const { email, password, displayName } = parsed.data;
 
         await connectDB();
 
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
             email: email.toLowerCase(),
             password_hash,
             display_name: displayName,
-            role,
             avatar_url: `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(displayName)}`,
             points: 0,
             streak: 0,
@@ -67,7 +65,7 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json(
-            { message: 'Account created successfully', user: { id: newUser._id.toString(), email: newUser.email, role: newUser.role } },
+            { message: 'Account created successfully', user: { id: newUser._id.toString(), email: newUser.email } },
             { status: 201 }
         );
     } catch (error) {

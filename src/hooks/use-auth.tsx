@@ -4,14 +4,11 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-export type UserRole = 'student' | 'teacher' | 'admin';
-
 export interface AuthUser {
   id: string;
   email: string;
   name: string;
   image?: string | null;
-  role: UserRole;
 }
 
 interface AuthContextType {
@@ -40,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email: session.user.email ?? '',
       name: session.user.name ?? '',
       image: session.user.image,
-      role: ((session.user as any).role as UserRole) ?? 'student',
     }
     : null;
 

@@ -19,7 +19,6 @@ export async function GET(request: Request) {
     try {
         // Aggregate to get top N users sorted by points
         const leaderboard = await User.aggregate([
-            { $match: { role: 'user' } },
             { $sort: { points: -1 } },
             { $limit: limit },
             {
@@ -40,14 +39,13 @@ export async function GET(request: Request) {
         }));
 
         // Get current user's rank
-        // We can do this by counting how many students have strictly more points
-        const currentUser = await User.findById(session.user.id).select('points display_name avatar_url role').lean();
+        // We can do this by counting how many users have strictly more points
+        const currentUser = await User.findById(session.user.id).select('points display_name avatar_url').lean();
         
         let myRankData = null;
 
-        if (currentUser && currentUser.role === 'user') {
+        if (currentUser) {
             const usersWithMorePoints = await User.countDocuments({
-                role: 'user',
                 points: { $gt: currentUser.points }
             });
 

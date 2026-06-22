@@ -15,7 +15,6 @@ export async function GET(
     }
 
     const { id } = await params;
-    const role = (session.user as any).role;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return NextResponse.json({ error: 'Invalid Quiz ID' }, { status: 400 });
@@ -30,8 +29,8 @@ export async function GET(
             return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
         }
 
-        // Students can only access published quizzes
-        if (!quiz.is_published && role !== 'admin') {
+        // Only published quizzes are accessible
+        if (!quiz.is_published) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
@@ -67,7 +66,7 @@ export async function GET(
     }
 }
 
-// DELETE /api/quizzes/[id] — teachers/admins only
+// DELETE /api/quizzes/[id] — Disabled (admins/roles removed)
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -77,29 +76,5 @@ export async function DELETE(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = (session.user as any).role;
-    if (role !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { id } = await params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return NextResponse.json({ error: 'Invalid Quiz ID' }, { status: 400 });
-    }
-
-    await connectDB();
-
-    try {
-        const result = await Quiz.findByIdAndDelete(id);
-
-        if (!result) {
-            return NextResponse.json({ error: 'Failed to delete quiz or quiz not found' }, { status: 404 });
-        }
-
-        return NextResponse.json({ message: 'Quiz deleted' });
-    } catch (error) {
-        console.error('Delete quiz error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    }
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }

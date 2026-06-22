@@ -15,7 +15,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const topic = searchParams.get('topic');
     const difficulty = searchParams.get('difficulty');
-    const role = (session.user as any).role;
 
     await connectDB();
 
@@ -71,46 +70,12 @@ const CreateQuizSchema = z.object({
         .max(30),
 });
 
-// POST /api/quizzes — teachers/admins only
+// POST /api/quizzes — Disabled (admins/roles removed)
 export async function POST(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = (session.user as any).role;
-    if (role !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden: admins only' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const parsed = CreateQuizSchema.safeParse(body);
-    if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
-    }
-
-    const { questions, ...quizData } = parsed.data;
-
-    await connectDB();
-
-    try {
-        const questionDocs = questions.map((q, i) => ({
-            question_text: q.question_text,
-            options: q.options,
-            correct_index: q.correct_index,
-            explanation: q.explanation,
-            question_order: i,
-        }));
-
-        const quiz = await Quiz.create({
-            ...quizData,
-            created_by: session.user.id,
-            quiz_questions: questionDocs,
-        });
-
-        return NextResponse.json({ message: 'Quiz created successfully', quizId: quiz._id.toString() }, { status: 201 });
-    } catch (error) {
-        console.error('Create quiz error:', error);
-        return NextResponse.json({ error: 'Failed to create quiz' }, { status: 500 });
-    }
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }

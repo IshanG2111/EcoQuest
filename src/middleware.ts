@@ -5,7 +5,7 @@ const { auth } = NextAuth(authConfig);
 import { NextResponse } from 'next/server';
 
 // Routes that require authentication
-const PROTECTED_ROUTES = ['/desktop', '/dashboard', '/leaderboard', '/learn', '/play', '/quizzes', '/teacher', '/account-settings'];
+const PROTECTED_ROUTES = ['/desktop', '/dashboard', '/leaderboard', '/learn', '/play', '/quizzes', '/account-settings'];
 
 // Routes only accessible when NOT logged in
 const AUTH_ROUTES = ['/login', '/signup'];
@@ -13,7 +13,6 @@ const AUTH_ROUTES = ['/login', '/signup'];
 export default auth((req) => {
     const { nextUrl, auth: session } = req;
     const isLoggedIn = !!session?.user;
-    const role = (session?.user as any)?.role;
 
     const isProtectedRoute = PROTECTED_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
     const isAuthRoute = AUTH_ROUTES.some((route) => nextUrl.pathname.startsWith(route));

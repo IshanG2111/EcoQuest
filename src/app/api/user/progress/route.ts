@@ -38,6 +38,13 @@ export async function GET() {
     });
 }
 
+import { z } from 'zod';
+
+const UpdateProgressSchema = z.object({
+    pointsToAdd: z.number().int().min(-50).max(300).optional().default(0),
+    resetStreak: z.boolean().optional().default(false),
+});
+
 // PATCH /api/user/progress — add points, update streak
 export async function PATCH(request: Request) {
     const session = await auth();
@@ -47,7 +54,13 @@ export async function PATCH(request: Request) {
 
     const userId = session.user.id;
     const body = await request.json();
-    const { pointsToAdd = 0, resetStreak = false } = body;
+    const parsed = UpdateProgressSchema.safeParse(body);
+
+    if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+    }
+
+    const { pointsToAdd, resetStreak } = parsed.data;
 
     await connectDB();
 

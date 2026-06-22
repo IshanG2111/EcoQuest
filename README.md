@@ -131,13 +131,23 @@ EcoQuest is built using a modern, scalable web stack optimized for rapid builds 
 *   **Framework**: [Next.js 15.3](https://nextjs.org/) (App Router, Turbopack, Server Actions)
 *   **Language**: [TypeScript](https://www.typescriptlang.org/) (Type-safe schemas, props, and states)
 *   **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/) for collections:
-    *   *Users*: Profiles, login hashes, roles (student/teacher).
+    *   *Users*: Profiles, display name, avatar, and credentials.
     *   *Progress*: Cumulative XP, streaks, badges earned, activity logs.
     *   *GameSessions*: Tracking play times, scores, and metadata.
 *   **Authentication**: [NextAuth.js v5](https://next-auth.js.org/) (Beta) for secure session management.
 *   **State Syncing**: [SWR](https://swr.vercel.app/) for client-side queries and updates.
 *   **Styling**: [Tailwind CSS v3.4](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/) (Radix Primitives).
 *   **Utilities**: React Draggable, Lucide React, Recharts.
+
+---
+
+## 🔒 Security Hardening
+
+EcoQuest has been audited and hardened against common vulnerabilities:
+*   **Registration Validation**: Schema-enforced input validation for email, username, and password length with secure bcrypt hashing.
+*   **Input Sanitization & Validation**: Endpoints such as `/api/user/progress` and game sessions utilize Zod schema validation to restrict point updates to valid ranges, preventing arbitrary score manipulation.
+*   **Secure Seeding**: Pre-populates environment with default badges and quizzes securely, maintaining strict data integrity.
+*   **NoSQL Injection Safeguards**: Strict typecasting via Mongoose schemas and input filtering blocks query-level operator injections.
 
 ---
 

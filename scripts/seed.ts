@@ -148,18 +148,8 @@ async function seed() {
             }
         }
 
-        // 2. Create an Admin User to own the quizzes
-        let adminUser = await User.findOne({ email: 'admin@ecoquest.com' });
-        if (!adminUser) {
-            const password_hash = await bcrypt.hash('admin123', 10);
-            adminUser = await User.create({
-                email: 'admin@ecoquest.com',
-                password_hash,
-                display_name: 'EcoQuest Admin',
-                role: 'admin',
-            });
-            console.log('Created Admin User: admin@ecoquest.com / admin123');
-        }
+        // 2. Define a dummy creator ID for the seeded quizzes
+        const dummyAdminId = new mongoose.Types.ObjectId();
 
         // 3. Seed Quizzes
         for (const quizData of sampleQuizzes) {
@@ -167,7 +157,7 @@ async function seed() {
             if (!existing) {
                 await Quiz.create({
                     ...quizData,
-                    created_by: adminUser._id
+                    created_by: dummyAdminId
                 });
                 console.log(`Created quiz: ${quizData.title}`);
             } else {
