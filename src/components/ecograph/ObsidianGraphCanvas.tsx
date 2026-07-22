@@ -122,46 +122,72 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const [hoveredNode, setHoveredNode] = useState<PhysicsNode | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // ─── Initialize Physics Nodes ─────────────────────────────────────────────
+  // ─── Initialize Physics Nodes with Obsidian Vault Outer Ring & Clusters ─────
   useEffect(() => {
     const W = 1800;
     const H = 1200;
     const cx = W / 2;
     const cy = H / 2;
 
-    const catCenters: Record<string, { x: number; y: number }> = {
-      Biodiversity: { x: cx - 120, y: cy - 80 },
-      Spatial:      { x: cx + 140, y: cy - 60 },
-      Pollution:    { x: cx - 70,  y: cy + 100 },
-      Climate:      { x: cx + 40,  y: cy + 140 },
-      Policy:       { x: cx + 180, y: cy + 70 },
-      User:         { x: cx - 180, y: cy + 30 },
-      Quest:        { x: cx,       y: cy - 150 },
-    };
+    const categories = Object.keys(CATEGORY_COLORS);
+    const catCenters: Record<string, { x: number; y: number }> = {};
+    
+    // Position category cluster centers in a balanced circle around canvas center
+    categories.forEach((cat, idx) => {
+      const angle = (idx / categories.length) * Math.PI * 2;
+      const radius = 280;
+      catCenters[cat] = {
+        x: cx + Math.cos(angle) * radius,
+        y: cy + Math.sin(angle) * radius,
+      };
+    });
+
+    // Compute node degree (edge count) for ring vs core placement
+    const degreeMap = new Map<string, number>();
+    graphData.edges.forEach((e) => {
+      degreeMap.set(e.sourceId, (degreeMap.get(e.sourceId) || 0) + 1);
+      degreeMap.set(e.targetId, (degreeMap.get(e.targetId) || 0) + 1);
+    });
 
     frameCountRef.current = 0; // reset cooling
 
     physicsRef.current = graphData.nodes.map((node, idx) => {
-      const cc = catCenters[node.category] || { x: cx, y: cy };
-      const angle = Math.random() * Math.PI * 2;
-      const spread = 40 + Math.random() * 140;
+      const degree = degreeMap.get(node.id) || 0;
+      const isPeripheral = degree <= 1; // Leaf / unconnected nodes form outer ring shell
+
+      let x: number, y: number;
+      if (isPeripheral) {
+        // Distribute outer ring nodes in a calm perimeter circle (matching Image 2 outer ring!)
+        const ringAngle = (idx / graphData.nodes.length) * Math.PI * 2;
+        const ringRadius = 500 + (Math.random() - 0.5) * 40;
+        x = cx + Math.cos(ringAngle) * ringRadius;
+        y = cy + Math.sin(ringAngle) * ringRadius;
+      } else {
+        // Inner connected cluster nodes around category centers
+        const cc = catCenters[node.category] || { x: cx, y: cy };
+        const angle = Math.random() * Math.PI * 2;
+        const spread = 30 + Math.random() * 120;
+        x = cc.x + Math.cos(angle) * spread;
+        y = cc.y + Math.sin(angle) * spread;
+      }
+
       const baseColor = groupColors[node.category] || CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
 
-      let r = 3;
-      if (node.label === 'Species' || node.label === 'Policy') r = 5;
-      if (node.label === 'Habitat') r = 6;
-      if (node.id.startsWith('obsidian-node')) r = 2 + Math.random() * 2;
+      let r = 2.5;
+      if (node.label === 'Species' || node.label === 'Policy') r = 4.5;
+      if (node.label === 'Habitat') r = 5.5;
+      if (node.id.startsWith('obsidian-node')) r = 1.8 + Math.random() * 1.5;
 
       return {
         id: node.id,
         node,
-        x: cc.x + Math.cos(angle) * spread,
-        y: cc.y + Math.sin(angle) * spread,
+        x,
+        y,
         vx: 0,
         vy: 0,
         radius: r * nodeSize,
         color: baseColor,
-        glow: baseColor + '60',
+        glow: baseColor + '50',
       };
     });
 
@@ -334,14 +360,14 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
         ctx.lineTo(tgt.x, tgt.y);
 
         if (isHighlighted) {
-          ctx.strokeStyle = `rgba(16, 185, 129, 0.8)`;
-          ctx.lineWidth = 2.5 / cam.zoom;
+          ctx.strokeStyle = `rgba(16, 185, 129, 0.85)`;
+          ctx.lineWidth = 2.0 / cam.zoom;
         } else if (isConnectedToSelected) {
-          ctx.strokeStyle = src.color + 'aa';
-          ctx.lineWidth = 1.8 / cam.zoom;
+          ctx.strokeStyle = src.color + 'dd';
+          ctx.lineWidth = 1.4 / cam.zoom;
         } else {
-          ctx.strokeStyle = `rgba(160, 60, 50, ${lineOpacity})`;
-          ctx.lineWidth = 0.6 / cam.zoom;
+          ctx.strokeStyle = `rgba(120, 125, 140, ${Math.min(lineOpacity, 0.18)})`;
+          ctx.lineWidth = 0.35 / cam.zoom;
         }
         ctx.stroke();
       });
