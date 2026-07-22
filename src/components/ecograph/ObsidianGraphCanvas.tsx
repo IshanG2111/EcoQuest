@@ -92,6 +92,15 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     fetchGlobalPresets();
   }, []);
 
+  // Re-wake physics simulation whenever global preset parameters change!
+  useEffect(() => {
+    frameCountRef.current = 0;
+    physicsRef.current.forEach((n) => {
+      n.vx = (Math.random() - 0.5) * 5;
+      n.vy = (Math.random() - 0.5) * 5;
+    });
+  }, [repulsion, linkDist, centerForce, friction, nodeSize]);
+
   // ─── User Explore Controls State ──────────────────────────────────────────
   const [searchFilter, setSearchFilter] = useState('');
   const [showLabels, setShowLabels] = useState(false);
