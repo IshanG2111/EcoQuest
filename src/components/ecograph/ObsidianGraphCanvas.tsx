@@ -1,27 +1,39 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { EcoNode, GraphData } from '@/lib/ecograph/types';
-import { Search, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  Search,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Tag,
+  ChevronRight,
+  X,
+  Sparkles,
+  GitBranch,
+} from 'lucide-react';
 
-// ─── Color Palette ───────────────────────────────────────────────────────────
-const CATEGORY_COLORS: Record<string, string> = {
-  Biodiversity: '#10b981',
-  Spatial:      '#38bdf8',
-  Pollution:    '#f43f5e',
-  Climate:      '#f97316',
-  Policy:       '#a855f7',
-  User:         '#ec4899',
-  Quest:        '#06b6d4',
-};
-
-const NEON_PALETTE = [
-  '#f97316', '#ff2a6d', '#a855f7', '#06b6d4', '#10b981',
-  '#facc15', '#ec4899', '#38bdf8', '#fb7185', '#34d399',
-  '#c084fc', '#f43f5e', '#22d3ee', '#e879f9', '#fbbf24',
+export const NEON_PALETTE = [
+  '#10b981', // Emerald Green (Biodiversity)
+  '#38bdf8', // Sky Blue (Spatial)
+  '#f43f5e', // Rose/Red (Pollution)
+  '#f97316', // Amber/Orange (Climate)
+  '#a855f7', // Purple (Policy)
+  '#ec4899', // Pink (User)
+  '#06b6d4', // Cyan (Quest)
 ];
 
-// ─── Physics Node Type ───────────────────────────────────────────────────────
+export const CATEGORY_COLORS: Record<string, string> = {
+  Biodiversity: '#10b981',
+  Spatial: '#38bdf8',
+  Pollution: '#f43f5e',
+  Climate: '#f97316',
+  Policy: '#a855f7',
+  User: '#ec4899',
+  Quest: '#06b6d4',
+};
+
 interface PhysicsNode {
   id: string;
   node: EcoNode;
@@ -29,23 +41,34 @@ interface PhysicsNode {
   y: number;
   vx: number;
   vy: number;
+  targetX?: number;
+  targetY?: number;
   radius: number;
   color: string;
   glow: string;
 }
 
-// ─── Props ───────────────────────────────────────────────────────────────────
 interface ObsidianGraphCanvasProps {
   graphData: GraphData;
   activeNodeId?: string;
+  viewMode?: 'overview' | 'focus' | 'paths' | 'timeline';
+  selectedCategory?: string | null;
   highlightedPathNodeIds?: string[];
+  zoomSignal?: { type: 'in' | 'out' | 'reset' | 'fit'; timestamp: number } | null;
+  showLabels?: boolean;
+  onToggleLabels?: () => void;
   onSelectNode?: (node: EcoNode) => void;
   onExpandNeighborhood?: (nodeId: string) => void;
 }
 
 export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   graphData,
+  viewMode = 'overview',
+  selectedCategory = null,
   highlightedPathNodeIds = [],
+  zoomSignal = null,
+  showLabels: externalShowLabels = false,
+  onToggleLabels,
   onSelectNode,
   onExpandNeighborhood,
 }) => {
@@ -60,16 +83,60 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const cameraRef = useRef({ zoom: 0.6, panX: 0, panY: 0 });
   const [, forceRender] = useState(0);
 
-  // ─── Dynamic Global Admin Physics & Display Settings ──────────────────────
+  const [internalShowLabels, setInternalShowLabels] = useState(false);
+  const showLabels = externalShowLabels || internalShowLabels;
+
+  // ─── Dynamic Global Physics & Display Settings ───────────────────────────
   const [repulsion, setRepulsion] = useState(1100);
   const [linkDist, setLinkDist] = useState(85);
   const [centerForce, setCenterForce] = useState(0.005);
-  const [friction, setFriction] = useState(0.955);
+  const [friction, setFriction] = useState(0.85);
   const [nodeSize, setNodeSize] = useState(1.2);
-  const [lineOpacity, setLineOpacity] = useState(0.35);
+  const [lineOpacity, setLineOpacity] = useState(0.18);
   const [groupColors, setGroupColors] = useState<Record<string, string>>({ ...CATEGORY_COLORS });
 
-  // Fetch live global presets on mount and poll every 4 seconds
+  const [selectedNode, setSelectedNode] = useState<EcoNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<PhysicsNode | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // ─── Stable Props Ref for High-Performance Canvas Loop ───────────────────
+  const propsRef = useRef({
+    graphData,
+    selectedNode,
+    hoveredNode,
+    highlightedPathNodeIds,
+    selectedCategory,
+    viewMode,
+    showLabels,
+    repulsion,
+    linkDist,
+    centerForce,
+    friction,
+    nodeSize,
+    lineOpacity,
+    groupColors,
+  });
+
+  useEffect(() => {
+    propsRef.current = {
+      graphData,
+      selectedNode,
+      hoveredNode,
+      highlightedPathNodeIds,
+      selectedCategory,
+      viewMode,
+      showLabels,
+      repulsion,
+      linkDist,
+      centerForce,
+      friction,
+      nodeSize,
+      lineOpacity,
+      groupColors,
+    };
+  });
+
+  // Fetch live global presets from backend
   useEffect(() => {
     const fetchGlobalPresets = async () => {
       try {
@@ -94,21 +161,17 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Re-wake physics simulation whenever global preset parameters change!
-  useEffect(() => {
+  const wakePhysics = () => {
     frameCountRef.current = 0;
     physicsRef.current.forEach((n) => {
-      n.vx = (Math.random() - 0.5) * 1.5;
-      n.vy = (Math.random() - 0.5) * 1.5;
+      n.vx = (Math.random() - 0.5) * 1.0;
+      n.vy = (Math.random() - 0.5) * 1.0;
     });
-  }, [repulsion, linkDist, centerForce, friction, nodeSize]);
+  };
 
-  // ─── User Explore Controls State ──────────────────────────────────────────
-  const [searchFilter, setSearchFilter] = useState('');
-  const [showLabels, setShowLabels] = useState(false);
-  const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>({
-    Biodiversity: true, Spatial: true, Pollution: true, Climate: true, Policy: true, User: true, Quest: true,
-  });
+  useEffect(() => {
+    wakePhysics();
+  }, [repulsion, linkDist, centerForce, friction, nodeSize]);
 
   // ─── Interaction State ────────────────────────────────────────────────────
   const dragRef = useRef<{
@@ -120,11 +183,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     startPanY: number;
   }>({ mode: 'none', nodeId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
 
-  const [selectedNode, setSelectedNode] = useState<EcoNode | null>(null);
-  const [hoveredNode, setHoveredNode] = useState<PhysicsNode | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  // ─── Initialize Physics Nodes with Obsidian Vault Outer Ring & Clusters ─────
+  // ─── Initialize Physics Nodes with Outer Ring & Sub-Clusters ──────────────
   useEffect(() => {
     const W = 1800;
     const H = 1200;
@@ -133,8 +192,6 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
     const categories = Object.keys(CATEGORY_COLORS);
     const catCenters: Record<string, { x: number; y: number }> = {};
-    
-    // Position category cluster centers in a balanced circle around canvas center
     categories.forEach((cat, idx) => {
       const angle = (idx / categories.length) * Math.PI * 2;
       const radius = 280;
@@ -144,33 +201,44 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       };
     });
 
-    // Compute node degree (edge count) for ring vs core placement
     const degreeMap = new Map<string, number>();
     graphData.edges.forEach((e) => {
       degreeMap.set(e.sourceId, (degreeMap.get(e.sourceId) || 0) + 1);
       degreeMap.set(e.targetId, (degreeMap.get(e.targetId) || 0) + 1);
     });
 
-    frameCountRef.current = 0; // reset cooling
+    // Save existing node positions to prevent resetting/scattering on data updates
+    const existingPosMap = new Map<string, { x: number; y: number }>();
+    physicsRef.current.forEach((n) => existingPosMap.set(n.id, { x: n.x, y: n.y }));
+
+    const isInitialLoad = physicsRef.current.length === 0;
+    if (isInitialLoad) {
+      frameCountRef.current = 0;
+    }
 
     physicsRef.current = graphData.nodes.map((node, idx) => {
-      const degree = degreeMap.get(node.id) || 0;
-      const isPeripheral = degree <= 1; // Leaf / unconnected nodes form outer ring shell
-
+      const existing = existingPosMap.get(node.id);
       let x: number, y: number;
-      if (isPeripheral) {
-        // Distribute outer ring nodes in a calm perimeter circle (matching Image 2 outer ring!)
-        const ringAngle = (idx / graphData.nodes.length) * Math.PI * 2;
-        const ringRadius = 500 + (Math.random() - 0.5) * 40;
-        x = cx + Math.cos(ringAngle) * ringRadius;
-        y = cy + Math.sin(ringAngle) * ringRadius;
+
+      if (existing) {
+        x = existing.x;
+        y = existing.y;
       } else {
-        // Inner connected cluster nodes around category centers
-        const cc = catCenters[node.category] || { x: cx, y: cy };
-        const angle = Math.random() * Math.PI * 2;
-        const spread = 30 + Math.random() * 120;
-        x = cc.x + Math.cos(angle) * spread;
-        y = cc.y + Math.sin(angle) * spread;
+        const degree = degreeMap.get(node.id) || 0;
+        const isPeripheral = degree <= 1;
+
+        if (isPeripheral) {
+          const ringAngle = (idx / graphData.nodes.length) * Math.PI * 2;
+          const ringRadius = 500 + (Math.random() - 0.5) * 40;
+          x = cx + Math.cos(ringAngle) * ringRadius;
+          y = cy + Math.sin(ringAngle) * ringRadius;
+        } else {
+          const cc = catCenters[node.category] || { x: cx, y: cy };
+          const angle = Math.random() * Math.PI * 2;
+          const spread = 30 + Math.random() * 120;
+          x = cc.x + Math.cos(angle) * spread;
+          y = cc.y + Math.sin(angle) * spread;
+        }
       }
 
       const baseColor = groupColors[node.category] || CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
@@ -194,11 +262,11 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     });
 
     const map = new Map<string, PhysicsNode>();
-    physicsRef.current.forEach(n => map.set(n.id, n));
+    physicsRef.current.forEach((n) => map.set(n.id, n));
     edgeMapRef.current = map;
   }, [graphData, groupColors, nodeSize]);
 
-  // ─── Transform Helpers ────────────────────────────────────────────────────
+  // Transform Helpers
   const screenToWorld = useCallback((sx: number, sy: number) => {
     const cam = cameraRef.current;
     return {
@@ -207,7 +275,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     };
   }, []);
 
-  // ─── Canvas Resize ────────────────────────────────────────────────────────
+  // Canvas Resize
   useEffect(() => {
     const resize = () => {
       const canvas = canvasRef.current;
@@ -224,7 +292,51 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     return () => window.removeEventListener('resize', resize);
   }, []);
 
-  // ─── Main Physics + Render Loop ───────────────────────────────────────────
+  // Cursor-Centered Wheel Zooming
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+
+      const cam = cameraRef.current;
+      const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+      const newZoom = Math.max(0.15, Math.min(3.5, cam.zoom * zoomFactor));
+
+      cam.panX = sx - (sx - cam.panX) * (newZoom / cam.zoom);
+      cam.panY = sy - (sy - cam.panY) * (newZoom / cam.zoom);
+      cam.zoom = newZoom;
+
+      forceRender((n) => n + 1);
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  useEffect(() => {
+    if (!zoomSignal) return;
+    if (zoomSignal.type === 'in') handleZoom(1.25);
+    if (zoomSignal.type === 'out') handleZoom(0.75);
+    if (zoomSignal.type === 'reset' || zoomSignal.type === 'fit') handleResetCamera();
+  }, [zoomSignal]);
+
+  const handleZoom = (factor: number) => {
+    cameraRef.current.zoom = Math.max(0.15, Math.min(3.0, cameraRef.current.zoom * factor));
+    forceRender((n) => n + 1);
+  };
+
+  const handleResetCamera = () => {
+    cameraRef.current = { zoom: 0.6, panX: 0, panY: 0 };
+    setSelectedNode(null);
+    forceRender((n) => n + 1);
+  };
+
+  // ─── Main Render & Physics Loop (STABLE UNBROKEN DEPENDENCY ARRAY) ─────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -232,6 +344,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     if (!ctx) return;
 
     const tick = () => {
+      const p = propsRef.current;
       const dpr = window.devicePixelRatio || 1;
       const W = canvas.width;
       const H = canvas.height;
@@ -240,91 +353,91 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       const worldCx = (W / dpr / 2 - cam.panX) / cam.zoom;
       const worldCy = (H / dpr / 2 - cam.panY) / cam.zoom;
 
-      // ── Physics Step ──
-      const catCenters: Record<string, { x: number; y: number; count: number }> = {};
-      nodes.forEach((n) => {
-        if (!catCenters[n.node.category]) {
-          catCenters[n.node.category] = { x: 0, y: 0, count: 0 };
-        }
-        catCenters[n.node.category].x += n.x;
-        catCenters[n.node.category].y += n.y;
-        catCenters[n.node.category].count += 1;
-      });
-      Object.keys(catCenters).forEach((cat) => {
-        const c = catCenters[cat];
-        if (c.count > 0) {
-          c.x /= c.count;
-          c.y /= c.count;
-        }
-      });
+      const dragging = dragRef.current;
 
-      // 1. Repulsion
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i], b = nodes[j];
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const distSq = dx * dx + dy * dy + 1;
-          if (distSq > 160000) continue;
-          const dist = Math.sqrt(distSq);
+      // ── 1. Timeline Mode Layout Interpolation ──
+      if (p.viewMode === 'timeline') {
+        const total = nodes.length;
+        const totalWidth = 1400;
+        const startX = worldCx - totalWidth / 2;
 
-          const sameCategory = a.node.category === b.node.category;
-          const repMult = sameCategory ? 0.7 : 1.0;
-          const f = (repulsion * repMult) / distSq;
-          const fx = (dx / dist) * f;
-          const fy = (dy / dist) * f;
-          a.vx -= fx; a.vy -= fy;
-          b.vx += fx; b.vy += fy;
+        nodes.forEach((n, idx) => {
+          if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
+          const targetX = startX + (idx / total) * totalWidth;
+          const targetY = worldCy + Math.sin(idx * 0.4) * 140;
+          n.x += (targetX - n.x) * 0.12;
+          n.y += (targetY - n.y) * 0.12;
+        });
+      } else {
+        // ── 2. Physics Settlement (Run for 35 frames then FREEZE completely) ──
+        frameCountRef.current++;
+        const frame = frameCountRef.current;
+        const isSettling = frame < 35;
+
+        if (isSettling) {
+          const coolFriction = Math.max(0.2, p.friction - frame * 0.02);
+
+          for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+              const a = nodes[i], b = nodes[j];
+              const dx = b.x - a.x;
+              const dy = b.y - a.y;
+              const distSq = dx * dx + dy * dy + 1;
+              if (distSq > 140000) continue;
+              const dist = Math.sqrt(distSq);
+
+              const sameCategory = a.node.category === b.node.category;
+              const repMult = sameCategory ? 0.6 : 1.0;
+              const f = (p.repulsion * repMult) / distSq;
+              const fx = (dx / dist) * f;
+              const fy = (dy / dist) * f;
+              a.vx -= fx; a.vy -= fy;
+              b.vx += fx; b.vy += fy;
+            }
+          }
+
+          const map = edgeMapRef.current;
+          p.graphData.edges.forEach((edge) => {
+            const src = map.get(edge.sourceId);
+            const tgt = map.get(edge.targetId);
+            if (!src || !tgt) return;
+            const dx = tgt.x - src.x;
+            const dy = tgt.y - src.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const f = (dist - p.linkDist) * 0.018;
+            const fx = (dx / dist) * f;
+            const fy = (dy / dist) * f;
+            src.vx += fx; src.vy += fy;
+            tgt.vx -= fx; tgt.vy -= fy;
+          });
+
+          nodes.forEach((n) => {
+            if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
+
+            n.vx += (worldCx - n.x) * p.centerForce;
+            n.vy += (worldCy - n.y) * p.centerForce;
+
+            n.vx *= coolFriction;
+            n.vy *= coolFriction;
+
+            if (Math.abs(n.vx) < 0.02) n.vx = 0;
+            if (Math.abs(n.vy) < 0.02) n.vy = 0;
+
+            n.x += n.vx;
+            n.y += n.vy;
+          });
+        } else {
+          // FREEZE velocity completely when settled
+          nodes.forEach((n) => {
+            if (dragging.mode !== 'node' || dragging.nodeId !== n.id) {
+              n.vx = 0;
+              n.vy = 0;
+            }
+          });
         }
       }
 
-      // 2. Spring attraction along edges
-      const map = edgeMapRef.current;
-      graphData.edges.forEach(edge => {
-        const src = map.get(edge.sourceId);
-        const tgt = map.get(edge.targetId);
-        if (!src || !tgt) return;
-        const dx = tgt.x - src.x;
-        const dy = tgt.y - src.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const f = (dist - linkDist) * 0.02;
-        const fx = (dx / dist) * f;
-        const fy = (dy / dist) * f;
-        src.vx += fx; src.vy += fy;
-        tgt.vx -= fx; tgt.vy -= fy;
-      });
-
-      // 3. Category Cluster Gravity & Integration
-      frameCountRef.current++;
-      const frame = frameCountRef.current;
-      const coolFriction = frame < 120 ? Math.min(friction, 0.75 + (frame / 120) * (friction - 0.75)) : friction;
-
-      const dragging = dragRef.current;
-      nodes.forEach(n => {
-        if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
-
-        const catCenter = catCenters[n.node.category];
-        if (catCenter && catCenter.count > 1) {
-          const cdx = catCenter.x - n.x;
-          const cdy = catCenter.y - n.y;
-          n.vx += cdx * 0.003;
-          n.vy += cdy * 0.003;
-        }
-
-        n.vx += (worldCx - n.x) * centerForce;
-        n.vy += (worldCy - n.y) * centerForce;
-
-        n.vx *= coolFriction;
-        n.vy *= coolFriction;
-
-        if (Math.abs(n.vx) < 0.02) n.vx = 0;
-        if (Math.abs(n.vy) < 0.02) n.vy = 0;
-
-        n.x += n.vx;
-        n.y += n.vy;
-      });
-
-      // ── Render Step ──
+      // ── 3. Render Step ──
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W / dpr, H / dpr);
 
@@ -332,7 +445,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       ctx.fillStyle = '#0d1117';
       ctx.fillRect(0, 0, W / dpr, H / dpr);
 
-      const grad = ctx.createRadialGradient(W / dpr / 2, H / dpr / 2, 100, W / dpr / 2, H / dpr / 2, W / dpr * 0.7);
+      const grad = ctx.createRadialGradient(W / dpr / 2, H / dpr / 2, 100, W / dpr / 2, H / dpr / 2, (W / dpr) * 0.7);
       grad.addColorStop(0, 'rgba(20, 25, 40, 0)');
       grad.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
       ctx.fillStyle = grad;
@@ -342,69 +455,89 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       ctx.translate(cam.panX, cam.panY);
       ctx.scale(cam.zoom, cam.zoom);
 
-      const filterLower = searchFilter.toLowerCase().trim();
-      const isFiltering = filterLower.length > 0;
+      // Connected Nodes Set for Focus & Paths Mode
+      const connectedNodeIds = new Set<string>();
+      if (p.selectedNode) {
+        connectedNodeIds.add(p.selectedNode.id);
+        p.graphData.edges.forEach((e) => {
+          if (e.sourceId === p.selectedNode!.id) connectedNodeIds.add(e.targetId);
+          if (e.targetId === p.selectedNode!.id) connectedNodeIds.add(e.sourceId);
+        });
+      }
 
-      // ── Draw Edges ──
-      graphData.edges.forEach(edge => {
+      const time = Date.now();
+
+      // ── Draw Edges & Traveling Pulse Particles ──
+      const map = edgeMapRef.current;
+      p.graphData.edges.forEach((edge, idx) => {
         const src = map.get(edge.sourceId);
         const tgt = map.get(edge.targetId);
         if (!src || !tgt) return;
-        if (!categoryFilters[src.node.category] || !categoryFilters[tgt.node.category]) return;
+
+        if (p.selectedCategory && src.node.category !== p.selectedCategory && tgt.node.category !== p.selectedCategory) {
+          return;
+        }
 
         const isConnectedToSelected =
-          selectedNode && (edge.sourceId === selectedNode.id || edge.targetId === selectedNode.id);
+          p.selectedNode && (edge.sourceId === p.selectedNode.id || edge.targetId === p.selectedNode.id);
         const isHighlighted =
-          highlightedPathNodeIds.includes(edge.sourceId) && highlightedPathNodeIds.includes(edge.targetId);
+          (p.highlightedPathNodeIds || []).includes(edge.sourceId) && (p.highlightedPathNodeIds || []).includes(edge.targetId);
+
+        if (p.viewMode === 'focus' && p.selectedNode && !isConnectedToSelected) {
+          return;
+        }
 
         ctx.beginPath();
         ctx.moveTo(src.x, src.y);
         ctx.lineTo(tgt.x, tgt.y);
 
-        if (isHighlighted) {
+        if (p.viewMode === 'paths' && (isConnectedToSelected || isHighlighted || idx % 2 === 0)) {
+          ctx.strokeStyle = `rgba(16, 185, 129, 0.9)`;
+          ctx.lineWidth = 2.2 / cam.zoom;
+        } else if (isHighlighted) {
           ctx.strokeStyle = `rgba(16, 185, 129, 0.85)`;
           ctx.lineWidth = 2.0 / cam.zoom;
         } else if (isConnectedToSelected) {
           ctx.strokeStyle = src.color + 'dd';
           ctx.lineWidth = 1.4 / cam.zoom;
         } else {
-          ctx.strokeStyle = `rgba(120, 125, 140, ${Math.min(lineOpacity, 0.18)})`;
+          ctx.strokeStyle = `rgba(140, 50, 45, ${Math.min(p.lineOpacity, 0.18)})`;
           ctx.lineWidth = 0.35 / cam.zoom;
         }
         ctx.stroke();
+
+        // Traveling pulse particle animation along edges
+        if (cam.zoom > 0.45 && (p.viewMode === 'paths' || idx % 3 === 0 || isConnectedToSelected || isHighlighted)) {
+          const pT = ((time * 0.0008 + idx * 0.2) % 1);
+          const px = src.x + (tgt.x - src.x) * pT;
+          const py = src.y + (tgt.y - src.y) * pT;
+
+          ctx.beginPath();
+          ctx.arc(px, py, (p.viewMode === 'paths' || isConnectedToSelected ? 2.5 : 1.5) / cam.zoom, 0, Math.PI * 2);
+          ctx.fillStyle = isConnectedToSelected || p.viewMode === 'paths' ? '#ffffff' : src.color;
+          ctx.fill();
+        }
       });
 
       // ── Draw Nodes ──
-      nodes.forEach((n, idx) => {
-        if (!categoryFilters[n.node.category]) return;
+      nodes.forEach((n) => {
+        if (p.selectedCategory && n.node.category !== p.selectedCategory) return;
 
-        const matchesFilter = isFiltering
-          ? n.node.name.toLowerCase().includes(filterLower) ||
-            n.node.tags.some(t => t.toLowerCase().includes(filterLower))
-          : true;
+        const isSelected = p.selectedNode?.id === n.id;
+        const isHovered = p.hoveredNode?.id === n.id;
+        const isHighlighted = (p.highlightedPathNodeIds || []).includes(n.id);
+        const isFocusConnected = p.viewMode !== 'focus' || !p.selectedNode || connectedNodeIds.has(n.id);
 
-        const isSelected = selectedNode?.id === n.id;
-        const isHovered = hoveredNode?.id === n.id;
-        const isHighlighted = highlightedPathNodeIds.includes(n.id);
-        const alpha = isFiltering && !matchesFilter ? 0.08 : 1.0;
-        const r = n.radius * nodeSize;
+        const alpha = isFocusConnected ? 1.0 : 0.08;
+        const r = n.radius * p.nodeSize;
 
         ctx.save();
         ctx.globalAlpha = alpha;
 
-        if (isSelected || isHighlighted || isHovered) {
-          const glowR = r + (isSelected ? 12 : 6);
+        if (isSelected || isHighlighted || isHovered || (p.viewMode === 'paths' && connectedNodeIds.has(n.id))) {
+          const glowR = r + (isSelected ? 14 : 7);
           const glowGrad = ctx.createRadialGradient(n.x, n.y, r * 0.3, n.x, n.y, glowR);
-          glowGrad.addColorStop(0, n.color + '80');
-          glowGrad.addColorStop(1, n.color + '00');
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
-          ctx.fillStyle = glowGrad;
-          ctx.fill();
-        } else if (idx % 9 === 0) {
-          const glowR = r + 4;
-          const glowGrad = ctx.createRadialGradient(n.x, n.y, r * 0.2, n.x, n.y, glowR);
-          glowGrad.addColorStop(0, n.color + '40');
+          glowGrad.addColorStop(0, n.color + '90');
           glowGrad.addColorStop(1, n.color + '00');
           ctx.beginPath();
           ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
@@ -417,22 +550,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
         ctx.fillStyle = n.color;
         ctx.fill();
 
-        if (r > 4) {
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, r * 0.3, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.fill();
-        }
-
-        if (isSelected) {
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, r + 3, 0, Math.PI * 2);
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.5 / cam.zoom;
-          ctx.stroke();
-        }
-
-        if (showLabels && cam.zoom > 0.5 && (isSelected || isHovered || isHighlighted || cam.zoom > 0.9)) {
+        if (p.showLabels || isSelected || isHovered || isHighlighted) {
           const fontSize = Math.max(9, 11 / cam.zoom);
           ctx.font = `${isSelected ? 'bold ' : ''}${fontSize}px sans-serif`;
           ctx.fillStyle = isSelected ? '#ffffff' : '#b0b8c8';
@@ -451,300 +569,170 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
     animIdRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animIdRef.current);
-  }, [
-    graphData,
-    selectedNode,
-    hoveredNode,
-    highlightedPathNodeIds,
-    searchFilter,
-    showLabels,
-    categoryFilters,
-    repulsion,
-    linkDist,
-    centerForce,
-    friction,
-    nodeSize,
-    lineOpacity,
-    groupColors,
-  ]);
+  }, []); // Guaranteed constant dependency array size across all renders and HMR updates
 
-  // ─── Mouse Wheel Zoom ─────────────────────────────────────────────────────
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const cam = cameraRef.current;
-      const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      const zoomFactor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
-      const newZoom = Math.min(Math.max(cam.zoom * zoomFactor, 0.1), 5.0);
-
-      cam.panX = mx - (mx - cam.panX) * (newZoom / cam.zoom);
-      cam.panY = my - (my - cam.panY) * (newZoom / cam.zoom);
-      cam.zoom = newZoom;
-      forceRender(x => x + 1);
-    };
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
-    return () => canvas.removeEventListener('wheel', handleWheel);
-  }, []);
-
-  // ─── Mouse Interactions ───────────────────────────────────────────────────
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  // Mouse Handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    const { x, y } = screenToWorld(sx, sy);
+    const world = screenToWorld(sx, sy);
 
-    const hitNode = physicsRef.current.find(n => {
-      const dx = n.x - x, dy = n.y - y;
-      return Math.sqrt(dx * dx + dy * dy) <= (n.radius * nodeSize) + 6;
+    const hit = physicsRef.current.find((n) => {
+      const dx = n.x - world.x;
+      const dy = n.y - world.y;
+      return Math.sqrt(dx * dx + dy * dy) <= n.radius * nodeSize + 6;
     });
 
-    if (hitNode) {
-      dragRef.current = { mode: 'node', nodeId: hitNode.id, startX: sx, startY: sy, startPanX: 0, startPanY: 0 };
-      setSelectedNode(hitNode.node);
-      onSelectNode?.(hitNode.node);
+    if (hit) {
+      dragRef.current = {
+        mode: 'node',
+        nodeId: hit.id,
+        startX: sx,
+        startY: sy,
+        startPanX: cameraRef.current.panX,
+        startPanY: cameraRef.current.panY,
+      };
+      setSelectedNode(hit.node);
+      if (onSelectNode) onSelectNode(hit.node);
+      wakePhysics();
     } else {
-      const cam = cameraRef.current;
-      dragRef.current = { mode: 'pan', nodeId: null, startX: sx, startY: sy, startPanX: cam.panX, startPanY: cam.panY };
-      setSelectedNode(null);
+      dragRef.current = {
+        mode: 'pan',
+        nodeId: null,
+        startX: sx,
+        startY: sy,
+        startPanX: cameraRef.current.panX,
+        startPanY: cameraRef.current.panY,
+      };
     }
-  }, [screenToWorld, onSelectNode]);
+  };
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    setMousePos({ x: e.clientX, y: e.clientY });
+    setMousePos({ x: sx, y: sy });
+    const world = screenToWorld(sx, sy);
 
-    const dr = dragRef.current;
-    if (dr.mode === 'pan') {
-      const cam = cameraRef.current;
-      cam.panX = dr.startPanX + (sx - dr.startX);
-      cam.panY = dr.startPanY + (sy - dr.startY);
-      forceRender(x => x + 1);
-    } else if (dr.mode === 'node' && dr.nodeId) {
-      const { x, y } = screenToWorld(sx, sy);
-      const n = physicsRef.current.find(p => p.id === dr.nodeId);
-      if (n) { n.x = x; n.y = y; n.vx = 0; n.vy = 0; }
+    const drag = dragRef.current;
+
+    if (drag.mode === 'pan') {
+      cameraRef.current.panX = drag.startPanX + (sx - drag.startX);
+      cameraRef.current.panY = drag.startPanY + (sy - drag.startY);
+      forceRender((n) => n + 1);
+    } else if (drag.mode === 'node' && drag.nodeId) {
+      const targetNode = physicsRef.current.find((n) => n.id === drag.nodeId);
+      if (targetNode) {
+        targetNode.x = world.x;
+        targetNode.y = world.y;
+        targetNode.vx = 0;
+        targetNode.vy = 0;
+        wakePhysics();
+      }
     } else {
-      const { x, y } = screenToWorld(sx, sy);
-      const hit = physicsRef.current.find(n => {
-        const dx = n.x - x, dy = n.y - y;
-        return Math.sqrt(dx * dx + dy * dy) <= (n.radius * nodeSize) + 5;
+      const hit = physicsRef.current.find((n) => {
+        const dx = n.x - world.x;
+        const dy = n.y - world.y;
+        return Math.sqrt(dx * dx + dy * dy) <= n.radius * nodeSize + 6;
       });
       setHoveredNode(hit || null);
     }
-  }, [screenToWorld]);
+  };
 
-  const handleMouseUp = useCallback(() => {
-    dragRef.current = { mode: 'none', nodeId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 };
-  }, []);
+  const handleMouseUp = () => {
+    dragRef.current.mode = 'none';
+  };
 
-  const handleDblClick = useCallback((e: React.MouseEvent) => {
+  const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const { x, y } = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-    const hit = physicsRef.current.find(n => {
-      const dx = n.x - x, dy = n.y - y;
-      return Math.sqrt(dx * dx + dy * dy) <= (n.radius * nodeSize) + 6;
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const world = screenToWorld(sx, sy);
+
+    const hit = physicsRef.current.find((n) => {
+      const dx = n.x - world.x;
+      const dy = n.y - world.y;
+      return Math.sqrt(dx * dx + dy * dy) <= n.radius * nodeSize + 6;
     });
+
     if (hit && onExpandNeighborhood) {
       onExpandNeighborhood(hit.id);
     }
-  }, [screenToWorld, onExpandNeighborhood]);
-
-  // ─── Backlinks for Selected Node ──────────────────────────────────────────
-  const backlinks = useMemo(() => {
-    if (!selectedNode) return null;
-    const incoming = graphData.edges
-      .filter(e => e.targetId === selectedNode.id)
-      .map(e => ({ edge: e, node: graphData.nodes.find(n => n.id === e.sourceId)! }))
-      .filter(x => x.node);
-    const outgoing = graphData.edges
-      .filter(e => e.sourceId === selectedNode.id)
-      .map(e => ({ edge: e, node: graphData.nodes.find(n => n.id === e.targetId)! }))
-      .filter(x => x.node);
-    return { incoming, outgoing };
-  }, [selectedNode, graphData]);
-
-  const categories = Object.keys(CATEGORY_COLORS);
+  };
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-[#0d1117] overflow-hidden font-sans select-none">
-
-      {/* ─── Main Interactive Canvas ────────────────────────────────────────── */}
-      <canvas ref={canvasRef}
+    <div ref={containerRef} className="relative w-full h-full bg-[#0d1117] overflow-hidden select-none">
+      <canvas
+        ref={canvasRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onDoubleClick={handleDblClick}
-        className="absolute inset-0 z-0 w-full h-full cursor-grab active:cursor-grabbing"
+        onDoubleClick={handleDoubleClick}
+        className="w-full h-full cursor-grab active:cursor-grabbing block"
       />
 
-      {/* ─── Streamlined Public Floating Toolbar (Top Left) ────────────────── */}
-      <div className="absolute top-10 left-3 z-30 flex flex-col gap-2 max-w-sm pointer-events-auto"
-        onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()}>
-
-        {/* Search Bar */}
-        <div className="flex items-center gap-1.5 bg-[#161b22]/90 backdrop-blur-md border border-zinc-700/80 rounded-lg px-2.5 py-1.5 shadow-xl">
-          <Search className="w-3.5 h-3.5 text-zinc-400" />
-          <input
-            type="text"
-            value={searchFilter}
-            onChange={e => setSearchFilter(e.target.value)}
-            placeholder="Search nodes or tags..."
-            className="w-48 bg-transparent text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
-          />
-          {searchFilter && (
-            <button onClick={() => setSearchFilter('')} className="text-xs text-zinc-500 hover:text-white">✕</button>
-          )}
-        </div>
-
-        {/* Category Pills & Explorer Controls */}
-        <div className="flex items-center gap-1.5 flex-wrap bg-[#161b22]/90 backdrop-blur-md border border-zinc-700/80 rounded-lg p-1.5 shadow-xl">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategoryFilters(prev => ({ ...prev, [cat]: !prev[cat] }))}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium transition flex items-center gap-1 ${
-                categoryFilters[cat] ? 'bg-zinc-800 text-zinc-100 border border-zinc-700' : 'opacity-40 text-zinc-500'
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[cat] }} />
-              {cat}
-            </button>
-          ))}
-
-          <div className="h-3 w-px bg-zinc-700 mx-0.5" />
-
-          {/* Labels Toggle */}
-          <button
-            onClick={() => setShowLabels(prev => !prev)}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
-              showLabels ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'
-            }`}
-          >
-            Labels
-          </button>
-
-          {/* Zoom Buttons */}
-          <div className="flex items-center gap-1 ml-auto">
-            <button
-              onClick={() => {
-                cameraRef.current.zoom = Math.min(cameraRef.current.zoom * 1.2, 5.0);
-                forceRender(x => x + 1);
-              }}
-              className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => {
-                cameraRef.current.zoom = Math.max(cameraRef.current.zoom / 1.2, 0.1);
-                forceRender(x => x + 1);
-              }}
-              className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => {
-                cameraRef.current = { zoom: 0.6, panX: 0, panY: 0 };
-                forceRender(x => x + 1);
-              }}
-              className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition"
-              title="Reset View"
-            >
-              <RotateCcw className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Hover Tooltip ───────────────────────────────────────────────── */}
+      {/* Hover Tooltip Card */}
       {hoveredNode && !selectedNode && (
-        <div className="fixed z-50 bg-[#161b22]/95 backdrop-blur border border-zinc-700 rounded-lg p-2.5 shadow-2xl pointer-events-none text-xs max-w-xs"
-          style={{ left: mousePos.x + 14, top: mousePos.y + 14 }}>
-          <div className="flex items-center gap-1.5 font-semibold text-white text-[11px]">
-            <span>{hoveredNode.node.icon}</span> {hoveredNode.node.name}
+        <div
+          className="absolute z-30 pointer-events-none bg-[#161b22]/95 backdrop-blur-md border border-zinc-800 p-2.5 rounded-xl shadow-2xl text-xs space-y-1 text-zinc-200 animate-in fade-in"
+          style={{ left: Math.min(window.innerWidth - 200, mousePos.x + 15), top: Math.min(window.innerHeight - 100, mousePos.y + 15) }}
+        >
+          <div className="flex items-center gap-2 font-bold text-white">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: hoveredNode.color }} />
+            <span>{hoveredNode.node.name}</span>
           </div>
-          <div className="text-[9px] mt-0.5 flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: hoveredNode.color }} />
-            <span className="text-zinc-400">{hoveredNode.node.category}</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-zinc-400">{hoveredNode.node.label}</span>
-          </div>
-          <div className="text-[9px] text-zinc-500 mt-1 italic">Double-click to expand neighborhood</div>
+          <span className="text-[9px] font-mono text-emerald-400 block">{hoveredNode.node.category}</span>
+          <p className="text-[10px] text-zinc-400 line-clamp-2">{hoveredNode.node.description}</p>
         </div>
       )}
 
-      {/* ─── Selected Node Inspector Card (Bottom Right) ─────────────────── */}
-      {selectedNode && backlinks && (
-        <div className="absolute bottom-4 right-4 z-30 w-72 bg-[#161b22]/95 backdrop-blur-sm border border-zinc-700/80 rounded-lg shadow-2xl overflow-hidden text-xs pointer-events-auto" onMouseDown={e => e.stopPropagation()}>
-          <div className="px-3 py-2 border-b border-zinc-800/60 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[selectedNode.category] || '#10b981' }} />
-              <span className="font-semibold text-white text-[11px] truncate max-w-[180px]">
-                {selectedNode.icon} {selectedNode.name}
-              </span>
-            </div>
-            <button onClick={() => setSelectedNode(null)} className="text-zinc-500 hover:text-white text-sm leading-none">✕</button>
-          </div>
+      {/* Floating Toolbar Controls */}
+      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 bg-[#161b22]/90 backdrop-blur-md border border-zinc-800 p-1.5 rounded-xl shadow-xl text-xs text-zinc-300">
+        <button
+          onClick={() => {
+            if (onToggleLabels) {
+              onToggleLabels();
+            } else {
+              setInternalShowLabels(!internalShowLabels);
+            }
+          }}
+          className={`px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5 font-medium ${
+            showLabels ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold' : 'hover:bg-zinc-800 text-zinc-300'
+          }`}
+          title="Toggle Node Labels"
+        >
+          <Tag className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden sm:inline">Labels</span>
+        </button>
 
-          <div className="px-3 py-2 max-h-48 overflow-y-auto space-y-2">
-            <div className="flex gap-1.5 flex-wrap">
-              <span className="px-1.5 py-0.5 rounded-sm text-[9px] font-mono bg-zinc-800 text-zinc-300">{selectedNode.category}</span>
-              <span className="px-1.5 py-0.5 rounded-sm text-[9px] font-mono bg-zinc-800 text-zinc-300">{selectedNode.label}</span>
-              {selectedNode.scientificName && (
-                <span className="px-1.5 py-0.5 rounded-sm text-[9px] font-mono bg-zinc-800 text-zinc-400 italic">{selectedNode.scientificName}</span>
-              )}
-            </div>
-            <p className="text-[10px] text-zinc-400 leading-relaxed">{selectedNode.description}</p>
+        <div className="w-px h-4 bg-zinc-800 my-auto" />
 
-            {(backlinks.incoming.length > 0 || backlinks.outgoing.length > 0) && (
-              <div className="space-y-1 pt-1 border-t border-zinc-800/40">
-                <div className="text-[9px] text-zinc-500 font-medium">
-                  {backlinks.incoming.length} in · {backlinks.outgoing.length} out
-                </div>
-                {backlinks.incoming.slice(0, 4).map(({ edge, node }) => (
-                  <button key={edge.id} onClick={() => setSelectedNode(node)}
-                    className="block w-full text-left text-[10px] text-zinc-400 hover:text-emerald-300 truncate transition">
-                    ← <span className="text-zinc-500">{edge.type}</span> {node.name}
-                  </button>
-                ))}
-                {backlinks.outgoing.slice(0, 4).map(({ edge, node }) => (
-                  <button key={edge.id} onClick={() => setSelectedNode(node)}
-                    className="block w-full text-left text-[10px] text-zinc-400 hover:text-emerald-300 truncate transition">
-                    → <span className="text-zinc-500">{edge.type}</span> {node.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {onExpandNeighborhood && (
-            <div className="px-3 py-2 border-t border-zinc-800/40">
-              <button onClick={() => onExpandNeighborhood(selectedNode.id)}
-                className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-medium transition">
-                Expand 2-Hop Neighborhood
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── Stats Badge Bottom Left ────────────────────────────────────── */}
-      <div className="absolute bottom-3 left-3 z-20 text-[9px] text-zinc-500 font-mono pointer-events-none">
-        {graphData.nodes.length} nodes · {graphData.edges.length} edges · {Math.round(cameraRef.current.zoom * 100)}%
+        <button
+          onClick={() => handleZoom(1.2)}
+          className="p-1.5 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleZoom(0.8)}
+          className="p-1.5 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleResetCamera}
+          className="p-1.5 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition"
+          title="Reset Camera"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
