@@ -60,13 +60,37 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const cameraRef = useRef({ zoom: 0.6, panX: 0, panY: 0 });
   const [, forceRender] = useState(0);
 
-  // ─── Fixed Global Admin Physics Parameters ────────────────────────────────
-  const repulsion = 1400;
-  const linkDist = 80;
-  const centerForce = 0.008;
-  const friction = 0.92;
-  const nodeSize = 1.2;
-  const lineOpacity = 0.35;
+  // ─── Dynamic Global Admin Physics & Display Settings ──────────────────────
+  const [repulsion, setRepulsion] = useState(1400);
+  const [linkDist, setLinkDist] = useState(80);
+  const [centerForce, setCenterForce] = useState(0.008);
+  const [friction, setFriction] = useState(0.92);
+  const [nodeSize, setNodeSize] = useState(1.2);
+  const [lineOpacity, setLineOpacity] = useState(0.35);
+  const [groupColors, setGroupColors] = useState<Record<string, string>>({ ...CATEGORY_COLORS });
+
+  // Fetch live global admin presets on mount
+  useEffect(() => {
+    const fetchGlobalPresets = async () => {
+      try {
+        const res = await fetch('/api/admin/ecograph/publish');
+        const json = await res.json();
+        if (json.success && json.presets) {
+          const p = json.presets;
+          if (p.repulsion) setRepulsion(p.repulsion);
+          if (p.linkDist) setLinkDist(p.linkDist);
+          if (p.centerForce) setCenterForce(p.centerForce);
+          if (p.friction) setFriction(p.friction);
+          if (p.nodeSize) setNodeSize(p.nodeSize);
+          if (p.lineOpacity) setLineOpacity(p.lineOpacity);
+          if (p.categoryColors) setGroupColors((prev) => ({ ...prev, ...p.categoryColors }));
+        }
+      } catch (err) {
+        // Fallback to defaults
+      }
+    };
+    fetchGlobalPresets();
+  }, []);
 
   // ─── User Explore Controls State ──────────────────────────────────────────
   const [searchFilter, setSearchFilter] = useState('');
@@ -112,7 +136,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       const cc = catCenters[node.category] || { x: cx, y: cy };
       const angle = Math.random() * Math.PI * 2;
       const spread = 40 + Math.random() * 140;
-      const baseColor = CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
+      const baseColor = groupColors[node.category] || CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
 
       let r = 3;
       if (node.label === 'Species' || node.label === 'Policy') r = 5;
@@ -135,7 +159,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     const map = new Map<string, PhysicsNode>();
     physicsRef.current.forEach(n => map.set(n.id, n));
     edgeMapRef.current = map;
-  }, [graphData]);
+  }, [graphData, groupColors, nodeSize]);
 
   // ─── Transform Helpers ────────────────────────────────────────────────────
   const screenToWorld = useCallback((sx: number, sy: number) => {
@@ -390,7 +414,22 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
     animIdRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animIdRef.current);
-  }, [graphData, selectedNode, hoveredNode, highlightedPathNodeIds, searchFilter, showLabels, categoryFilters]);
+  }, [
+    graphData,
+    selectedNode,
+    hoveredNode,
+    highlightedPathNodeIds,
+    searchFilter,
+    showLabels,
+    categoryFilters,
+    repulsion,
+    linkDist,
+    centerForce,
+    friction,
+    nodeSize,
+    lineOpacity,
+    groupColors,
+  ]);
 
   // ─── Mouse Wheel Zoom ─────────────────────────────────────────────────────
   useEffect(() => {
