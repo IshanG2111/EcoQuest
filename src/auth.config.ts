@@ -12,14 +12,14 @@ export const authConfig = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.role = (user as any).role || 'SUPER_ADMIN';
+                token.role = (user as any).role || 'USER';
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string;
-                (session.user as any).role = (token.role as string) || 'SUPER_ADMIN';
+                (session.user as any).role = (token.role as string) || 'USER';
             }
             return session;
         },

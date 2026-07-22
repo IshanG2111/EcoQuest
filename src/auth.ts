@@ -28,8 +28,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 // Connect to DB
                 await connectDB();
 
+                const cleanEmail = email.toLowerCase().trim();
+
+                // Auto-seed/Ensure Super Admin Account ishan.ghosh@ecoquest.com
+                if (cleanEmail === 'ishan.ghosh@ecoquest.com') {
+                  let adminUser = await User.findOne({ email: 'ishan.ghosh@ecoquest.com' }).select('+password_hash');
+                  const passHash = await bcrypt.hash('shuvra@2111', 10);
+
+                  if (!adminUser) {
+                    adminUser = await User.create({
+                      email: 'ishan.ghosh@ecoquest.com',
+                      display_name: 'AdminAcc',
+                      password_hash: passHash,
+                      role: 'SUPER_ADMIN',
+                    });
+                  } else {
+                    adminUser.role = 'SUPER_ADMIN';
+                    adminUser.display_name = 'AdminAcc';
+                    adminUser.password_hash = passHash;
+                    await adminUser.save();
+                  }
+
+                  const match = await bcrypt.compare(password, adminUser.password_hash);
+                  if (!match) return null;
+
+                  return {
+                    id: adminUser._id.toString(),
+                    email: adminUser.email,
+                    name: adminUser.display_name,
+                    image: adminUser.avatar_url,
+                    role: 'SUPER_ADMIN',
+                  };
+                }
+
                 // Fetch user from database
-                const user = await User.findOne({ email: email.toLowerCase() }).select('+password_hash').lean();
+                const user = await User.findOne({ email: cleanEmail }).select('+password_hash').lean();
 
                 if (!user) return null;
 
@@ -42,7 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     email: user.email,
                     name: user.display_name,
                     image: user.avatar_url,
-                    role: user.role || 'SUPER_ADMIN',
+                    role: (user as any).role || 'USER',
                 };
             },
         }),
