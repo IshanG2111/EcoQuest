@@ -61,10 +61,10 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const [, forceRender] = useState(0);
 
   // ─── Dynamic Global Admin Physics & Display Settings ──────────────────────
-  const [repulsion, setRepulsion] = useState(1400);
-  const [linkDist, setLinkDist] = useState(80);
-  const [centerForce, setCenterForce] = useState(0.008);
-  const [friction, setFriction] = useState(0.92);
+  const [repulsion, setRepulsion] = useState(1100);
+  const [linkDist, setLinkDist] = useState(85);
+  const [centerForce, setCenterForce] = useState(0.005);
+  const [friction, setFriction] = useState(0.955);
   const [nodeSize, setNodeSize] = useState(1.2);
   const [lineOpacity, setLineOpacity] = useState(0.35);
   const [groupColors, setGroupColors] = useState<Record<string, string>>({ ...CATEGORY_COLORS });
@@ -96,8 +96,8 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   useEffect(() => {
     frameCountRef.current = 0;
     physicsRef.current.forEach((n) => {
-      n.vx = (Math.random() - 0.5) * 5;
-      n.vy = (Math.random() - 0.5) * 5;
+      n.vx = (Math.random() - 0.5) * 1.5;
+      n.vy = (Math.random() - 0.5) * 1.5;
     });
   }, [repulsion, linkDist, centerForce, friction, nodeSize]);
 
