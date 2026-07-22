@@ -26,9 +26,9 @@ export default function EcoGraphAdminLayout({ children }: { children: React.Reac
   ];
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-zinc-100 flex font-sans select-none">
+    <div className="h-screen w-screen bg-[#090a0f] text-zinc-100 flex font-sans select-none overflow-hidden">
       {/* Admin Sidebar Navigation */}
-      <aside className="w-64 bg-[#11131c] border-r border-zinc-800/80 flex flex-col justify-between p-4 flex-shrink-0">
+      <aside className="w-64 h-full bg-[#11131c] border-r border-zinc-800/80 flex flex-col justify-between p-4 flex-shrink-0">
         <div>
           {/* Header */}
           <div className="flex items-center gap-2 mb-6 pb-4 border-b border-zinc-800/80">
@@ -84,8 +84,8 @@ export default function EcoGraphAdminLayout({ children }: { children: React.Reac
         </div>
       </aside>
 
-      {/* Main Admin Content Body */}
-      <main className="flex-1 bg-[#090a0f] overflow-y-auto p-6">{children}</main>
+      {/* Main Admin Content Body with Full Height Scrolling */}
+      <main className="flex-1 h-full bg-[#090a0f] overflow-y-auto p-6 min-w-0">{children}</main>
     </div>
   );
 }
