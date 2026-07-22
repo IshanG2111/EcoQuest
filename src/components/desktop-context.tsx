@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type WidgetType = 'fact' | 'briefing' | 'weather' | 'news' | 'calendar' | 'garden';
+export type WidgetType = 'fact' | 'briefing' | 'weather' | 'news' | 'calendar' | 'garden' | 'ecograph';
 
 export interface WidgetPosition {
   x: number;

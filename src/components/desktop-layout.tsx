@@ -16,7 +16,8 @@ import {
   Zap,
   Leaf,
   Briefcase,
-  Users
+  Users,
+  Network
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -39,6 +40,7 @@ import { PixelWeatherWidget } from '@/components/widgets/PixelWeatherWidget';
 import { EcoNewsWidget } from '@/components/widgets/EcoNewsWidget';
 import { EcoTilesCalendarWidget } from '@/components/widgets/EcoTilesCalendarWidget';
 import { EcoGardenWidget } from '@/components/widgets/EcoGardenWidget';
+import { EcoGraphMiniWidget } from '@/components/widgets/EcoGraphMiniWidget';
 
 import { WidgetShell } from '@/components/widgets/WidgetShell';
 import { WidgetDock } from '@/components/widgets/WidgetDock';
@@ -48,6 +50,7 @@ import { DailyBriefingIcon, RankingsIcon, ThemesIcon } from '@/lib/user-data';
 const desktopIcons = [
   { href: '/play', label: 'Games', icon: Gamepad2 },
   { href: '/dashboard', label: 'Dashboard', icon: DailyBriefingIcon },
+  { href: '/ecograph', label: 'EcoGraph', icon: Network },
   { href: '/leaderboard', label: 'Rankings', icon: RankingsIcon },
   { href: '/quizzes', label: 'Quizzes', icon: FileQuestion },
 ];
@@ -65,6 +68,7 @@ const widgetComponents: Record<WidgetType, React.FC<any>> = {
   news: EcoNewsWidget,
   calendar: EcoTilesCalendarWidget,
   garden: EcoGardenWidget,
+  ecograph: EcoGraphMiniWidget,
 };
 
 const widgetTitles: Record<WidgetType, string> = {
@@ -74,6 +78,7 @@ const widgetTitles: Record<WidgetType, string> = {
   news: 'Eco News Feed',
   calendar: 'Eco Tiles Calendar',
   garden: 'Eco Garden Pet',
+  ecograph: 'EcoGraph Knowledge Mini',
 };
 
 const getWidgetDefaultPos = (id: WidgetType, width: number) => {

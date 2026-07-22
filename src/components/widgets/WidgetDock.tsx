@@ -1,9 +1,9 @@
 'use client';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Lightbulb, Newspaper, CloudSun, Rss, CalendarDays, Trees } from 'lucide-react';
+import { Lightbulb, Newspaper, CloudSun, Rss, CalendarDays, Trees, Network } from 'lucide-react';
 
-type WidgetType = 'fact' | 'briefing' | 'weather' | 'news' | 'calendar' | 'garden';
+type WidgetType = 'fact' | 'briefing' | 'weather' | 'news' | 'calendar' | 'garden' | 'ecograph';
 
 interface WidgetDockProps {
   isOpen: boolean;
@@ -13,6 +13,12 @@ interface WidgetDockProps {
 }
 
 const availableWidgets = [
+  { 
+    id: 'ecograph' as WidgetType,
+    title: 'EcoGraph Knowledge Mini',
+    desc: 'Real-time environmental knowledge graph entity explorer and multi-hop discovery widget.',
+    icon: Network
+  },
   { 
     id: 'fact' as WidgetType, 
     title: 'Eco Fact Card', 
