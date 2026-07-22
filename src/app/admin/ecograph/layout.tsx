@@ -12,6 +12,7 @@ import {
   Eye,
   ShieldCheck,
   ArrowLeft,
+  Users,
 } from 'lucide-react';
 
 export default function EcoGraphAdminLayout({ children }: { children: React.ReactNode }) {
@@ -19,6 +20,7 @@ export default function EcoGraphAdminLayout({ children }: { children: React.Reac
 
   const navItems = [
     { href: '/admin/ecograph', label: 'Dashboard & Health', icon: LayoutDashboard },
+    { href: '/admin/users', label: 'User Management', icon: Users },
     { href: '/admin/ecograph/editor', label: 'Visual Graph Editor', icon: GitBranch },
     { href: '/admin/ecograph/ai-ingest', label: 'AI Web Ingestion', icon: Sparkles },
     { href: '/admin/ecograph/drafts', label: 'Drafts & Versions', icon: CheckCircle2 },

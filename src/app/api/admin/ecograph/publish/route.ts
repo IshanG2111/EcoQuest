@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     const { action, commitMessage, newPresets } = body;
 
     if (action === 'publish') {
-      const snapshot = adminStore.publishChanges(commitMessage);
+      const snapshot = await adminStore.publishChanges(commitMessage);
       return NextResponse.json({ success: true, publishedVersion: snapshot });
     }
 

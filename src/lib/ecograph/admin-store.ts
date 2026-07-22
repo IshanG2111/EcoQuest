@@ -318,14 +318,15 @@ class EcoGraphAdminStore {
     };
   }
 
-  public publishChanges(commitMessage?: string): VersionSnapshot {
+  public async publishChanges(commitMessage?: string): Promise<VersionSnapshot> {
+    const graph = await this.getGraph();
     const snapshot: VersionSnapshot = {
       version: `v1.${this.versionHistory.length + 1}.0`,
       timestamp: new Date().toISOString(),
-      nodeCount: 0,
-      edgeCount: 0,
+      nodeCount: graph.nodes.length,
+      edgeCount: graph.edges.length,
       description: commitMessage || `Published ${this.drafts.length} pending draft edits`,
-      data: { nodes: [], edges: [] },
+      data: graph,
     };
 
     this.versionHistory.unshift(snapshot);

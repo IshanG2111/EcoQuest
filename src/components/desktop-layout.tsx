@@ -323,11 +323,23 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
             <DropdownMenuSeparator />
             {user ? (
               <>
-                <DropdownMenuItem onClick={() => router.push('/admin/ecograph')}>
-                  <ShieldCheck className="mr-2 h-4 w-4 text-emerald-400" />
-                  <span className="font-bold text-emerald-400">Knowledge Studio (Admin)</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {Boolean(
+                  user.role === 'SUPER_ADMIN' ||
+                  user.role === 'ADMIN' ||
+                  ['admin.master@ecoquest.org', 'ishan.ghosh2004@gmail.com', 'ishan.ghosh@ecoquest.com'].includes((user.email || '').toLowerCase().trim())
+                ) && (
+                  <>
+                    <DropdownMenuItem onClick={() => router.push('/admin/ecograph')}>
+                      <ShieldCheck className="mr-2 h-4 w-4 text-emerald-400" />
+                      <span className="font-bold text-emerald-400">Knowledge Studio (Admin)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/admin/users')}>
+                      <Users className="mr-2 h-4 w-4 text-sky-400" />
+                      <span className="font-bold text-sky-400">User Management (Admin)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={() => router.push('/account-settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   Account Settings
@@ -350,7 +362,16 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1"></div>
 
         <div className="flex items-center h-full text-foreground/80 text-xs font-code gap-4 px-3">
-          {user && <span className="hidden sm:inline">{user.name || user.email}</span>}
+          {user && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs">
+              {user.name || user.email}
+              {(user.role === 'SUPER_ADMIN' || user.role === 'ADMIN' || ['admin.master@ecoquest.org', 'ishan.ghosh2004@gmail.com', 'ishan.ghosh@ecoquest.com'].includes((user.email || '').toLowerCase().trim())) && (
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                  ADMIN
+                </span>
+              )}
+            </span>
+          )}
           <div className="flex items-center px-3 h-8 bg-background/10 border border-t-white/20 border-l-white/20 border-b-black/20 border-r-black/20">
             <span className="font-code text-xs">{time}</span>
           </div>
