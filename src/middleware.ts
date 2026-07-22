@@ -35,7 +35,10 @@ export default auth((req) => {
   if (isAdminRoute) {
     const isSuperAdmin =
       isLoggedIn &&
-      (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'ishan.ghosh@ecoquest.com');
+      (userRole === 'SUPER_ADMIN' ||
+        userRole === 'ADMIN' ||
+        userEmail === 'ishan.ghosh2004@gmail.com' ||
+        userEmail === 'ishan.ghosh@ecoquest.com');
 
     if (!isSuperAdmin) {
       // Act like the page does not exist at all (Stealth 404)

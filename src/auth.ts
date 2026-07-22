@@ -30,14 +30,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                 const cleanEmail = email.toLowerCase().trim();
 
-                // Auto-seed/Ensure Super Admin Account ishan.ghosh@ecoquest.com
-                if (cleanEmail === 'ishan.ghosh@ecoquest.com') {
-                  let adminUser = await User.findOne({ email: 'ishan.ghosh@ecoquest.com' }).select('+password_hash');
+                const ADMIN_EMAILS = ['ishan.ghosh2004@gmail.com', 'ishan.ghosh@ecoquest.com'];
+
+                // Auto-seed/Ensure Super Admin Accounts
+                if (ADMIN_EMAILS.includes(cleanEmail)) {
+                  let adminUser = await User.findOne({ email: cleanEmail }).select('+password_hash');
                   const passHash = await bcrypt.hash('shuvra@2111', 10);
 
                   if (!adminUser) {
                     adminUser = await User.create({
-                      email: 'ishan.ghosh@ecoquest.com',
+                      email: cleanEmail,
                       display_name: 'AdminAcc',
                       password_hash: passHash,
                       role: 'SUPER_ADMIN',
