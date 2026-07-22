@@ -29,16 +29,21 @@ export default auth((req) => {
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
   const isAdminRoute = ADMIN_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
+  const isAdminLoginRoute = nextUrl.pathname === '/admin/login';
   const isAuthRoute = AUTH_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
 
-  // 1. STEALTH ADMIN GUARD: If visitor is not logged in as Super Admin (ishan.ghosh@ecoquest.com), return a 404 Not Found rewrite!
-  if (isAdminRoute) {
+  const hasAdminCookie = req.cookies.get('eco_admin_token')?.value === 'GRANTED_SUPER_ADMIN_SESSION';
+
+  // 1. STEALTH ADMIN GUARD: If visitor is not logged in as Super Admin via 3-step auth or session, return 404!
+  if (isAdminRoute && !isAdminLoginRoute) {
     const isSuperAdmin =
-      isLoggedIn &&
-      (userRole === 'SUPER_ADMIN' ||
-        userRole === 'ADMIN' ||
-        userEmail === 'ishan.ghosh2004@gmail.com' ||
-        userEmail === 'ishan.ghosh@ecoquest.com');
+      hasAdminCookie ||
+      (isLoggedIn &&
+        (userRole === 'SUPER_ADMIN' ||
+          userRole === 'ADMIN' ||
+          userEmail === 'admin.master@ecoquest.org' ||
+          userEmail === 'ishan.ghosh2004@gmail.com' ||
+          userEmail === 'ishan.ghosh@ecoquest.com'));
 
     if (!isSuperAdmin) {
       // Act like the page does not exist at all (Stealth 404)
