@@ -33,6 +33,21 @@ export async function verifyAdminApiAuth(req: Request): Promise<{ authorized: bo
       };
     }
 
+    // Optional 2FA Admin Master Passcode Verification (configured in .env.local via ADMIN_MASTER_PIN)
+    const masterPin = process.env.ADMIN_MASTER_PIN;
+    if (masterPin) {
+      const requestPin = req.headers.get('x-admin-pin') || req.headers.get('authorization')?.replace('Bearer ', '');
+      if (requestPin !== masterPin) {
+        return {
+          authorized: false,
+          response: NextResponse.json(
+            { error: '403 Forbidden: Invalid 2FA Admin Master Security PIN.' },
+            { status: 403 }
+          ),
+        };
+      }
+    }
+
     return { authorized: true, user: session.user };
   } catch (err: any) {
     return {
