@@ -5,6 +5,7 @@ export interface IUser extends Document {
     password_hash: string;
     display_name: string;
     avatar_url?: string;
+    role: 'USER' | 'ADMIN' | 'SUPER_ADMIN';
     points: number;
     streak: number;
     last_active: string;
@@ -19,6 +20,7 @@ const UserSchema: Schema = new Schema(
         password_hash: { type: String, required: true },
         display_name: { type: String, required: true },
         avatar_url: { type: String },
+        role: { type: String, enum: ['USER', 'ADMIN', 'SUPER_ADMIN'], default: 'USER' },
         points: { type: Number, default: 0 },
         streak: { type: Number, default: 0 },
         last_active: { type: String, default: () => new Date().toISOString().split('T')[0] },
