@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { adminStore } from '@/lib/ecograph/admin-store';
-import { EcoGraphEngine } from '@/lib/ecograph/engine';
 import { verifyAdminApiAuth } from '@/lib/ecograph/admin-auth-guard';
 
 export async function GET(req: Request) {
@@ -10,7 +9,7 @@ export async function GET(req: Request) {
   try {
     const drafts = adminStore.getDrafts();
     const history = adminStore.getVersionHistory();
-    const presets = adminStore.getPresets();
+    const presets = await adminStore.getPresets();
     return NextResponse.json({
       success: true,
       drafts,
@@ -28,25 +27,15 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { action, commitMessage, rollbackVersion, newPresets } = body;
+    const { action, commitMessage, newPresets } = body;
 
     if (action === 'publish') {
       const snapshot = adminStore.publishChanges(commitMessage);
-      EcoGraphEngine.getInstance().loadGraph(adminStore.getGraph());
       return NextResponse.json({ success: true, publishedVersion: snapshot });
     }
 
-    if (action === 'rollback' && rollbackVersion) {
-      const snapshot = adminStore.rollbackToVersion(rollbackVersion);
-      if (!snapshot) {
-        return NextResponse.json({ error: `Version ${rollbackVersion} not found.` }, { status: 404 });
-      }
-      EcoGraphEngine.getInstance().loadGraph(adminStore.getGraph());
-      return NextResponse.json({ success: true, rolledBackTo: snapshot });
-    }
-
     if (action === 'update_presets' && newPresets) {
-      const updated = adminStore.updatePresets(newPresets);
+      const updated = await adminStore.updatePresets(newPresets);
       return NextResponse.json({ success: true, presets: updated });
     }
 

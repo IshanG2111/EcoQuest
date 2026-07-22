@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { EcoGraphEngine } from '@/lib/ecograph/engine';
+import { adminStore } from '@/lib/ecograph/admin-store';
 import { NodeCategory } from '@/lib/ecograph/types';
 
 export async function GET(req: Request) {
@@ -8,27 +8,38 @@ export async function GET(req: Request) {
     const query = searchParams.get('q') || '';
     const id = searchParams.get('id');
     const category = (searchParams.get('category') as NodeCategory) || undefined;
-    const hops = parseInt(searchParams.get('hops') || '1', 10);
 
-    const engine = EcoGraphEngine.getInstance();
+    // Read live graph data from MongoDB Atlas
+    const graphData = await adminStore.getGraph();
+    let nodes = graphData.nodes;
+    let edges = graphData.edges;
 
-    // Case 1: Fetch single entity by ID with optional k-hop neighborhood
+    // Filter by search query or category if provided
+    if (query) {
+      const qLower = query.toLowerCase();
+      nodes = nodes.filter(
+        (n) =>
+          n.name.toLowerCase().includes(qLower) ||
+          n.tags.some((t) => t.toLowerCase().includes(qLower)) ||
+          n.category.toLowerCase().includes(qLower)
+      );
+    }
+
+    if (category) {
+      nodes = nodes.filter((n) => n.category === category);
+    }
+
     if (id) {
-      const node = engine.getNode(id);
+      const node = graphData.nodes.find((n) => n.id === id);
       if (!node) {
         return NextResponse.json({ error: `Node with id "${id}" not found.` }, { status: 404 });
       }
-      const neighborhood = engine.getNeighborhood(id, hops);
       return NextResponse.json({
         success: true,
         entity: node,
-        neighborhood,
+        neighborhood: graphData,
       });
     }
-
-    // Case 2: Search or list entities
-    const nodes = engine.searchNodes(query, category);
-    const edges = engine.getAllEdges();
 
     return NextResponse.json({
       success: true,

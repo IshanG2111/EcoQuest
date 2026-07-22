@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (!sourceId || !targetId) {
       return NextResponse.json({ error: 'Missing sourceId or targetId.' }, { status: 400 });
     }
-    const newEdge = adminStore.createEdge({ sourceId, targetId, type, label });
+    const newEdge = await adminStore.createEdge({ sourceId, targetId, type, label });
     return NextResponse.json({ success: true, edge: newEdge });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Admin Create Edge Error' }, { status: 500 });
@@ -29,7 +29,7 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json({ error: 'Missing edge id.' }, { status: 400 });
     }
-    const deleted = adminStore.deleteEdge(id);
+    const deleted = await adminStore.deleteEdge(id);
     return NextResponse.json({ success: deleted });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Admin Delete Edge Error' }, { status: 500 });

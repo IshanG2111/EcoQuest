@@ -7,8 +7,8 @@ export async function GET(req: Request) {
   if (!auth.authorized) return auth.response!;
 
   try {
-    const graph = adminStore.getGraph();
-    const metrics = adminStore.getHealthMetrics();
+    const graph = await adminStore.getGraph();
+    const metrics = await adminStore.getHealthMetrics();
     return NextResponse.json({
       success: true,
       nodes: graph.nodes,
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const newNode = adminStore.createNode(body);
+    const newNode = await adminStore.createNode(body);
     return NextResponse.json({ success: true, node: newNode });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Admin Create Node Error' }, { status: 500 });
@@ -43,7 +43,7 @@ export async function PUT(req: Request) {
     if (!id) {
       return NextResponse.json({ error: 'Missing node id parameter.' }, { status: 400 });
     }
-    const updated = adminStore.updateNode(id, updates);
+    const updated = await adminStore.updateNode(id, updates);
     if (!updated) {
       return NextResponse.json({ error: `Node ${id} not found.` }, { status: 404 });
     }
@@ -63,7 +63,7 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json({ error: 'Missing node id parameter.' }, { status: 400 });
     }
-    const deleted = adminStore.deleteNode(id);
+    const deleted = await adminStore.deleteNode(id);
     return NextResponse.json({ success: deleted });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Admin Delete Node Error' }, { status: 500 });

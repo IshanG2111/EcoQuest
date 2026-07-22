@@ -1,5 +1,9 @@
-import { EcoNode, EcoEdge, GraphData, NodeCategory, NodeLabel } from './types';
+import { EcoNode, EcoEdge, GraphData } from './types';
 import { INITIAL_ECOGRAPH_DATA } from './seed-data';
+import connectDB from '@/lib/mongodb';
+import EcoGraphNode from '@/models/EcoGraphNode';
+import EcoGraphEdge from '@/models/EcoGraphEdge';
+import EcoGraphPreset from '@/models/EcoGraphPreset';
 
 export interface DraftEdit {
   id: string;
@@ -29,21 +33,110 @@ export interface GlobalPresets {
   categoryColors: Record<string, string>;
 }
 
-// In-Memory Admin State Store (persisted to graph engine)
 class EcoGraphAdminStore {
   private static instance: EcoGraphAdminStore;
-  private currentGraph: GraphData;
   private drafts: DraftEdit[] = [];
   private versionHistory: VersionSnapshot[] = [];
-  private presets: GlobalPresets;
 
-  private constructor() {
-    this.currentGraph = JSON.parse(JSON.stringify(INITIAL_ECOGRAPH_DATA));
-    this.presets = {
-      repulsion: 1400,
-      linkDist: 80,
-      centerForce: 0.008,
-      friction: 0.92,
+  private constructor() {}
+
+  public static getInstance(): EcoGraphAdminStore {
+    if (!EcoGraphAdminStore.instance) {
+      EcoGraphAdminStore.instance = new EcoGraphAdminStore();
+    }
+    return EcoGraphAdminStore.instance;
+  }
+
+  // Ensure DB seed
+  public async ensureSeed(): Promise<void> {
+    await connectDB();
+    const count = await EcoGraphNode.countDocuments();
+    if (count === 0) {
+      console.log('Seeding initial EcoGraph data to MongoDB Atlas...');
+      for (const n of INITIAL_ECOGRAPH_DATA.nodes) {
+        await EcoGraphNode.create(n);
+      }
+      for (const e of INITIAL_ECOGRAPH_DATA.edges) {
+        await EcoGraphEdge.create(e);
+      }
+      await EcoGraphPreset.create({
+        key: 'global_presets',
+        repulsion: 1100,
+        linkDist: 85,
+        centerForce: 0.005,
+        friction: 0.955,
+        nodeSize: 1.2,
+        lineOpacity: 0.35,
+        categoryColors: {
+          Biodiversity: '#10b981',
+          Spatial: '#38bdf8',
+          Pollution: '#f43f5e',
+          Climate: '#f97316',
+          Policy: '#a855f7',
+          User: '#ec4899',
+          Quest: '#06b6d4',
+        },
+      });
+    }
+  }
+
+  public async getGraph(): Promise<GraphData> {
+    await this.ensureSeed();
+    const nodes = await EcoGraphNode.find().lean();
+    const edges = await EcoGraphEdge.find().lean();
+
+    return {
+      nodes: nodes.map((n: any) => ({
+        id: n.id,
+        label: n.label,
+        category: n.category,
+        name: n.name,
+        scientificName: n.scientificName,
+        description: n.description,
+        attributes: n.attributes || {},
+        provenance: n.provenance,
+        tags: n.tags || [],
+        icon: n.icon || '📌',
+      })),
+      edges: edges.map((e: any) => ({
+        id: e.id,
+        sourceId: e.sourceId,
+        targetId: e.targetId,
+        type: e.type,
+        label: e.label,
+        weight: e.weight || 1.0,
+        provenance: e.provenance,
+      })),
+    };
+  }
+
+  public getDrafts(): DraftEdit[] {
+    return this.drafts;
+  }
+
+  public getVersionHistory(): VersionSnapshot[] {
+    return this.versionHistory;
+  }
+
+  public async getPresets(): Promise<GlobalPresets> {
+    await connectDB();
+    const doc = await EcoGraphPreset.findOne({ key: 'global_presets' }).lean();
+    if (doc) {
+      return {
+        repulsion: doc.repulsion,
+        linkDist: doc.linkDist,
+        centerForce: doc.centerForce,
+        friction: doc.friction,
+        nodeSize: doc.nodeSize,
+        lineOpacity: doc.lineOpacity,
+        categoryColors: doc.categoryColors || {},
+      };
+    }
+    return {
+      repulsion: 1100,
+      linkDist: 85,
+      centerForce: 0.005,
+      friction: 0.955,
       nodeSize: 1.2,
       lineOpacity: 0.35,
       categoryColors: {
@@ -56,48 +149,30 @@ class EcoGraphAdminStore {
         Quest: '#06b6d4',
       },
     };
-
-    // Initial Baseline Version
-    this.versionHistory.push({
-      version: 'v1.0.0',
-      timestamp: new Date().toISOString(),
-      nodeCount: this.currentGraph.nodes.length,
-      edgeCount: this.currentGraph.edges.length,
-      description: 'Initial Seed Knowledge Graph Baseline',
-      data: JSON.parse(JSON.stringify(this.currentGraph)),
-    });
   }
 
-  public static getInstance(): EcoGraphAdminStore {
-    if (!EcoGraphAdminStore.instance) {
-      EcoGraphAdminStore.instance = new EcoGraphAdminStore();
-    }
-    return EcoGraphAdminStore.instance;
+  public async updatePresets(newPresets: Partial<GlobalPresets>): Promise<GlobalPresets> {
+    await connectDB();
+    const updated = await EcoGraphPreset.findOneAndUpdate(
+      { key: 'global_presets' },
+      { $set: newPresets },
+      { new: true, upsert: true }
+    ).lean();
+
+    return {
+      repulsion: updated.repulsion,
+      linkDist: updated.linkDist,
+      centerForce: updated.centerForce,
+      friction: updated.friction,
+      nodeSize: updated.nodeSize,
+      lineOpacity: updated.lineOpacity,
+      categoryColors: updated.categoryColors || {},
+    };
   }
 
-  public getGraph(): GraphData {
-    return this.currentGraph;
-  }
-
-  public getDrafts(): DraftEdit[] {
-    return this.drafts;
-  }
-
-  public getVersionHistory(): VersionSnapshot[] {
-    return this.versionHistory;
-  }
-
-  public getPresets(): GlobalPresets {
-    return this.presets;
-  }
-
-  public updatePresets(newPresets: Partial<GlobalPresets>): GlobalPresets {
-    this.presets = { ...this.presets, ...newPresets };
-    return this.presets;
-  }
-
-  // Node CRUD Operations
-  public createNode(nodeData: Partial<EcoNode>): EcoNode {
+  // Node CRUD
+  public async createNode(nodeData: Partial<EcoNode>): Promise<EcoNode> {
+    await connectDB();
     const id = nodeData.id || `node-${Date.now()}`;
     const newNode: EcoNode = {
       id,
@@ -117,7 +192,8 @@ class EcoGraphAdminStore {
       icon: nodeData.icon || '📌',
     };
 
-    this.currentGraph.nodes.push(newNode);
+    await EcoGraphNode.create(newNode);
+
     this.drafts.push({
       id: `edit-${Date.now()}`,
       type: 'create_node',
@@ -130,11 +206,11 @@ class EcoGraphAdminStore {
     return newNode;
   }
 
-  public updateNode(id: string, updates: Partial<EcoNode>): EcoNode | null {
-    const index = this.currentGraph.nodes.findIndex((n) => n.id === id);
-    if (index === -1) return null;
+  public async updateNode(id: string, updates: Partial<EcoNode>): Promise<EcoNode | null> {
+    await connectDB();
+    const updated = await EcoGraphNode.findOneAndUpdate({ id }, { $set: updates }, { new: true }).lean();
+    if (!updated) return null;
 
-    this.currentGraph.nodes[index] = { ...this.currentGraph.nodes[index], ...updates };
     this.drafts.push({
       id: `edit-${Date.now()}`,
       type: 'update_node',
@@ -144,17 +220,15 @@ class EcoGraphAdminStore {
       author: 'Super Admin',
     });
 
-    return this.currentGraph.nodes[index];
+    return updated as any;
   }
 
-  public deleteNode(id: string): boolean {
-    const initialLen = this.currentGraph.nodes.length;
-    this.currentGraph.nodes = this.currentGraph.nodes.filter((n) => n.id !== id);
-    this.currentGraph.edges = this.currentGraph.edges.filter(
-      (e) => e.sourceId !== id && e.targetId !== id
-    );
+  public async deleteNode(id: string): Promise<boolean> {
+    await connectDB();
+    const deleted = await EcoGraphNode.findOneAndDelete({ id });
+    await EcoGraphEdge.deleteMany({ $or: [{ sourceId: id }, { targetId: id }] });
 
-    if (this.currentGraph.nodes.length < initialLen) {
+    if (deleted) {
       this.drafts.push({
         id: `edit-${Date.now()}`,
         type: 'delete_node',
@@ -168,8 +242,9 @@ class EcoGraphAdminStore {
     return false;
   }
 
-  // Edge CRUD Operations
-  public createEdge(edgeData: { sourceId: string; targetId: string; type: any; label: string }): EcoEdge {
+  // Edge CRUD
+  public async createEdge(edgeData: { sourceId: string; targetId: string; type: any; label: string }): Promise<EcoEdge> {
+    await connectDB();
     const id = `edge-${Date.now()}`;
     const newEdge: EcoEdge = {
       id,
@@ -186,7 +261,8 @@ class EcoGraphAdminStore {
       },
     };
 
-    this.currentGraph.edges.push(newEdge);
+    await EcoGraphEdge.create(newEdge);
+
     this.drafts.push({
       id: `edit-${Date.now()}`,
       type: 'create_edge',
@@ -199,10 +275,10 @@ class EcoGraphAdminStore {
     return newEdge;
   }
 
-  public deleteEdge(id: string): boolean {
-    const initialLen = this.currentGraph.edges.length;
-    this.currentGraph.edges = this.currentGraph.edges.filter((e) => e.id !== id);
-    if (this.currentGraph.edges.length < initialLen) {
+  public async deleteEdge(id: string): Promise<boolean> {
+    await connectDB();
+    const deleted = await EcoGraphEdge.findOneAndDelete({ id });
+    if (deleted) {
       this.drafts.push({
         id: `edit-${Date.now()}`,
         type: 'delete_edge',
@@ -216,36 +292,10 @@ class EcoGraphAdminStore {
     return false;
   }
 
-  // Publish & Rollback Operations
-  public publishChanges(commitMessage?: string): VersionSnapshot {
-    const nextVer = `v1.${this.versionHistory.length}.0`;
-    const snapshot: VersionSnapshot = {
-      version: nextVer,
-      timestamp: new Date().toISOString(),
-      nodeCount: this.currentGraph.nodes.length,
-      edgeCount: this.currentGraph.edges.length,
-      description: commitMessage || `Published ${this.drafts.length} pending draft edits`,
-      data: JSON.parse(JSON.stringify(this.currentGraph)),
-    };
-
-    this.versionHistory.unshift(snapshot);
-    this.drafts = [];
-    return snapshot;
-  }
-
-  public rollbackToVersion(version: string): VersionSnapshot | null {
-    const target = this.versionHistory.find((v) => v.version === version);
-    if (!target) return null;
-
-    this.currentGraph = JSON.parse(JSON.stringify(target.data));
-    this.drafts = [];
-    return target;
-  }
-
-  // Quality Analytics
-  public getHealthMetrics() {
-    const nodes = this.currentGraph.nodes;
-    const edges = this.currentGraph.edges;
+  public async getHealthMetrics() {
+    const graph = await this.getGraph();
+    const nodes = graph.nodes;
+    const edges = graph.edges;
 
     const edgeNodeIds = new Set<string>();
     edges.forEach((e) => {
@@ -266,6 +316,21 @@ class EcoGraphAdminStore {
         100 - (orphanNodes.length / (nodes.length || 1)) * 30 - (missingCitations.length / (nodes.length || 1)) * 20
       ),
     };
+  }
+
+  public publishChanges(commitMessage?: string): VersionSnapshot {
+    const snapshot: VersionSnapshot = {
+      version: `v1.${this.versionHistory.length + 1}.0`,
+      timestamp: new Date().toISOString(),
+      nodeCount: 0,
+      edgeCount: 0,
+      description: commitMessage || `Published ${this.drafts.length} pending draft edits`,
+      data: { nodes: [], edges: [] },
+    };
+
+    this.versionHistory.unshift(snapshot);
+    this.drafts = [];
+    return snapshot;
   }
 }
 
