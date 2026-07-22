@@ -28,9 +28,10 @@ const NAV: { id: Section; label: string; icon: typeof User; desc: string }[] = [
 ];
 
 export default function AccountSettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [section, setSection] = useState<Section>('profile');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Profile
   const [username, setUsername] = useState('');
@@ -93,6 +94,25 @@ export default function AccountSettingsPage() {
     }, 800);
   }
 
+  const handleDeleteAccount = async () => {
+    if (!confirm('Are you sure you want to permanently delete your EcoQuest account? This action CANNOT be undone.')) return;
+    try {
+      setIsDeleting(true);
+      const res = await fetch('/api/user/delete-account', { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        toast({ title: 'Account Deleted', description: 'Your account has been deleted.' });
+        await logout();
+      } else {
+        toast({ title: 'Error', description: json.error || 'Failed to delete account.', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Network error deleting account.', variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!user) {
     return <Desktop><div className="settings-loading"><Leaf className="animate-spin h-6 w-6" /> Loading…</div></Desktop>;
   }
@@ -132,7 +152,7 @@ export default function AccountSettingsPage() {
             ))}
           </nav>
 
-          <button className="settings-logout-btn">
+          <button onClick={logout} className="settings-logout-btn">
             <LogOut className="h-4 w-4" />
             Sign Out
           </button>
@@ -503,8 +523,8 @@ export default function AccountSettingsPage() {
                   <p className="settings-danger-title">Delete Account</p>
                   <p className="settings-danger-desc">Permanently delete your EcoQuest account. All data will be erased and you will be signed out immediately.</p>
                 </div>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4" /> Delete Account
+                <Button onClick={handleDeleteAccount} disabled={isDeleting} variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4" /> {isDeleting ? 'Deleting…' : 'Delete Account'}
                 </Button>
               </div>
             </div>

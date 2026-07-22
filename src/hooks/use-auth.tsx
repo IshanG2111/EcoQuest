@@ -78,8 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    await signOut({ redirect: false });
-    router.push('/');
+    try {
+      await signOut({ callbackUrl: '/login', redirect: true });
+    } catch {
+      window.location.href = '/login';
+    }
   };
 
   return (
