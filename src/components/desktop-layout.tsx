@@ -17,7 +17,8 @@ import {
   Leaf,
   Briefcase,
   Users,
-  Network
+  Network,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -322,6 +323,11 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
             <DropdownMenuSeparator />
             {user ? (
               <>
+                <DropdownMenuItem onClick={() => router.push('/admin/ecograph')}>
+                  <ShieldCheck className="mr-2 h-4 w-4 text-emerald-400" />
+                  <span className="font-bold text-emerald-400">Knowledge Studio (Admin)</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/account-settings')}>
                   <Settings className="mr-2 h-4 w-4" />
                   Account Settings

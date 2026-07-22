@@ -76,8 +76,8 @@ export default function SecretAdminLoginPage() {
       }
       setSuccessMsg('Authentication Granted. Opening Control Studio...');
       setTimeout(() => {
-        router.push('/admin/ecograph');
-      }, 800);
+        window.location.href = '/admin/ecograph';
+      }, 500);
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
