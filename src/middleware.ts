@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 const { auth } = NextAuth(authConfig);
 
-// Routes that require authentication
+// Protected routes for general logged-in users
 const PROTECTED_ROUTES = [
   '/desktop',
   '/dashboard',
@@ -13,34 +13,39 @@ const PROTECTED_ROUTES = [
   '/play',
   '/quizzes',
   '/account-settings',
-  '/admin',
 ];
 
-// Routes only accessible to Super Admin roles
+// Stealth Secret Admin Routes (Hidden behind 404 for unauthorized visitors)
 const ADMIN_ROUTES = ['/admin'];
 
-// Routes only accessible when NOT logged in
+// Auth routes for unauthenticated users
 const AUTH_ROUTES = ['/login', '/signup'];
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session?.user;
+  const userRole = (session?.user as any)?.role || 'USER';
+  const userEmail = session?.user?.email?.toLowerCase().trim();
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
   const isAdminRoute = ADMIN_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
   const isAuthRoute = AUTH_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
 
-  // 1. Redirect unauthenticated users away from protected & admin routes to /login
-  if (isProtectedRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL('/login', nextUrl));
+  // 1. STEALTH ADMIN GUARD: If visitor is not logged in as Super Admin (ishan.ghosh@ecoquest.com), return a 404 Not Found rewrite!
+  if (isAdminRoute) {
+    const isSuperAdmin =
+      isLoggedIn &&
+      (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userEmail === 'ishan.ghosh@ecoquest.com');
+
+    if (!isSuperAdmin) {
+      // Act like the page does not exist at all (Stealth 404)
+      return NextResponse.rewrite(new URL('/404', nextUrl));
+    }
   }
 
-  // 2. Strict Role Check: Redirect non-admin logged-in users away from /admin to /desktop
-  if (isAdminRoute && isLoggedIn) {
-    const userRole = (session?.user as any)?.role || 'USER';
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/desktop', nextUrl));
-    }
+  // 2. Redirect unauthenticated users away from protected user routes to /login
+  if (isProtectedRoute && !isLoggedIn) {
+    return NextResponse.redirect(new URL('/login', nextUrl));
   }
 
   // 3. Redirect authenticated users away from login/signup to /desktop
