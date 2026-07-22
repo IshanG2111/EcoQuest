@@ -69,11 +69,11 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const [lineOpacity, setLineOpacity] = useState(0.35);
   const [groupColors, setGroupColors] = useState<Record<string, string>>({ ...CATEGORY_COLORS });
 
-  // Fetch live global admin presets on mount
+  // Fetch live global presets on mount and poll every 4 seconds
   useEffect(() => {
     const fetchGlobalPresets = async () => {
       try {
-        const res = await fetch('/api/admin/ecograph/publish');
+        const res = await fetch('/api/ecograph/presets', { cache: 'no-store' });
         const json = await res.json();
         if (json.success && json.presets) {
           const p = json.presets;
@@ -90,6 +90,8 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       }
     };
     fetchGlobalPresets();
+    const interval = setInterval(fetchGlobalPresets, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   // Re-wake physics simulation whenever global preset parameters change!
