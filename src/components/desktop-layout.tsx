@@ -239,12 +239,9 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Desktop Wallpaper — True-Color Dither Video */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute inset-0 w-full h-full" style={{
-          background: `linear-gradient(135deg, #070e14 0%, #030609 50%, #010305 100%)`
-        }} />
-        {/* Real-time Meticulous True-Color Dither Shader on desktop.mp4 */}
+      {/* Desktop Wallpaper — Live Video True-Color Dither */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-[#020508]">
+        {/* Real-time Meticulous True-Color Dither Shader over desktop.mp4 */}
         <DitherCanvas
           src="/videos/desktop.mp4"
           colorMode="rgb"

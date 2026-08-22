@@ -33,23 +33,16 @@
 
 <br/><br/>
 
-### 🖥️ High-Tech Retro Edu-OS Desktop Workspace
-<img src="public/screenshots/01_desktop_os.png" alt="EcoQuest Retro Desktop OS Workspace" width="100%" />
-*True-color dithered live video wallpaper, draggable windows, real-time widgets, and system taskbar*
-
-<br/><br/>
-
-| 🌐 EcoGraph Knowledge Galaxy | 🛂 Holographic Planetary Passport |
+| 🌐 EcoGraph Knowledge Galaxy | 📊 Citizen Dashboard & Planetary Passport |
 |:---:|:---:|
-| <img src="public/screenshots/02_ecograph_galaxy.png" alt="EcoGraph Knowledge Galaxy" width="100%" /> | <img src="public/screenshots/03_passport_portal.png" alt="Planetary Passport System" width="100%" /> |
-| *Force-directed 450+ node ecological food web* | *Holographic printable passport with rank seals* |
+| <img src="public/screenshots/02_ecograph_galaxy.png" alt="EcoGraph Knowledge Galaxy" width="100%" /> | <img src="public/screenshots/05_citizen_dashboard.png" alt="Citizen Dashboard & Planetary Passport" width="100%" /> |
+| *Force-directed 450+ node ecological food web* | *3D Holographic Passport, XP Progression & Leaderboards* |
 
 <br/>
 
-| 🕹️ Planetary Arcade Vault | 📊 Citizen Dashboard & Achievements |
-|:---:|:---:|
-| <img src="public/screenshots/04_arcade_vault.png" alt="Planetary Arcade Vault" width="100%" /> | <img src="public/screenshots/05_citizen_dashboard.png" alt="Citizen Dashboard & XP Progression" width="100%" /> |
-| *3D hardware cartridge rack with gesture controls* | *XP progression, carbon impact, and live garden* |
+### 🕹️ Planetary Arcade Vault — 3D Hardware Rack
+<img src="public/screenshots/04_arcade_vault.png" alt="Planetary Arcade Vault 3D Rack" width="100%" />
+*Pure gesture/scroll zooming, touch orbit, and 3D physical cartridge crate*
 
 </div>
 
@@ -166,22 +159,23 @@ The centerpiece of EcoQuest. **EcoGraph** is a **force-directed, physics-simulat
 
 ---
 
-## 🛂 The Planetary Passport System
+## 🛂 The Planetary Passport & Citizen Dashboard
 
-Every EcoQuest learner earns a **Planetary Passport** — a holographic, printable credential that proves their ecological mastery.
+Every EcoQuest learner earns a **Planetary Passport** and accesses the **Citizen Dashboard** — a central mission hub tracking ecological mastery, XP progression, and planetary impact.
 
 <div align="center">
-  <img src="public/screenshots/03_passport_portal.png" alt="Planetary Passport Customizer" width="90%" />
+  <img src="public/screenshots/05_citizen_dashboard.png" alt="Citizen Dashboard & Planetary Passport" width="90%" />
 </div>
 
-### Passport Features
+### Passport & Dashboard Features
 
 - **Hologram Aura Themes** — Verdant Grove · Abyssal Tide · Ember Hearth · Cosmic Amethyst · Cyber Neon
-- **Conservation Rank** — From `SEEDLING OBSERVER` to `PLANETARY GUARDIAN`, earned through XP milestones
-- **Custom Explorer Name** — Personalized identity (up to 22 characters, uppercase, saved to localStorage)
-- **Download as PNG** — High-resolution 1200×600px canvas render with perforated stub, watermark, and texture
-- **Print Layout** — Dedicated print media query for physical passport production
-- **Persistent Customization** — Passport data persists across sessions via `localStorage`; survives page reloads
+- **Conservation Rank & XP** — 7-tier system: Seedling → Sprout → Sapling → Eco Warrior → Green Knight → Earth Guardian → Planet Protector
+- **Carbon Impact Tracker** — Real-world CO₂ saved from logged daily eco-actions (biking, recycling, energy conservation)
+- **Eco Garden Widget** — A live plant simulation tied to learning effort — neglect your garden and it withers; nurture it and harvest 250 XP
+- **Eco Activity Heatmap** — Contribution calendar tracking daily eco-activity intensity and streak multipliers
+- **Global Leaderboards** — Weekly and monthly competitive rankings synced globally via MongoDB aggregation
+- **Download as PNG & Print** — High-resolution 1200×600px canvas render with perforated stub, watermark, and texture
 
 ---
 
@@ -205,7 +199,7 @@ Six interactive, data-driven ecological simulations, each rigorously modeled on 
 All games feature:
 - **Session Tracker Hook** (`useGameSessionTracker`) — Auto-syncs play time, scores, and metadata to MongoDB
 - **Standalone HTML Mode** — Each game has a zero-dependency single-file HTML build for offline / iframe use
-- **Mobile 3D Rack & Grid** — Touch gesture orbit, pinch-to-zoom, and tactile feedback on mobile devices
+- **Pure Scroll & Gesture Zoom** — Mouse wheel zooming, two-finger mobile pinch, touch orbit, and click-to-launch
 
 ---
 
@@ -215,20 +209,6 @@ All games feature:
 - **Contextual Answer States** — WCAG 4.5:1 contrast-compliant correct/incorrect states with explanations
 - **XP Rewards** — Tiered rewards based on difficulty: Easy (+15 XP), Medium (+30 XP), Hard (+60 XP)
 - **Streak Multipliers** — Consecutive correct answers unlock XP multipliers up to 3×
-
----
-
-## 📊 Citizen Dashboard & Leaderboards
-
-<div align="center">
-  <img src="public/screenshots/05_citizen_dashboard.png" alt="Citizen Dashboard & Stats" width="90%" />
-</div>
-
-- **XP Rank Progression** — 7-tier system: Seedling → Sprout → Sapling → Eco Warrior → Green Knight → Earth Guardian → Planet Protector
-- **Carbon Impact Tracker** — Real-world CO₂ saved from logged daily eco-actions (biking, recycling, energy conservation)
-- **Eco Garden Widget** — A live plant simulation tied to your learning effort — neglect your garden and it withers; nurture it and harvest 250 XP
-- **Eco Activity Calendar** — GitHub-style contribution heatmap tracking daily eco-activity intensity
-- **Global Leaderboards** — Weekly and monthly competitive rankings synced globally via MongoDB aggregation
 
 ---
 
@@ -333,7 +313,6 @@ EcoQuest/
 │       ├── 00_welcome_terminal.png
 │       ├── 01_desktop_os.png
 │       ├── 02_ecograph_galaxy.png
-│       ├── 03_passport_portal.png
 │       ├── 04_arcade_vault.png
 │       └── 05_citizen_dashboard.png
 ├── src/

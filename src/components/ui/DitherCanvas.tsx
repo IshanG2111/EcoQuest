@@ -63,9 +63,10 @@ interface DitherCanvasProps {
   colorMode?: 'rgb' | 'theme';
   /** Active theme ID when colorMode='theme' */
   theme?: string;
-  /** Radius (px) of the finer-dither "reveal lens" around cursor. Default 200 */
+  /** Radius (px) of the finer-dither "reveal lens" around cursor. Default 220 */
   lensRadius?: number;
   className?: string;
+  onLoaded?: () => void;
 }
 
 export default function DitherCanvas({
@@ -74,6 +75,7 @@ export default function DitherCanvas({
   theme = 'the-verdant-grove',
   lensRadius = 220,
   className = '',
+  onLoaded,
 }: DitherCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -90,7 +92,7 @@ export default function DitherCanvas({
   } | null>(null);
   const dirty = useRef(true);
 
-  // ── Setup Video or Load Image ─────────────────────────────────────────────
+  // ── Setup Video or Image Source ───────────────────────────────────────────
   const loadSource = useCallback((sourceSrc: string, targetW: number, targetH: number) => {
     if (!offscreenRef.current) {
       offscreenRef.current = document.createElement('canvas');
@@ -107,7 +109,16 @@ export default function DitherCanvas({
         vid.loop = true;
         vid.muted = true;
         vid.playsInline = true;
+        vid.preload = 'auto';
         vid.crossOrigin = 'anonymous';
+
+        const handleReady = () => {
+          vid.play().catch(() => {});
+          if (onLoaded) onLoaded();
+        };
+
+        vid.addEventListener('canplay', handleReady);
+        vid.addEventListener('loadeddata', handleReady);
         vid.play().catch(() => {});
         videoRef.current = vid;
       }
@@ -127,10 +138,11 @@ export default function DitherCanvas({
         const raw = ctx.getImageData(0, 0, targetW, targetH);
         rawPixelsRef.current = { data: raw.data, w: targetW, h: targetH };
         dirty.current = true;
+        if (onLoaded) onLoaded();
       };
       img.src = sourceSrc;
     }
-  }, [isVideo]);
+  }, [isVideo, onLoaded]);
 
   // ── Real-Time Dither Render Loop ──────────────────────────────────────────
   const render = useCallback(() => {
@@ -148,12 +160,11 @@ export default function DitherCanvas({
       return;
     }
 
-    // Use consistent pixel grid scale (2px cell)
     const SCALE = 2;
     const gw = Math.ceil(cw / SCALE);
     const gh = Math.ceil(ch / SCALE);
 
-    // If video, dynamically size offscreen canvas to match grid and capture full frame
+    // If video, capture current frame buffer directly from video element
     if (isVideo && videoRef.current) {
       const vid = videoRef.current;
       if (vid.readyState >= 2) {
