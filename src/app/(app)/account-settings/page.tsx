@@ -11,7 +11,7 @@ import { getAvatarUrl } from '@/lib/utils';
 import '@/app/settings.css';
 import {
   User, Mail, Bell, Shield, Palette, Globe2, LogOut,
-  Check, ChevronRight, Camera, Leaf, Lock, Eye, EyeOff,
+  Check, ChevronRight, Camera, Loader2, Lock, Eye, EyeOff,
   Smartphone, Moon, Sun, Monitor, Volume2, VolumeX, Save,
   AlertTriangle, Trash2
 } from 'lucide-react';
@@ -114,7 +114,7 @@ export default function AccountSettingsPage() {
   };
 
   if (!user) {
-    return <Desktop><div className="settings-loading"><Leaf className="animate-spin h-6 w-6" /> Loading…</div></Desktop>;
+    return <Desktop><div className="settings-loading"><Loader2 className="animate-spin h-6 w-6 text-emerald-400" /> Loading…</div></Desktop>;
   }
 
   return (
@@ -227,7 +227,7 @@ export default function AccountSettingsPage() {
 
               <div className="settings-actions">
                 <Button onClick={() => save('Profile updated!')} disabled={isSaving} className="settings-save-btn">
-                  {isSaving ? <><Leaf className="animate-spin h-4 w-4" /> Saving…</> : <><Save className="h-4 w-4" /> Save Profile</>}
+                  {isSaving ? <><Loader2 className="animate-spin h-4 w-4" /> Saving…</> : <><Save className="h-4 w-4" /> Save Profile</>}
                 </Button>
               </div>
             </div>

@@ -9,19 +9,22 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Loader2 } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Desktop } from '@/components/desktop';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, AuthGuard } from '@/hooks/use-auth';
+import { TableSkeleton } from '@/components/ui/skeleton-loader';
+import Link from 'next/link';
 
 export default function LeaderboardPage() {
   const { leaderboard, currentUser, isLoading, isError } = useLeaderboard(20);
   const { user } = useAuth();
 
   return (
-    <Desktop>
+    <AuthGuard allowGuest={false}>
+      <Desktop>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-headline tracking-tight uppercase">Leaderboard</h1>
@@ -40,11 +43,16 @@ export default function LeaderboardPage() {
 
         <Card className="overflow-hidden retro-window">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            <TableSkeleton rows={10} />
           ) : isError ? (
-            <div className="text-center py-16 text-destructive">Failed to load leaderboard. Please refresh.</div>
+            <div className="state-error py-16">
+              <p>Failed to load leaderboard. Please refresh.</p>
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <div className="state-empty py-16">
+              <Trophy className="h-12 w-12" />
+              <p>No players yet. Complete quizzes and games to earn Eco Points!</p>
+            </div>
           ) : (
             <Table>
               <TableHeader className="bg-secondary/10">
@@ -83,18 +91,12 @@ export default function LeaderboardPage() {
                     </TableRow>
                   );
                 })}
-                {leaderboard.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                      No players yet. Complete quizzes and games to earn Eco Points!
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           )}
         </Card>
       </div>
     </Desktop>
-  );
+  </AuthGuard>
+);
 }

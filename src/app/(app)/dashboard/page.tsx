@@ -1,23 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUserProgress } from '@/hooks/useUserProgress';
-import { useNotifications } from '@/hooks/useNotifications';
 import {
-  Flame, Star, Award, Sparkles, BookOpen, AlertTriangle,
-  Loader2, Bell, Copy, BarChart2, ChevronRight, Leaf,
-  Globe, Zap, Shield, Clock, TrendingUp, CheckCircle2
+  Flame,
+  Star,
+  Award,
+  Sparkles,
+  ChevronRight,
+  Shield,
+  TrendingUp,
+  Zap,
+  BookOpen,
+  Gamepad2,
+  Compass,
+  Sliders,
+  Download,
+  Printer,
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn, getAvatarUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Desktop } from '@/components/desktop';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-
+import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AdmitOneTicket, playShutterSound } from '@/components/ui/admit-one-ticket';
+import { soundFX } from '@/lib/audio-fx';
+import {
+  PassportConfig,
+  PASSPORT_THEMES,
+  PassportCustomizerModal,
+  loadSavedPassportConfig,
+  savePassportConfig,
+  downloadPassportPng,
+} from '@/components/passport/PassportCustomizerModal';
 
-// Eco Points progress percentage
+// XP level calculation
 function xpPercent(points: number) {
   const level = Math.floor(points / 500) + 1;
   const levelMin = (level - 1) * 500;
@@ -25,312 +42,316 @@ function xpPercent(points: number) {
   return { level, pct: Math.round(((points - levelMin) / (levelMax - levelMin)) * 100), levelMax };
 }
 
-const LEVEL_NAMES = ['Seedling', 'Sprout', 'Sapling', 'Eco Warrior', 'Green Knight', 'Earth Guardian', 'Planet Protector'];
-
-const SUGGESTIONS = [
-  {
-    title: 'Sustainable Cities: Innovations for Urban Living',
-    desc: 'Learn how cities are becoming greener and smarter.',
-    readTime: '12 min read',
-    tag: 'RECOMMENDED',
-    href: '/quizzes',
-    img: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=160&q=80',
-  },
-  {
-    title: 'Marine Ecosystems and Ocean Stewardship',
-    desc: 'Dive deep into ocean conservation strategies.',
-    readTime: '8 min read',
-    tag: 'POPULAR',
-    href: '/quizzes',
-    img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=160&q=80',
-  },
-  {
-    title: 'Forests: Biodiversity and Conservation',
-    desc: 'Explore why forests are the lungs of the Earth.',
-    readTime: '10 min read',
-    tag: 'NEW',
-    href: '/quizzes',
-    img: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=160&q=80',
-  },
+const LEVEL_NAMES = [
+  'Seedling',
+  'Sprout',
+  'Sapling',
+  'Green Explorer',
+  'Forest Ranger',
+  'Earth Guardian',
+  'Eco Hero',
+  'Gaia Champion',
 ];
 
 export default function DashboardPage() {
-  const [copied, setCopied] = useState(false);
   const { user } = useAuth();
-  const router = useRouter();
-  const { progress, isLoading: progressLoading } = useUserProgress();
-  const {
-    notifications,
-    unreadCount,
-    isLoading: notificationsLoading,
-    markAsRead,
-    markAllAsRead,
-  } = useNotifications(6);
+  const { progress, isLoading } = useUserProgress();
 
-  const avatarUrl = getAvatarUrl(user?.id || user?.name);
-  const username = user?.name ?? 'Eco-Champion';
-  const handle = (user?.name ?? 'eco_champion').toLowerCase().replace(/\s+/g, '_');
-
+  const username = user?.name ?? 'Explorer';
   const pts = progress?.points ?? 0;
   const streak = progress?.streak ?? 0;
   const badges = progress?.badges ?? [];
   const { level, pct, levelMax } = xpPercent(pts);
   const levelName = LEVEL_NAMES[Math.min(level - 1, LEVEL_NAMES.length - 1)] ?? 'Eco Warrior';
 
-  useEffect(() => {
-    if (!user) router.push('/login');
-  }, [user, router]);
+  // Passport Configuration & Customization State (Persistent in localStorage)
+  const [passportConfig, setPassportConfig] = useState<PassportConfig>(() => loadSavedPassportConfig(username));
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
-  function handleCopy() {
-    navigator.clipboard.writeText(`@${handle}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }
+  // Active theme properties
+  const activeTheme = PASSPORT_THEMES[passportConfig.themeId] || PASSPORT_THEMES.emerald;
 
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const dashTicketTexture = {
+    engine: 'generative',
+    colorBack: activeTheme.colorBack,
+    colorFront: activeTheme.colorFront,
+    colorHighlight: activeTheme.colorHighlight,
+    shape: 'warp',
+    type: 'random',
+    size: 0.6,
+    colorSteps: 4,
+    originalColors: true,
+    scale: 1.15,
+    rotation: 0,
+    offsetX: 0,
+    offsetY: 0,
+    speed: 0.35,
+  };
+
+  const dashTicketLayout = {
+    padding: 57 / 741,
+    labelTop: 58 / 741,
+    labelSize: 18 / 741,
+    labelLead: 26 / 741,
+    labelTracking: 0.02,
+    nameTop: 185 / 741,
+    nameSize: 56 / 741,
+    nameLead: 58 / 741,
+    nameTracking: -0.01,
+    footerTop: 348 / 741,
+    footerSize: 18 / 741,
+    footerTracking: 0.02,
+    stubSize: 60 / 741,
+    stubTracking: 0,
+    stubOpacity: 0.9,
+    watermarkSize: 140 / 741,
+    watermarkOpacity: 0.55,
+    watermarkColor: activeTheme.watermarkColor,
+    inkColor: activeTheme.inkColor,
+  };
+
+  const handleDownload = () => {
+    downloadPassportPng(passportConfig);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
-    <Desktop>
-      <div className="dash-root animate-in fade-in duration-500">
-        {/* ── LEFT PANEL ── */}
-        <aside className="dash-sidebar">
-          {/* name + title */}
-          <div className="dash-profile-header">
-            <div className="dash-profile-name">{username}</div>
-            <div className="dash-profile-title">
-              <Leaf className="dash-leaf-icon" />
-              Eco-Champion
-            </div>
-          </div>
+    <AuthGuard allowGuest={false}>
+      <Desktop>
+        <div className="dash-redesign space-y-6 max-w-6xl mx-auto font-sans pb-10">
+          
+          {/* ── HERO WITH 3D ADMIT-ONE TICKET SHOWCASE ── */}
+          <section className="relative overflow-hidden rounded-3xl bg-[#0c1017]/95 border border-zinc-800/90 shadow-2xl p-6 md:p-8 backdrop-blur-2xl">
+            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/4 -mb-10 w-60 h-60 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* avatar */}
-          <div className="dash-avatar-ring">
-            <div className="dash-avatar-glow" />
-            <img
-              src={avatarUrl}
-              alt={username}
-              className="dash-avatar-img"
-              onError={e => { (e.target as HTMLImageElement).style.opacity = '0.4'; }}
-            />
-            <div className="dash-avatar-badge">
-              <Leaf className="h-3 w-3 text-white" />
-            </div>
-          </div>
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+              
+              {/* Left Greeting & Level Telemetry */}
+              <div className="space-y-4 max-w-xl text-center lg:text-left">
+                <div className="flex items-center justify-center lg:justify-start gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-emerald-400 font-semibold">
+                    <Sparkles className="w-3 h-3" />
+                    <span>GAIA CITIZEN · LEVEL {level}</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-zinc-500">ID: {user?.id?.slice(0, 8) || 'ONLINE'}</span>
+                </div>
 
-          {/* status row */}
-          <div className="dash-status-row">
-            <span className="dash-online-dot" />
-            <span className="dash-online-text">Online</span>
-          </div>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                  Welcome back, <span className="text-emerald-400 font-mono">{passportConfig.name || username}</span>
+                </h1>
 
-          {/* handle */}
-          <div className="dash-handle-row">
-            <span className="dash-handle-text">@{handle}</span>
-            <button
-              className="dash-copy-btn"
-              onClick={handleCopy}
-              title="Copy handle"
-            >
-              {copied ? <CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
-            </button>
-          </div>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  Planetary Explorer Passport active. Continue your quests, preserve biomes, and expand the ecological knowledge graph.
+                </p>
 
-          {/* view stats btn */}
-          <Link href="/leaderboard" className="dash-view-stats-btn">
-            <BarChart2 className="h-4 w-4" />
-            View Stats
-            <ChevronRight className="h-4 w-4 ml-auto" />
-          </Link>
+                {/* Level Progress Bar */}
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[11px]">
+                        {level}
+                      </div>
+                      <span className="font-bold text-white font-mono">{levelName}</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-emerald-400 font-bold">
+                      {pts.toLocaleString()} / {levelMax.toLocaleString()} XP
+                    </span>
+                  </div>
 
-          {/* level card */}
-          <div className="dash-level-card">
-            <div className="dash-level-badge">{level}</div>
-            <div className="dash-level-info">
-              <div className="dash-level-name">{levelName}</div>
-              <div className="dash-xp-bar-wrap">
-                <div className="dash-xp-bar" style={{ width: `${pct}%` }} />
+                  <div className="w-full bg-zinc-950 h-2 rounded-full overflow-hidden border border-zinc-800">
+                    <div
+                      className="bg-gradient-to-r from-emerald-500 to-sky-400 h-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="dash-xp-label">
-                {progressLoading ? (
-                  <Skeleton className="h-3 w-20 bg-primary/20" />
-                ) : (
-                  `${pts.toLocaleString()} / ${levelMax.toLocaleString()} XP`
-                )}
-              </div>
-            </div>
-          </div>
-        </aside>
 
-        {/* ── MAIN CONTENT ── */}
-        <main className="dash-main">
-          {/* ── TOP BAR ── */}
-          <div className="dash-topbar">
-            <div className="dash-topbar-date">
-              <span className="dash-topbar-date-icon">📅</span>
-              {dateStr}
-            </div>
-            <div className="dash-topbar-right">
-              <button className="dash-bell-btn" aria-label="Notifications">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="dash-bell-badge">{unreadCount}</span>
-                )}
-              </button>
-              <div className="dash-points-chip">
-                <Leaf className="h-4 w-4 text-green-400" />
-                <span>{progressLoading ? <Skeleton className="h-4 w-12 bg-white/10" /> : pts.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+              {/* Right Side: 3D Tilting Admit-One Passport Badge */}
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <div className="relative group cursor-pointer">
+                  <AdmitOneTicket
+                    name={passportConfig.name || username.toUpperCase()}
+                    presenter="ECOQUEST // GAIA PROTOCOL"
+                    event={passportConfig.rank}
+                    venue={`RANK: ${levelName.toUpperCase()}`}
+                    dates={`LEVEL 0${level} · ${pts.toLocaleString()} XP`}
+                    stubText="SECTOR 7 // ACTIVE"
+                    watermark={passportConfig.watermark}
+                    width={windowWidthDashboard()}
+                    texture={dashTicketTexture}
+                    layout={dashTicketLayout}
+                  />
+                </div>
 
-          {/* ── WELCOME HERO ── */}
-          <section className="dash-hero">
-            <div className="dash-hero-text">
-              <h1 className="dash-hero-title">
-                Welcome Back,<br />
-                <span className="dash-hero-username">{username.toUpperCase()}!</span>
-              </h1>
-              <p className="dash-hero-sub">
-                Continue your journey to make the world a greener place.<br />
-                <span className="dash-hero-highlight">Every action counts.</span>
-              </p>
-            </div>
-            <div className="dash-hero-globe" aria-hidden>
-              <Globe className="h-24 w-24 text-cyan-400 opacity-80" />
-              <Leaf className="dash-hero-leaf dash-hero-leaf-1" />
-              <Leaf className="dash-hero-leaf dash-hero-leaf-2" />
+                {/* Passport Action Toolbar */}
+                <div className="flex items-center justify-center gap-2 print:hidden">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setIsCustomizerOpen(true);
+                    }}
+                    className="py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
+                  >
+                    <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Customize</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      playShutterSound();
+                      handleDownload();
+                    }}
+                    className="py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
+                  >
+                    <Download className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Download PNG</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      handlePrint();
+                    }}
+                    className="py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Print</span>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </section>
 
           {/* ── STAT CARDS ── */}
-          <div className="dash-stats-grid">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Eco Points */}
-            <div className="dash-stat-card dash-stat-green">
-              <div className="dash-stat-icon-wrap dash-stat-icon-green">
-                <Star className="h-5 w-5" />
+            <div className="p-5 rounded-2xl bg-[#0c1017]/95 border border-zinc-800/80 shadow-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">ECO POINTS</span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Star className="h-4 w-4" />
+                </div>
               </div>
-              <div className="dash-stat-label">ECO POINTS</div>
-              <div className="dash-stat-value">
-                {progressLoading ? <Skeleton className="h-8 w-24 bg-white/10" /> : pts.toLocaleString()}
+              <div className="text-2xl font-bold text-white font-mono">
+                {isLoading ? <Skeleton className="h-8 w-24 bg-zinc-800" /> : pts.toLocaleString()}
               </div>
-              <div className="dash-stat-sub">
-                <TrendingUp className="h-3 w-3" />
-                +320 this week
-              </div>
+              <p className="text-[11px] text-zinc-500 font-sans">
+                Earn points by completing ecological quizzes and minigames.
+              </p>
             </div>
 
             {/* Daily Streak */}
-            <div className="dash-stat-card dash-stat-orange">
-              <div className="dash-stat-icon-wrap dash-stat-icon-orange">
-                <Flame className="h-5 w-5" />
+            <div className="p-5 rounded-2xl bg-[#0c1017]/95 border border-zinc-800/80 shadow-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">DAY STREAK</span>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Flame className="h-4 w-4" />
+                </div>
               </div>
-              <div className="dash-stat-label">DAILY STREAK</div>
-              <div className="dash-stat-value">
-                {progressLoading ? <Skeleton className="h-8 w-24 bg-white/10" /> : (
-                  <><span>{streak}</span><span className="dash-stat-unit"> Day{streak !== 1 ? 's' : ''}</span></>
-                )}
+              <div className="text-2xl font-bold text-white font-mono">
+                {isLoading ? <Skeleton className="h-8 w-16 bg-zinc-800" /> : `${streak} Days`}
               </div>
-              <div className="dash-stat-sub dash-streak-dots">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className={cn('dash-streak-dot', i < Math.min(streak, 5) && 'dash-streak-dot-active')} />
-                ))}
-              </div>
+              <p className="text-[11px] text-zinc-500 font-sans">
+                Log in daily to keep your conservation multiplier active.
+              </p>
             </div>
 
-            {/* Badges Earned */}
-            <div className="dash-stat-card dash-stat-blue">
-              <div className="dash-stat-icon-wrap dash-stat-icon-blue">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div className="dash-stat-label">BADGES EARNED</div>
-              <div className="dash-stat-value">
-                {progressLoading ? <Skeleton className="h-8 w-16 bg-white/10" /> : badges.length}
-              </div>
-              <Link href="/badges" className="dash-stat-sub dash-stat-link">
-                View all badges <ChevronRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-
-          {/* ── BOTTOM GRID ── */}
-          <div className="dash-bottom-grid">
-            {/* YOUR BADGES */}
-            <div className="dash-panel">
-              <div className="dash-panel-header">
-                <div className="dash-panel-title">
-                  <Leaf className="h-4 w-4 text-green-400" />
-                  YOUR BADGES
-                </div>
-                <Link href="/badges" className="dash-panel-link">View All <ChevronRight className="h-3 w-3" /></Link>
-              </div>
-              <p className="dash-panel-desc">A collection of your achievements so far. Keep it up!</p>
-
-              {progressLoading ? (
-                <div className="grid grid-cols-3 gap-3 py-4">
-                   {[...Array(3)].map((_, i) => (
-                     <div key={i} className="flex flex-col items-center gap-2">
-                        <Skeleton className="h-12 w-12 rounded-full bg-white/5" />
-                        <Skeleton className="h-3 w-16 bg-white/5" />
-                     </div>
-                   ))}
-                </div>
-              ) : badges.length === 0 ? (
-                <div className="dash-empty-badges">
-                  <Award className="h-10 w-10 opacity-30" />
-                  <p>No badges yet. Complete quizzes to earn some!</p>
-                </div>
-              ) : (
-                <div className="dash-badges-grid">
-                  {badges.map((badge, i) => (
-                    <div key={badge.id} className="dash-badge-item" title={badge.description}>
-                      <div className={cn('dash-badge-ring', i % 3 === 0 ? 'dash-badge-green' : i % 3 === 1 ? 'dash-badge-teal' : 'dash-badge-gray')}>
-                        <Award className="h-7 w-7" />
-                      </div>
-                      <span className="dash-badge-name">{badge.name}</span>
-                      <span className="dash-badge-date">{badge.description?.slice(0, 22)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* FOR YOU */}
-            <div className="dash-panel">
-              <div className="dash-panel-header">
-                <div className="dash-panel-title">
-                  <Sparkles className="h-4 w-4 text-cyan-400" />
-                  FOR YOU
+            {/* Badges Count */}
+            <div className="p-5 rounded-2xl bg-[#0c1017]/95 border border-zinc-800/80 shadow-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">MINTED BADGES</span>
+                <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                  <Award className="h-4 w-4" />
                 </div>
               </div>
-              <p className="dash-panel-desc">Personalized learning suggestions based on your interests.</p>
-
-              <div className="dash-suggestions">
-                {SUGGESTIONS.slice(0, 2).map((s) => (
-                  <Link key={s.title} href={s.href} className="dash-suggestion-card group">
-                    <img src={s.img} alt={s.title} className="dash-suggestion-img" />
-                    <div className="dash-suggestion-body">
-                      <span className="dash-suggestion-tag">{s.tag}</span>
-                      <p className="dash-suggestion-title group-hover:text-primary transition-colors">{s.title}</p>
-                      <p className="dash-suggestion-desc">{s.desc}</p>
-                      <div className="dash-suggestion-footer">
-                        <span className="dash-suggestion-time"><Clock className="h-3 w-3" /> {s.readTime}</span>
-                        <span className="dash-suggestion-cta">Start Learning <ChevronRight className="h-3 w-3" /></span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+              <div className="text-2xl font-bold text-white font-mono">
+                {isLoading ? <Skeleton className="h-8 w-16 bg-zinc-800" /> : badges.length}
               </div>
+              <p className="text-[11px] text-zinc-500 font-sans">
+                Unlocked through achievements and planetary research.
+              </p>
             </div>
           </div>
 
-          {/* ── FOOTER ── */}
-          <footer className="dash-footer">
-            <Leaf className="h-4 w-4 text-green-400" />
-            Together, we build a better planet.
-          </footer>
-        </main>
-      </div>
-    </Desktop>
+          {/* ── QUICK LAUNCH NAVIGATION ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link
+              href="/play"
+              className="group p-5 rounded-2xl bg-[#0c1017]/90 hover:bg-[#101622] border border-zinc-800/80 hover:border-emerald-500/40 transition shadow-xl flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                  <Gamepad2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-white text-sm">Play Games</h2>
+                  <p className="text-[11px] text-zinc-400">Arcade & 3D Quests</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            </Link>
+
+            <Link
+              href="/quizzes"
+              className="group p-5 rounded-2xl bg-[#0c1017]/90 hover:bg-[#101622] border border-zinc-800/80 hover:border-sky-500/40 transition shadow-xl flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-white text-sm">Quizzes</h2>
+                  <p className="text-[11px] text-zinc-400">Knowledge Challenges</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            </Link>
+
+            <Link
+              href="/ecograph"
+              className="group p-5 rounded-2xl bg-[#0c1017]/90 hover:bg-[#101622] border border-zinc-800/80 hover:border-teal-500/40 transition shadow-xl flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-white text-sm">EcoGraph</h2>
+                  <p className="text-[11px] text-zinc-400">3D Relational Explorer</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            </Link>
+          </div>
+
+        </div>
+      </Desktop>
+
+      {/* ─── Interactive Passport Customizer Modal ─── */}
+      <PassportCustomizerModal
+        isOpen={isCustomizerOpen}
+        onClose={() => setIsCustomizerOpen(false)}
+        config={passportConfig}
+        onChange={(cfg) => {
+          setPassportConfig(cfg);
+          savePassportConfig(cfg);
+        }}
+        onDownload={handleDownload}
+        onPrint={handlePrint}
+      />
+    </AuthGuard>
   );
+}
+
+function windowWidthDashboard() {
+  if (typeof window === 'undefined') return 480;
+  if (window.innerWidth < 640) return Math.min(330, window.innerWidth - 48);
+  if (window.innerWidth < 1024) return 420;
+  return 480;
 }

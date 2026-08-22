@@ -1,52 +1,51 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { EcoNode, GraphData } from '@/lib/ecograph/types';
-import {
-  Search,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Tag,
-  ChevronRight,
-  X,
-  Sparkles,
-  GitBranch,
-} from 'lucide-react';
-
-export const NEON_PALETTE = [
-  '#10b981', // Emerald Green (Biodiversity)
-  '#38bdf8', // Sky Blue (Spatial)
-  '#f43f5e', // Rose/Red (Pollution)
-  '#f97316', // Amber/Orange (Climate)
-  '#a855f7', // Purple (Policy)
-  '#ec4899', // Pink (User)
-  '#06b6d4', // Cyan (Quest)
-];
+import { soundFX } from '@/lib/audio-fx';
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  Biodiversity: '#10b981',
-  Spatial: '#38bdf8',
-  Pollution: '#f43f5e',
-  Climate: '#f97316',
-  Policy: '#a855f7',
-  User: '#ec4899',
-  Quest: '#06b6d4',
+  Climate: '#f59e0b',       // Warm Amber / Gold (Central Core)
+  Biodiversity: '#10b981',  // Emerald / Mint Green (Secondary Cluster)
+  Spatial: '#38bdf8',       // Cyan / Sky Blue
+  Pollution: '#f43f5e',     // Rose / Coral
+  Policy: '#a855f7',        // Violet / Purple
+  User: '#ec4899',          // Soft Magenta / Pink
+  Quest: '#06b6d4',         // Electric Cyan
 };
+
+export const NEON_PALETTE = [
+  '#f59e0b', '#10b981', '#38bdf8', '#f43f5e', '#a855f7', '#06b6d4', '#ec4899',
+];
 
 interface PhysicsNode {
   id: string;
   node: EcoNode;
-  x: number;
-  y: number;
+  base2dX: number;
+  base2dY: number;
+  renderX: number;
+  renderY: number;
   z?: number;
   vx: number;
   vy: number;
-  targetX?: number;
-  targetY?: number;
   radius: number;
   color: string;
   glow: string;
+  isHub?: boolean;
+  degree: number;
+  clusterIndex: number;
+  phase: number;
+  shimmerOffset: number;
+}
+
+export interface ObsidianGraphCanvasRef {
+  focusNode: (nodeId: string, zoomLevel?: number) => void;
+  focusCluster: (category: string) => void;
+  focusPath: (nodeIds: string[]) => void;
+  resetCamera: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  pan: (dx: number, dy: number) => void;
 }
 
 interface ObsidianGraphCanvasProps {
@@ -56,27 +55,26 @@ interface ObsidianGraphCanvasProps {
   projectionMode?: '2d' | 'globe';
   selectedCategory?: string | null;
   highlightedPathNodeIds?: string[];
+  timelineYear?: number;
   zoomSignal?: { type: 'in' | 'out' | 'reset' | 'fit'; timestamp: number } | null;
   showLabels?: boolean;
-  onToggleLabels?: () => void;
-  onToggleProjectionMode?: () => void;
-  onSelectNode?: (node: EcoNode) => void;
+  onSelectNode?: (node: EcoNode | null) => void;
   onExpandNeighborhood?: (nodeId: string) => void;
 }
 
-export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
+export const ObsidianGraphCanvas = forwardRef<ObsidianGraphCanvasRef, ObsidianGraphCanvasProps>(({
   graphData,
+  activeNodeId,
   viewMode = 'overview',
   projectionMode = '2d',
   selectedCategory = null,
   highlightedPathNodeIds = [],
+  timelineYear,
   zoomSignal = null,
-  showLabels: externalShowLabels = false,
-  onToggleLabels,
-  onToggleProjectionMode,
+  showLabels = false,
   onSelectNode,
   onExpandNeighborhood,
-}) => {
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const physicsRef = useRef<PhysicsNode[]>([]);
@@ -84,104 +82,71 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const edgeMapRef = useRef<Map<string, PhysicsNode>>(new Map());
   const frameCountRef = useRef(0);
 
-  // ─── Camera State ─────────────────────────────────────────────────────────
-  const cameraRef = useRef({ zoom: 0.6, panX: 0, panY: 0 });
+  // ─── Camera State with Strict Center Origin ──────────────────────────────
+  const cameraRef = useRef({
+    zoom: 0.65,
+    panX: 0,
+    panY: 0,
+    targetZoom: 0.65,
+    targetPanX: 0,
+    targetPanY: 0,
+    isFollowing: false,
+    followNodeId: null as string | null,
+  });
   const [, forceRender] = useState(0);
 
-  const [internalShowLabels, setInternalShowLabels] = useState(false);
-  const showLabels = externalShowLabels || internalShowLabels;
-
-  // ─── Dynamic Global Physics & Display Settings ───────────────────────────
-  const [repulsion, setRepulsion] = useState(1100);
-  const [linkDist, setLinkDist] = useState(85);
-  const [centerForce, setCenterForce] = useState(0.005);
-  const [friction, setFriction] = useState(0.85);
-  const [nodeSize, setNodeSize] = useState(1.2);
-  const [lineOpacity, setLineOpacity] = useState(0.18);
-  const [groupColors, setGroupColors] = useState<Record<string, string>>({ ...CATEGORY_COLORS });
-
-  const [selectedNode, setSelectedNode] = useState<EcoNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<PhysicsNode | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
+  // ─── Smooth 2D <-> 3D Morph Factor ───────────────────────────────────────
+  const morphProgressRef = useRef(projectionMode === 'globe' ? 1.0 : 0.0);
   const globeRotYRef = useRef(0);
-  const globeRotXRef = useRef(0.2);
+  const globeRotXRef = useRef(0.18);
 
-  // ─── Stable Props Ref for High-Performance Canvas Loop ───────────────────
+  // Wake physics whenever projection mode changes
+  useEffect(() => {
+    frameCountRef.current = 0;
+  }, [projectionMode]);
+
+  // ─── Props Ref for 60fps Loop ─────────────────────────────────────────────
   const propsRef = useRef({
     graphData,
-    selectedNode,
+    activeNodeId,
     hoveredNode,
     highlightedPathNodeIds,
     selectedCategory,
     viewMode,
     projectionMode,
     showLabels,
-    repulsion,
-    linkDist,
-    centerForce,
-    friction,
-    nodeSize,
-    lineOpacity,
-    groupColors,
+    timelineYear,
+    onSelectNode,
   });
 
   useEffect(() => {
     propsRef.current = {
       graphData,
-      selectedNode,
+      activeNodeId,
       hoveredNode,
       highlightedPathNodeIds,
       selectedCategory,
       viewMode,
       projectionMode,
       showLabels,
-      repulsion,
-      linkDist,
-      centerForce,
-      friction,
-      nodeSize,
-      lineOpacity,
-      groupColors,
+      timelineYear,
+      onSelectNode,
     };
   });
 
-  // Fetch live global presets from backend
-  useEffect(() => {
-    const fetchGlobalPresets = async () => {
-      try {
-        const res = await fetch('/api/ecograph/presets', { cache: 'no-store' });
-        const json = await res.json();
-        if (json.success && json.presets) {
-          const p = json.presets;
-          if (p.repulsion) setRepulsion(p.repulsion);
-          if (p.linkDist) setLinkDist(p.linkDist);
-          if (p.centerForce) setCenterForce(p.centerForce);
-          if (p.friction) setFriction(p.friction);
-          if (p.nodeSize) setNodeSize(p.nodeSize);
-          if (p.lineOpacity) setLineOpacity(p.lineOpacity);
-          if (p.categoryColors) setGroupColors((prev) => ({ ...prev, ...p.categoryColors }));
-        }
-      } catch (err) {
-        // Fallback to defaults
-      }
-    };
-    fetchGlobalPresets();
-    const interval = setInterval(fetchGlobalPresets, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const wakePhysics = () => {
-    frameCountRef.current = 0;
-    physicsRef.current.forEach((n) => {
-      n.vx = (Math.random() - 0.5) * 1.0;
-      n.vy = (Math.random() - 0.5) * 1.0;
-    });
+  // ─── Anchored Cluster Offsets (Relative to Origin 0,0) ───────────────────
+  const catCenterOffsets: Record<string, { dx: number; dy: number; radius: number }> = {
+    Climate: { dx: 0, dy: 0, radius: 180 },            // Central Amber Dense Core
+    Biodiversity: { dx: 220, dy: 180, radius: 130 },   // Emerald Green Cluster
+    Spatial: { dx: -100, dy: 240, radius: 115 },       // Sky Blue Cluster
+    Pollution: { dx: -250, dy: -140, radius: 120 },    // Rose / Coral Cluster
+    Policy: { dx: 240, dy: -140, radius: 115 },        // Violet Cluster
+    User: { dx: -260, dy: 60, radius: 95 },            // Soft Pink Cluster
+    Quest: { dx: 260, dy: 60, radius: 95 },            // Cyan Cluster
   };
-
-  useEffect(() => {
-    wakePhysics();
-  }, [repulsion, linkDist, centerForce, friction, nodeSize]);
 
   // ─── Interaction State ────────────────────────────────────────────────────
   const dragRef = useRef<{
@@ -193,27 +158,8 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     startPanY: number;
   }>({ mode: 'none', nodeId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
 
-  // ─── Category Cluster Offsets relative to world center ─────────────────
-  const catCenterOffsets: Record<string, { dx: number; dy: number }> = {
-    Biodiversity: { dx: 180, dy: 160 },    // Bottom Right (Green)
-    Spatial: { dx: -60, dy: 220 },          // Bottom (Blue)
-    Pollution: { dx: -220, dy: -140 },      // Top Left (Red/Pink)
-    Climate: { dx: 0, dy: -20 },            // Center (Orange)
-    Policy: { dx: 220, dy: -140 },         // Top Right (Purple)
-    User: { dx: -240, dy: 60 },             // Left (Pink)
-    Quest: { dx: 240, dy: 60 },             // Right (Cyan)
-  };
-
-  // ─── Initialize Physics Nodes with Cluster Centers ──────────────────────
+  // ─── Initialize Physics Nodes with Strict Centered Coordinates ───────────
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const dpr = window.devicePixelRatio || 1;
-    const W = canvas ? canvas.width / dpr : 1200;
-    const H = canvas ? canvas.height / dpr : 800;
-    const cam = cameraRef.current;
-    const cx = (W / 2 - cam.panX) / cam.zoom;
-    const cy = (H / 2 - cam.panY) / cam.zoom;
-
     const degreeMap = new Map<string, number>();
     graphData.edges.forEach((e) => {
       degreeMap.set(e.sourceId, (degreeMap.get(e.sourceId) || 0) + 1);
@@ -221,80 +167,398 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     });
 
     const existingPosMap = new Map<string, { x: number; y: number }>();
-    physicsRef.current.forEach((n) => existingPosMap.set(n.id, { x: n.x, y: n.y }));
+    physicsRef.current.forEach((n) => existingPosMap.set(n.id, { x: n.base2dX, y: n.base2dY }));
 
-    const isInitialLoad = physicsRef.current.length === 0;
-    if (isInitialLoad) {
-      frameCountRef.current = 0;
-    }
+    const categories = Object.keys(catCenterOffsets);
 
     physicsRef.current = graphData.nodes.map((node, idx) => {
       const existing = existingPosMap.get(node.id);
       let x: number, y: number;
+      const catConfig = catCenterOffsets[node.category] || { dx: 0, dy: 0, radius: 100 };
+      const clusterIndex = categories.indexOf(node.category);
 
       if (existing) {
         x = existing.x;
         y = existing.y;
       } else {
-        const offset = catCenterOffsets[node.category] || { dx: 0, dy: 0 };
-        const ccX = cx + offset.dx;
-        const ccY = cy + offset.dy;
-
+        const isOuterBoundaryRing = idx % 8 === 0;
         const angle = Math.random() * Math.PI * 2;
-        const spread = 20 + Math.random() * 110;
-        x = ccX + Math.cos(angle) * spread;
-        y = ccY + Math.sin(angle) * spread;
+        const spread = isOuterBoundaryRing
+          ? 380 + Math.random() * 80
+          : 6 + Math.random() * catConfig.radius;
+
+        x = catConfig.dx + Math.cos(angle) * spread;
+        y = catConfig.dy + Math.sin(angle) * spread;
       }
 
-      const baseColor = groupColors[node.category] || CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
-
-      let r = 2.5;
-      if (node.label === 'Species' || node.label === 'Policy') r = 4.5;
-      if (node.label === 'Habitat') r = 5.5;
-      if (node.id.startsWith('obsidian-node')) r = 1.8 + Math.random() * 1.5;
+      const degree = degreeMap.get(node.id) || 1;
+      const isHub = degree >= 6 || idx % 22 === 0;
+      const radius = Math.min(8.5, Math.max(2.2, Math.sqrt(degree) * 1.75));
+      const baseColor = CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
 
       return {
         id: node.id,
         node,
-        x,
-        y,
+        base2dX: x,
+        base2dY: y,
+        renderX: x,
+        renderY: y,
         vx: 0,
         vy: 0,
-        radius: r * nodeSize,
+        radius,
         color: baseColor,
-        glow: baseColor + '50',
+        glow: baseColor,
+        isHub,
+        degree,
+        clusterIndex,
+        phase: Math.random() * Math.PI * 2,
+        shimmerOffset: Math.random() * 100,
       };
     });
 
-    const map = new Map<string, PhysicsNode>();
-    physicsRef.current.forEach((n) => map.set(n.id, n));
-    edgeMapRef.current = map;
-  }, [graphData, groupColors, nodeSize]);
+    const newEdgeMap = new Map<string, PhysicsNode>();
+    physicsRef.current.forEach((n) => newEdgeMap.set(n.id, n));
+    edgeMapRef.current = newEdgeMap;
 
-  // Transform Helpers
-  const screenToWorld = useCallback((sx: number, sy: number) => {
+    frameCountRef.current = 0;
+  }, [graphData]);
+
+  // Initial Camera Centering
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.width / dpr;
+      const H = canvas.height / dpr;
+      cameraRef.current.panX = W / 2;
+      cameraRef.current.panY = H / 2;
+      cameraRef.current.targetPanX = W / 2;
+      cameraRef.current.targetPanY = H / 2;
+      cameraRef.current.zoom = 0.65;
+      cameraRef.current.targetZoom = 0.65;
+      forceRender((n) => n + 1);
+    }
+  }, []);
+
+  // Screen to World Transform
+  const screenToWorld = useCallback((screenX: number, screenY: number) => {
     const cam = cameraRef.current;
     return {
-      x: (sx - cam.panX) / cam.zoom,
-      y: (sy - cam.panY) / cam.zoom,
+      x: (screenX - cam.panX) / cam.zoom,
+      y: (screenY - cam.panY) / cam.zoom,
     };
   }, []);
 
-  // Canvas Resize
+  // ─── Smooth Parabolic Fly-To Camera Navigation ───────────────────────────
+  const flyTo = useCallback((targetX: number, targetY: number, targetZoom = 1.45, followId: string | null = null) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+
+    const targetPanX = W / 2 - targetX * targetZoom;
+    const targetPanY = H / 2 - targetY * targetZoom;
+
+    cameraRef.current.targetPanX = targetPanX;
+    cameraRef.current.targetPanY = targetPanY;
+    cameraRef.current.targetZoom = targetZoom;
+    cameraRef.current.followNodeId = followId;
+
+    const startZoom = cameraRef.current.zoom;
+    const startPanX = cameraRef.current.panX;
+    const startPanY = cameraRef.current.panY;
+    const dipZoom = Math.min(startZoom, targetZoom) * 0.88;
+
+    let step = 0;
+    const maxSteps = 30;
+
+    const smoothFly = () => {
+      step++;
+      const t = step / maxSteps;
+      const ease = t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+
+      const zoomProgress = Math.sin(t * Math.PI);
+      const currentZoom = (1 - t) * startZoom + t * targetZoom - zoomProgress * (Math.abs(startZoom - dipZoom) * 0.35);
+
+      cameraRef.current.zoom = Math.max(0.18, currentZoom);
+      cameraRef.current.panX = startPanX + (targetPanX - startPanX) * ease;
+      cameraRef.current.panY = startPanY + (targetPanY - startPanY) * ease;
+
+      forceRender((n) => n + 1);
+
+      if (step < maxSteps) {
+        requestAnimationFrame(smoothFly);
+      }
+    };
+    requestAnimationFrame(smoothFly);
+  }, []);
+
+  const focusNode = useCallback((nodeId: string, zoomLevel = 1.45) => {
+    const target = physicsRef.current.find((n) => n.id === nodeId);
+    if (!target) return;
+
+    if (propsRef.current.onSelectNode) {
+      propsRef.current.onSelectNode(target.node);
+    }
+
+    flyTo(target.renderX, target.renderY, zoomLevel, nodeId);
+  }, [flyTo]);
+
+  // Sync external activeNodeId
   useEffect(() => {
-    const resize = () => {
+    if (activeNodeId) {
+      const target = physicsRef.current.find((n) => n.id === activeNodeId);
+      if (target) {
+        flyTo(target.renderX, target.renderY, 1.45, activeNodeId);
+      }
+    }
+  }, [activeNodeId, flyTo]);
+
+  const focusCluster = useCallback((category: string) => {
+    const offset = catCenterOffsets[category] || { dx: 0, dy: 0 };
+    flyTo(offset.dx, offset.dy, 1.15);
+  }, [flyTo]);
+
+  const focusPath = useCallback((nodeIds: string[]) => {
+    if (nodeIds.length === 0) return;
+    const first = physicsRef.current.find((n) => n.id === nodeIds[0]);
+    if (first) {
+      focusNode(first.id, 1.4);
+    }
+  }, [focusNode]);
+
+  const resetCamera = useCallback(() => {
+    if (propsRef.current.onSelectNode) {
+      propsRef.current.onSelectNode(null);
+    }
+    flyTo(0, 0, 0.65, null);
+  }, [flyTo]);
+
+  const handlePanDelta = useCallback((dx: number, dy: number) => {
+    cameraRef.current.panX += dx;
+    cameraRef.current.panY += dy;
+    cameraRef.current.followNodeId = null;
+    forceRender((n) => n + 1);
+  }, []);
+
+  // ─── Instant Node Jump in Direction (Arrow Keys) ─────────────────────────
+  const jumpToNodeInDirection = useCallback((dir: 'up' | 'down' | 'left' | 'right') => {
+    const nodes = physicsRef.current;
+    if (nodes.length === 0) return;
+
+    const current = propsRef.current.activeNodeId
+      ? nodes.find((n) => n.id === propsRef.current.activeNodeId)
+      : null;
+    const currentX = current ? current.renderX : 0;
+    const currentY = current ? current.renderY : 0;
+
+    const connectedIds = new Set<string>();
+    if (current) {
+      propsRef.current.graphData.edges.forEach((e) => {
+        if (e.sourceId === current.id) connectedIds.add(e.targetId);
+        if (e.targetId === current.id) connectedIds.add(e.sourceId);
+      });
+    }
+
+    // When a node is selected, ONLY navigate among its directly connected neighbors
+    const candidateNodes = (current && connectedIds.size > 0)
+      ? nodes.filter((n) => connectedIds.has(n.id))
+      : nodes;
+
+    let bestNode: PhysicsNode | null = null;
+    let bestScore = Infinity;
+
+    for (const n of candidateNodes) {
+      if (current && n.id === current.id) continue;
+      if (propsRef.current.selectedCategory && n.node.category !== propsRef.current.selectedCategory) continue;
+
+      const dx = n.renderX - currentX;
+      const dy = n.renderY - currentY;
+      const dist = Math.hypot(dx, dy);
+
+      let inDirection = false;
+      let angularPenalty = 0;
+
+      if (dir === 'right' && dx > 8) {
+        inDirection = true;
+        angularPenalty = Math.abs(dy) / (dx + 1);
+      } else if (dir === 'left' && dx < -8) {
+        inDirection = true;
+        angularPenalty = Math.abs(dy) / (-dx + 1);
+      } else if (dir === 'down' && dy > 8) {
+        inDirection = true;
+        angularPenalty = Math.abs(dx) / (dy + 1);
+      } else if (dir === 'up' && dy < -8) {
+        inDirection = true;
+        angularPenalty = Math.abs(dx) / (-dy + 1);
+      }
+
+      if (inDirection) {
+        const score = dist * (1 + angularPenalty * 1.5);
+        if (score < bestScore) {
+          bestScore = score;
+          bestNode = n;
+        }
+      }
+    }
+
+    // Fallback if no neighbor was in that exact directional sector: cycle to closest neighbor
+    if (!bestNode && current && candidateNodes.length > 0) {
+      let closestDist = Infinity;
+      for (const n of candidateNodes) {
+        if (n.id === current.id) continue;
+        const d = Math.hypot(n.renderX - currentX, n.renderY - currentY);
+        if (d < closestDist) {
+          closestDist = d;
+          bestNode = n;
+        }
+      }
+    }
+
+    if (bestNode) {
+      focusNode(bestNode.id, 1.45);
+      if (propsRef.current.onSelectNode) {
+        propsRef.current.onSelectNode(bestNode.node);
+      }
+    }
+  }, [focusNode]);
+
+  // ─── Game-like Keyboard Navigation (Arrows = Node Jump, WASD = Pan) ──────
+  useEffect(() => {
+    const keysPressed: Record<string, boolean> = {};
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['input', 'textarea'].includes((e.target as HTMLElement)?.tagName?.toLowerCase())) return;
+
+      const key = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', '+', '-', '=', '_', 'r'].includes(key)) {
+        e.preventDefault();
+      }
+
+      if (e.key === 'ArrowUp') {
+        jumpToNodeInDirection('up');
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        jumpToNodeInDirection('down');
+        return;
+      }
+      if (e.key === 'ArrowLeft') {
+        jumpToNodeInDirection('left');
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        jumpToNodeInDirection('right');
+        return;
+      }
+
+      keysPressed[key] = true;
+
+      if (key === 'r' || key === ' ') {
+        resetCamera();
+      }
+      if (key === '+' || key === '=') {
+        cameraRef.current.zoom = Math.min(3.8, cameraRef.current.zoom * 1.15);
+        forceRender((n) => n + 1);
+      }
+      if (key === '-' || key === '_') {
+        cameraRef.current.zoom = Math.max(0.18, cameraRef.current.zoom * 0.85);
+        forceRender((n) => n + 1);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      keysPressed[e.key.toLowerCase()] = false;
+    };
+
+    let keyLoopId: number;
+    const keyLoop = () => {
+      const speed = 14;
+      let moved = false;
+
+      if (keysPressed['w']) {
+        cameraRef.current.panY += speed;
+        cameraRef.current.followNodeId = null;
+        moved = true;
+      }
+      if (keysPressed['s']) {
+        cameraRef.current.panY -= speed;
+        cameraRef.current.followNodeId = null;
+        moved = true;
+      }
+      if (keysPressed['a']) {
+        cameraRef.current.panX += speed;
+        cameraRef.current.followNodeId = null;
+        moved = true;
+      }
+      if (keysPressed['d']) {
+        cameraRef.current.panX -= speed;
+        cameraRef.current.followNodeId = null;
+        moved = true;
+      }
+
+      if (moved) {
+        forceRender((n) => n + 1);
+      }
+
+      keyLoopId = requestAnimationFrame(keyLoop);
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
+    window.addEventListener('keyup', handleKeyUp);
+    keyLoopId = requestAnimationFrame(keyLoop);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      cancelAnimationFrame(keyLoopId);
+    };
+  }, [resetCamera, jumpToNodeInDirection]);
+
+  // Imperative Handle
+  useImperativeHandle(ref, () => ({
+    focusNode,
+    focusCluster,
+    focusPath,
+    resetCamera,
+    zoomIn: () => {
+      cameraRef.current.zoom = Math.min(3.8, cameraRef.current.zoom * 1.25);
+      forceRender((n) => n + 1);
+    },
+    zoomOut: () => {
+      cameraRef.current.zoom = Math.max(0.18, cameraRef.current.zoom * 0.8);
+      forceRender((n) => n + 1);
+    },
+    pan: handlePanDelta,
+  }));
+
+  // Handle Canvas Resizing
+  useEffect(() => {
+    const updateSize = () => {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (!canvas || !container) return;
+
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = container.clientWidth * dpr;
-      canvas.height = container.clientHeight * dpr;
-      canvas.style.width = container.clientWidth + 'px';
-      canvas.style.height = container.clientHeight + 'px';
+      const rect = container.getBoundingClientRect();
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+
+      if (cameraRef.current.panX === 0 && cameraRef.current.panY === 0) {
+        cameraRef.current.panX = rect.width / 2;
+        cameraRef.current.panY = rect.height / 2;
+      }
+
+      forceRender((n) => n + 1);
     };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, []);
 
   // Cursor-Centered Wheel Zooming
@@ -310,11 +574,12 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
       const cam = cameraRef.current;
       const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
-      const newZoom = Math.max(0.15, Math.min(3.5, cam.zoom * zoomFactor));
+      const newZoom = Math.max(0.18, Math.min(3.8, cam.zoom * zoomFactor));
 
       cam.panX = sx - (sx - cam.panX) * (newZoom / cam.zoom);
       cam.panY = sy - (sy - cam.panY) * (newZoom / cam.zoom);
       cam.zoom = newZoom;
+      cam.followNodeId = null;
 
       forceRender((n) => n + 1);
     };
@@ -325,23 +590,18 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
   useEffect(() => {
     if (!zoomSignal) return;
-    if (zoomSignal.type === 'in') handleZoom(1.25);
-    if (zoomSignal.type === 'out') handleZoom(0.75);
-    if (zoomSignal.type === 'reset' || zoomSignal.type === 'fit') handleResetCamera();
-  }, [zoomSignal]);
+    if (zoomSignal.type === 'in') {
+      cameraRef.current.zoom = Math.min(3.8, cameraRef.current.zoom * 1.25);
+      forceRender((n) => n + 1);
+    }
+    if (zoomSignal.type === 'out') {
+      cameraRef.current.zoom = Math.max(0.18, cameraRef.current.zoom * 0.8);
+      forceRender((n) => n + 1);
+    }
+    if (zoomSignal.type === 'reset' || zoomSignal.type === 'fit') resetCamera();
+  }, [zoomSignal, resetCamera]);
 
-  const handleZoom = (factor: number) => {
-    cameraRef.current.zoom = Math.max(0.15, Math.min(3.0, cameraRef.current.zoom * factor));
-    forceRender((n) => n + 1);
-  };
-
-  const handleResetCamera = () => {
-    cameraRef.current = { zoom: 0.6, panX: 0, panY: 0 };
-    setSelectedNode(null);
-    forceRender((n) => n + 1);
-  };
-
-  // ─── Main Render & Physics Loop (STABLE UNBROKEN DEPENDENCY ARRAY) ─────────
+  // ─── Main Render & Physics Loop with Smooth Morph ─────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -355,24 +615,99 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       const H = canvas.height;
       const nodes = physicsRef.current;
       const cam = cameraRef.current;
-      const worldCx = (W / dpr / 2 - cam.panX) / cam.zoom;
-      const worldCy = (H / dpr / 2 - cam.panY) / cam.zoom;
 
       const dragging = dragRef.current;
+      const time = Date.now();
 
-      // ── 1. 3D Spherical Globe Projection Mode ──
-      if (p.projectionMode === 'globe') {
-        globeRotYRef.current += 0.0035;
-        const rotY = globeRotYRef.current;
-        const rotX = globeRotXRef.current;
-        const total = nodes.length || 1;
-        const sphereRadius = 310;
+      // ── Smooth 2D <-> 3D Morph Interpolation ──
+      const targetMorph = p.projectionMode === 'globe' ? 1.0 : 0.0;
+      morphProgressRef.current += (targetMorph - morphProgressRef.current) * 0.08;
+      const morph = morphProgressRef.current;
 
-        nodes.forEach((n, idx) => {
+      // 3D Spherical Coordinates calculations
+      globeRotYRef.current += 0.003;
+      const rotY = globeRotYRef.current;
+      const rotX = globeRotXRef.current;
+      const total = nodes.length || 1;
+      const sphereRadius = 300;
+
+      // 2D Physics Settlement
+      frameCountRef.current++;
+      const frame = frameCountRef.current;
+      const isSettling = frame < 45;
+
+      if (isSettling && morph < 0.99) {
+        const coolFriction = Math.max(0.2, 0.85 - frame * 0.015);
+
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i], b = nodes[j];
+            const dx = b.base2dX - a.base2dX;
+            const dy = b.base2dY - a.base2dY;
+            const distSq = dx * dx + dy * dy + 1;
+            if (distSq > 160000) continue;
+            const dist = Math.sqrt(distSq);
+
+            const sameCategory = a.node.category === b.node.category;
+            const repMult = sameCategory ? 0.65 : 1.15;
+            const f = (1200 * repMult) / distSq;
+            const fx = (dx / dist) * f;
+            const fy = (dy / dist) * f;
+            a.vx -= fx; a.vy -= fy;
+            b.vx += fx; b.vy += fy;
+          }
+        }
+
+        const map = edgeMapRef.current;
+        p.graphData.edges.forEach((edge) => {
+          const src = map.get(edge.sourceId);
+          const tgt = map.get(edge.targetId);
+          if (!src || !tgt) return;
+          const dx = tgt.base2dX - src.base2dX;
+          const dy = tgt.base2dY - src.base2dY;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const f = (dist - 80) * 0.018;
+          const fx = (dx / dist) * f;
+          const fy = (dy / dist) * f;
+          src.vx += fx; src.vy += fy;
+          tgt.vx -= fx; tgt.vy -= fy;
+        });
+
+        nodes.forEach((n) => {
           if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
 
+          const offset = catCenterOffsets[n.node.category] || { dx: 0, dy: 0 };
+          n.vx += (offset.dx - n.base2dX) * 0.009;
+          n.vy += (offset.dy - n.base2dY) * 0.009;
+
+          n.vx *= coolFriction;
+          n.vy *= coolFriction;
+
+          if (Math.abs(n.vx) < 0.02) n.vx = 0;
+          if (Math.abs(n.vy) < 0.02) n.vy = 0;
+
+          n.base2dX += n.vx;
+          n.base2dY += n.vy;
+        });
+      }
+
+      // ── Calculate Projected renderX / renderY with Live Ambient Currents ──
+      nodes.forEach((n, idx) => {
+        if (dragging.mode === 'node' && dragging.nodeId === n.id) {
+          n.renderX = n.base2dX;
+          n.renderY = n.base2dY;
+          return;
+        }
+
+        // Live harmonic organic breathing
+        const driftX = Math.sin(time * 0.0009 + n.phase) * 0.5;
+        const driftY = Math.cos(time * 0.0009 + n.phase) * 0.5;
+        const base2dWithDriftX = n.base2dX + driftX;
+        const base2dWithDriftY = n.base2dY + driftY;
+
+        if (morph > 0.001) {
           const lat = Math.asin(-1 + (2 * idx) / total);
-          const lon = idx * 2.3999632297286533; // Golden angle
+          const lon = idx * 2.3999632297286533;
 
           const x0 = sphereRadius * Math.cos(lat) * Math.cos(lon);
           const y0 = sphereRadius * Math.sin(lat);
@@ -387,108 +722,30 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
           const z2 = y0 * sinX + z1 * cosX;
 
           const perspectiveScale = 520 / (520 - z2);
-          const targetX = worldCx + x1 * perspectiveScale;
-          const targetY = worldCy + y1 * perspectiveScale;
+          const globeX = x1 * perspectiveScale;
+          const globeY = y1 * perspectiveScale;
 
-          n.x += (targetX - n.x) * 0.16;
-          n.y += (targetY - n.y) * 0.16;
+          n.renderX = (1 - morph) * base2dWithDriftX + morph * globeX;
+          n.renderY = (1 - morph) * base2dWithDriftY + morph * globeY;
           n.z = z2;
-        });
-      } else if (p.viewMode === 'timeline') {
-        const total = nodes.length;
-        const totalWidth = 1400;
-        const startX = worldCx - totalWidth / 2;
-
-        nodes.forEach((n, idx) => {
-          if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
-          const targetX = startX + (idx / total) * totalWidth;
-          const targetY = worldCy + Math.sin(idx * 0.4) * 140;
-          n.x += (targetX - n.x) * 0.12;
-          n.y += (targetY - n.y) * 0.12;
-        });
-      } else {
-        // ── 2. Physics Settlement (Run for 35 frames then FREEZE completely) ──
-        frameCountRef.current++;
-        const frame = frameCountRef.current;
-        const isSettling = frame < 35;
-
-        if (isSettling) {
-          const coolFriction = Math.max(0.2, p.friction - frame * 0.02);
-
-          for (let i = 0; i < nodes.length; i++) {
-            for (let j = i + 1; j < nodes.length; j++) {
-              const a = nodes[i], b = nodes[j];
-              const dx = b.x - a.x;
-              const dy = b.y - a.y;
-              const distSq = dx * dx + dy * dy + 1;
-              if (distSq > 140000) continue;
-              const dist = Math.sqrt(distSq);
-
-              const sameCategory = a.node.category === b.node.category;
-              const repMult = sameCategory ? 0.6 : 1.0;
-              const f = (p.repulsion * repMult) / distSq;
-              const fx = (dx / dist) * f;
-              const fy = (dy / dist) * f;
-              a.vx -= fx; a.vy -= fy;
-              b.vx += fx; b.vy += fy;
-            }
-          }
-
-          const map = edgeMapRef.current;
-          p.graphData.edges.forEach((edge) => {
-            const src = map.get(edge.sourceId);
-            const tgt = map.get(edge.targetId);
-            if (!src || !tgt) return;
-            const dx = tgt.x - src.x;
-            const dy = tgt.y - src.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const f = (dist - p.linkDist) * 0.018;
-            const fx = (dx / dist) * f;
-            const fy = (dy / dist) * f;
-            src.vx += fx; src.vy += fy;
-            tgt.vx -= fx; tgt.vy -= fy;
-          });
-
-          nodes.forEach((n) => {
-            if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
-
-            const offset = catCenterOffsets[n.node.category] || { dx: 0, dy: 0 };
-            const targetX = worldCx + offset.dx;
-            const targetY = worldCy + offset.dy;
-
-            n.vx += (targetX - n.x) * (p.centerForce * 1.5);
-            n.vy += (targetY - n.y) * (p.centerForce * 1.5);
-
-            n.vx *= coolFriction;
-            n.vy *= coolFriction;
-
-            if (Math.abs(n.vx) < 0.02) n.vx = 0;
-            if (Math.abs(n.vy) < 0.02) n.vy = 0;
-
-            n.x += n.vx;
-            n.y += n.vy;
-          });
         } else {
-          nodes.forEach((n) => {
-            if (dragging.mode !== 'node' || dragging.nodeId !== n.id) {
-              n.vx = 0;
-              n.vy = 0;
-            }
-          });
+          n.renderX = base2dWithDriftX;
+          n.renderY = base2dWithDriftY;
+          n.z = 0;
         }
-      }
+      });
 
-      // ── 3. Render Step ──
+      // ── Render Step ──
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W / dpr, H / dpr);
 
-      // Deep Obsidian Space Background
+      // Deep Obsidian Background
       ctx.fillStyle = '#07090e';
       ctx.fillRect(0, 0, W / dpr, H / dpr);
 
-      const grad = ctx.createRadialGradient(W / dpr / 2, H / dpr / 2, 80, W / dpr / 2, H / dpr / 2, (W / dpr) * 0.7);
-      grad.addColorStop(0, 'rgba(15, 23, 42, 0.6)');
-      grad.addColorStop(0.6, 'rgba(13, 17, 23, 0.9)');
+      const grad = ctx.createRadialGradient(W / dpr / 2, H / dpr / 2, 70, W / dpr / 2, H / dpr / 2, (W / dpr) * 0.85);
+      grad.addColorStop(0, 'rgba(14, 18, 28, 0.55)');
+      grad.addColorStop(0.6, 'rgba(8, 11, 17, 0.9)');
       grad.addColorStop(1, 'rgba(7, 9, 14, 1.0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W / dpr, H / dpr);
@@ -497,46 +754,48 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       ctx.translate(cam.panX, cam.panY);
       ctx.scale(cam.zoom, cam.zoom);
 
-      // Render 2D Network Cluster Constellation Orbit Ring & Category Halos
-      const clusterR = 520;
-
       // Outer Constellation Boundary Ring
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
-      ctx.lineWidth = 1.0 / cam.zoom;
-      ctx.setLineDash([3, 6]);
-      ctx.beginPath();
-      ctx.arc(worldCx, worldCy, clusterR, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Category Cluster Halos
-      Object.entries(catCenterOffsets).forEach(([cat, offset]) => {
-        const hx = worldCx + offset.dx;
-        const hy = worldCy + offset.dy;
-        const color = CATEGORY_COLORS[cat] || '#10b981';
-
-        const haloGrad = ctx.createRadialGradient(hx, hy, 10, hx, hy, 180);
-        haloGrad.addColorStop(0, color + '22');
-        haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = haloGrad;
+      if (morph < 0.6) {
+        const clusterR = 540;
+        ctx.strokeStyle = `rgba(56, 189, 248, ${0.08 * (1 - morph)})`;
+        ctx.lineWidth = 0.8 / cam.zoom;
+        ctx.setLineDash([3, 8]);
         ctx.beginPath();
-        ctx.arc(hx, hy, 180, 0, Math.PI * 2);
-        ctx.fill();
-      });
+        ctx.arc(0, 0, clusterR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
 
-      // Connected Nodes Set for Focus & Paths Mode
-      const connectedNodeIds = new Set<string>();
-      if (p.selectedNode) {
-        connectedNodeIds.add(p.selectedNode.id);
-        p.graphData.edges.forEach((e) => {
-          if (e.sourceId === p.selectedNode!.id) connectedNodeIds.add(e.targetId);
-          if (e.targetId === p.selectedNode!.id) connectedNodeIds.add(e.sourceId);
+      // Atmospheric Glowing Cluster Nebulae
+      if (morph < 0.8) {
+        Object.entries(catCenterOffsets).forEach(([cat, config]) => {
+          const color = CATEGORY_COLORS[cat] || '#10b981';
+          const isHoveredCluster = p.selectedCategory === cat;
+          const nebulaR = isHoveredCluster ? 240 : 180;
+          const haloGrad = ctx.createRadialGradient(config.dx, config.dy, 10, config.dx, config.dy, nebulaR);
+          haloGrad.addColorStop(0, color + (isHoveredCluster ? '30' : '15'));
+          haloGrad.addColorStop(0.6, color + (isHoveredCluster ? '12' : '05'));
+          haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = haloGrad;
+          ctx.beginPath();
+          ctx.arc(config.dx, config.dy, nebulaR, 0, Math.PI * 2);
+          ctx.fill();
         });
       }
 
-      const time = Date.now();
+      // Connected Nodes Set
+      const connectedNodeIds = new Set<string>();
+      if (p.activeNodeId) {
+        connectedNodeIds.add(p.activeNodeId);
+        p.graphData.edges.forEach((e) => {
+          if (e.sourceId === p.activeNodeId) connectedNodeIds.add(e.targetId);
+          if (e.targetId === p.activeNodeId) connectedNodeIds.add(e.sourceId);
+        });
+      }
 
-      // ── Draw Edges & Traveling Pulse Particles ──
+      const pathNodeIdsSet = new Set(p.highlightedPathNodeIds || []);
+
+      // ── Draw Edges (Cosmic Threads & Bioluminescent Flowing Photons) ──
       const map = edgeMapRef.current;
       p.graphData.edges.forEach((edge, idx) => {
         const src = map.get(edge.sourceId);
@@ -548,85 +807,111 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
         }
 
         const isConnectedToSelected =
-          p.selectedNode && (edge.sourceId === p.selectedNode.id || edge.targetId === p.selectedNode.id);
-        const isHighlighted =
-          (p.highlightedPathNodeIds || []).includes(edge.sourceId) && (p.highlightedPathNodeIds || []).includes(edge.targetId);
+          p.activeNodeId && (edge.sourceId === p.activeNodeId || edge.targetId === p.activeNodeId);
+        const isPathEdge =
+          pathNodeIdsSet.has(edge.sourceId) && pathNodeIdsSet.has(edge.targetId);
 
-        if (p.viewMode === 'focus' && p.selectedNode && !isConnectedToSelected) {
+        if (p.viewMode === 'focus' && p.activeNodeId && !isConnectedToSelected) {
           return;
         }
 
         ctx.beginPath();
-        ctx.moveTo(src.x, src.y);
-        ctx.lineTo(tgt.x, tgt.y);
+        ctx.moveTo(src.renderX, src.renderY);
+        ctx.lineTo(tgt.renderX, tgt.renderY);
 
-        if (p.viewMode === 'paths' && (isConnectedToSelected || isHighlighted || idx % 2 === 0)) {
-          ctx.strokeStyle = `rgba(16, 185, 129, 0.9)`;
-          ctx.lineWidth = 2.2 / cam.zoom;
-        } else if (isHighlighted) {
-          ctx.strokeStyle = `rgba(16, 185, 129, 0.85)`;
-          ctx.lineWidth = 2.0 / cam.zoom;
+        if (isPathEdge) {
+          ctx.strokeStyle = '#34d399';
+          ctx.lineWidth = 2.4 / cam.zoom;
         } else if (isConnectedToSelected) {
           ctx.strokeStyle = src.color + 'dd';
           ctx.lineWidth = 1.4 / cam.zoom;
         } else {
-          ctx.strokeStyle = `rgba(140, 50, 45, ${Math.min(p.lineOpacity, 0.18)})`;
-          ctx.lineWidth = 0.35 / cam.zoom;
+          ctx.strokeStyle = 'rgba(160, 75, 65, 0.16)';
+          ctx.lineWidth = 0.38 / cam.zoom;
         }
         ctx.stroke();
 
-        // Traveling pulse particle animation along edges
-        if (cam.zoom > 0.45 && (p.viewMode === 'paths' || idx % 3 === 0 || isConnectedToSelected || isHighlighted)) {
-          const pT = ((time * 0.0008 + idx * 0.2) % 1);
-          const px = src.x + (tgt.x - src.x) * pT;
-          const py = src.y + (tgt.y - src.y) * pT;
+        // Real-time Bioluminescent Photons traveling along edges
+        if (isPathEdge || isConnectedToSelected || (idx % 12 === 0 && cam.zoom > 0.4)) {
+          const speedFactor = isPathEdge ? 0.0012 : 0.0006;
+          const pT = ((time * speedFactor + idx * 0.18) % 1);
+          const px = src.renderX + (tgt.renderX - src.renderX) * pT;
+          const py = src.renderY + (tgt.renderY - src.renderY) * pT;
 
           ctx.beginPath();
-          ctx.arc(px, py, (p.viewMode === 'paths' || isConnectedToSelected ? 2.5 : 1.5) / cam.zoom, 0, Math.PI * 2);
-          ctx.fillStyle = isConnectedToSelected || p.viewMode === 'paths' ? '#ffffff' : src.color;
+          ctx.arc(px, py, (isPathEdge ? 2.5 : 1.8) / cam.zoom, 0, Math.PI * 2);
+          ctx.fillStyle = isPathEdge ? '#34d399' : '#ffffff';
           ctx.fill();
         }
       });
 
-      // ── Draw Nodes ──
+      // ── Draw Nodes (Celestial Multi-Tier Star Particles) ──
       nodes.forEach((n) => {
         if (p.selectedCategory && n.node.category !== p.selectedCategory) return;
 
-        const isSelected = p.selectedNode?.id === n.id;
+        const isSelected = p.activeNodeId === n.id;
         const isHovered = p.hoveredNode?.id === n.id;
-        const isHighlighted = (p.highlightedPathNodeIds || []).includes(n.id);
-        const isFocusConnected = p.viewMode !== 'focus' || !p.selectedNode || connectedNodeIds.has(n.id);
+        const isPathNode = pathNodeIdsSet.has(n.id);
+        const isFocusConnected = p.viewMode !== 'focus' || !p.activeNodeId || connectedNodeIds.has(n.id);
 
-        const alpha = isFocusConnected ? 1.0 : 0.08;
-        const r = n.radius * p.nodeSize;
+        const alpha = isFocusConnected ? (pathNodeIdsSet.size > 0 && !isPathNode && !isSelected ? 0.2 : 1.0) : 0.08;
+        const r = n.radius * 1.15;
 
         ctx.save();
         ctx.globalAlpha = alpha;
 
-        if (isSelected || isHighlighted || isHovered || (p.viewMode === 'paths' && connectedNodeIds.has(n.id))) {
-          const glowR = r + (isSelected ? 14 : 7);
-          const glowGrad = ctx.createRadialGradient(n.x, n.y, r * 0.3, n.x, n.y, glowR);
-          glowGrad.addColorStop(0, n.color + '90');
+        // Expanding active pulse ring for selected node
+        if (isSelected) {
+          const pulseT = (time * 0.003) % 1;
+          const pulseR = r + pulseT * 18;
+          ctx.beginPath();
+          ctx.arc(n.renderX, n.renderY, pulseR, 0, Math.PI * 2);
+          ctx.strokeStyle = n.color;
+          ctx.lineWidth = (1.5 * (1 - pulseT)) / cam.zoom;
+          ctx.stroke();
+        }
+
+        // Controlled subtle glow on hovered, selected, or path node
+        if (isSelected || isPathNode || isHovered) {
+          const glowR = r + (isSelected ? 16 : 8);
+          const glowGrad = ctx.createRadialGradient(n.renderX, n.renderY, r * 0.2, n.renderX, n.renderY, glowR);
+          glowGrad.addColorStop(0, n.color + 'bb');
           glowGrad.addColorStop(1, n.color + '00');
           ctx.beginPath();
-          ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+          ctx.arc(n.renderX, n.renderY, glowR, 0, Math.PI * 2);
           ctx.fillStyle = glowGrad;
           ctx.fill();
         }
 
+        // Node Inner Core
         ctx.beginPath();
-        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.arc(n.renderX, n.renderY, r, 0, Math.PI * 2);
         ctx.fillStyle = n.color;
         ctx.fill();
 
-        if (p.showLabels || isSelected || isHovered || isHighlighted) {
-          const fontSize = Math.max(9, 11 / cam.zoom);
-          ctx.font = `${isSelected ? 'bold ' : ''}${fontSize}px sans-serif`;
-          ctx.fillStyle = isSelected ? '#ffffff' : '#b0b8c8';
+        // Node Center Specular Star Point
+        if (r > 3.0) {
+          ctx.beginPath();
+          ctx.arc(n.renderX, n.renderY, r * 0.38, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+          ctx.fill();
+        }
+
+        // Clean Selective Labels
+        const shouldShowLabel = isSelected || isHovered || isPathNode;
+
+        if (shouldShowLabel) {
+          const fontSize = Math.max(10, Math.min(13, 11 / cam.zoom));
+          ctx.font = `${isSelected || isPathNode ? 'bold ' : ''}${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+          ctx.fillStyle = isSelected ? '#ffffff' : isPathNode ? '#34d399' : '#f1f5f9';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
-          const label = n.node.name.length > 22 ? n.node.name.substring(0, 20) + '…' : n.node.name;
-          ctx.fillText(label, n.x, n.y + r + 4);
+
+          const label = n.node.name.length > 24 ? n.node.name.substring(0, 22) + '…' : n.node.name;
+          ctx.shadowColor = '#000000';
+          ctx.shadowBlur = 6;
+          ctx.fillText(label, n.renderX, n.renderY + r + 3);
+          ctx.shadowBlur = 0;
         }
 
         ctx.restore();
@@ -638,7 +923,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
     animIdRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animIdRef.current);
-  }, []); // Guaranteed constant dependency array size across all renders and HMR updates
+  }, []);
 
   // Mouse Handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -649,9 +934,9 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     const world = screenToWorld(sx, sy);
 
     const hit = physicsRef.current.find((n) => {
-      const dx = n.x - world.x;
-      const dy = n.y - world.y;
-      return Math.sqrt(dx * dx + dy * dy) <= n.radius * nodeSize + 6;
+      const dx = n.renderX - world.x;
+      const dy = n.renderY - world.y;
+      return Math.sqrt(dx * dx + dy * dy) <= n.radius * 1.15 + 7;
     });
 
     if (hit) {
@@ -663,9 +948,11 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
         startPanX: cameraRef.current.panX,
         startPanY: cameraRef.current.panY,
       };
-      setSelectedNode(hit.node);
-      if (onSelectNode) onSelectNode(hit.node);
-      wakePhysics();
+      soundFX.playNodeSelect();
+      focusNode(hit.id, 1.45);
+      if (propsRef.current.onSelectNode) {
+        propsRef.current.onSelectNode(hit.node);
+      }
     } else {
       dragRef.current = {
         mode: 'pan',
@@ -683,7 +970,6 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     if (!rect) return;
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    setMousePos({ x: sx, y: sy });
     const world = screenToWorld(sx, sy);
 
     const drag = dragRef.current;
@@ -691,23 +977,31 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     if (drag.mode === 'pan') {
       cameraRef.current.panX = drag.startPanX + (sx - drag.startX);
       cameraRef.current.panY = drag.startPanY + (sy - drag.startY);
+      cameraRef.current.followNodeId = null;
       forceRender((n) => n + 1);
     } else if (drag.mode === 'node' && drag.nodeId) {
       const targetNode = physicsRef.current.find((n) => n.id === drag.nodeId);
       if (targetNode) {
-        targetNode.x = world.x;
-        targetNode.y = world.y;
+        targetNode.base2dX = world.x;
+        targetNode.base2dY = world.y;
+        targetNode.renderX = world.x;
+        targetNode.renderY = world.y;
         targetNode.vx = 0;
         targetNode.vy = 0;
-        wakePhysics();
+        frameCountRef.current = 0;
       }
     } else {
       const hit = physicsRef.current.find((n) => {
-        const dx = n.x - world.x;
-        const dy = n.y - world.y;
-        return Math.sqrt(dx * dx + dy * dy) <= n.radius * nodeSize + 6;
+        const dx = n.renderX - world.x;
+        const dy = n.renderY - world.y;
+        return Math.sqrt(dx * dx + dy * dy) <= n.radius * 1.15 + 7;
       });
       setHoveredNode(hit || null);
+      if (hit) {
+        setTooltipPos({ x: sx, y: sy });
+      } else {
+        setTooltipPos(null);
+      }
     }
   };
 
@@ -723,86 +1017,87 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     const world = screenToWorld(sx, sy);
 
     const hit = physicsRef.current.find((n) => {
-      const dx = n.x - world.x;
-      const dy = n.y - world.y;
-      return Math.sqrt(dx * dx + dy * dy) <= n.radius * nodeSize + 6;
+      const dx = n.renderX - world.x;
+      const dy = n.renderY - world.y;
+      return Math.sqrt(dx * dx + dy * dy) <= n.radius * 1.15 + 7;
     });
 
-    if (hit && onExpandNeighborhood) {
-      onExpandNeighborhood(hit.id);
+    if (hit) {
+      focusNode(hit.id);
+      if (onExpandNeighborhood) onExpandNeighborhood(hit.id);
+    } else {
+      resetCamera();
     }
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-[#0d1117] overflow-hidden select-none">
+    <div ref={containerRef} className="relative w-full h-full bg-[#07090e] overflow-hidden select-none">
       <canvas
         ref={canvasRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseLeave={() => {
+          handleMouseUp();
+          setTooltipPos(null);
+        }}
         onDoubleClick={handleDoubleClick}
         className="w-full h-full cursor-grab active:cursor-grabbing block"
       />
 
-      {/* Hover Tooltip Card */}
-      {hoveredNode && !selectedNode && (
+      {/* Lightweight 1-line hover tooltip */}
+      {hoveredNode && tooltipPos && !activeNodeId && (
         <div
-          className="absolute z-30 pointer-events-none bg-[#161b22]/95 backdrop-blur-md border border-zinc-800 p-2.5 rounded-xl shadow-2xl text-xs space-y-1 text-zinc-200 animate-in fade-in"
-          style={{ left: Math.min(window.innerWidth - 200, mousePos.x + 15), top: Math.min(window.innerHeight - 100, mousePos.y + 15) }}
+          className="absolute z-30 pointer-events-none transform -translate-x-1/2 -translate-y-full mb-3 px-2.5 py-1 rounded-md bg-[#0e121a]/95 backdrop-blur-md border border-zinc-700/80 text-white text-[11px] font-sans flex items-center gap-2 shadow-xl animate-in fade-in duration-75"
+          style={{ left: tooltipPos.x, top: tooltipPos.y - 8 }}
         >
-          <div className="flex items-center gap-2 font-bold text-white">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: hoveredNode.color }} />
-            <span>{hoveredNode.node.name}</span>
-          </div>
-          <span className="text-[9px] font-mono text-emerald-400 block">{hoveredNode.node.category}</span>
-          <p className="text-[10px] text-zinc-400 line-clamp-2">{hoveredNode.node.description}</p>
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: hoveredNode.color }} />
+          <span className="font-semibold">{hoveredNode.node.name}</span>
+          <span className="text-[10px] text-zinc-400 font-mono">· {hoveredNode.node.category}</span>
         </div>
       )}
 
-      {/* Floating Toolbar Controls */}
-      <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 bg-[#161b22]/90 backdrop-blur-md border border-zinc-800 p-1.5 rounded-xl shadow-xl text-xs text-zinc-300">
+      {/* Game-like Minimal Navigation Overlay (Bottom-Left) */}
+      <div className="absolute bottom-6 left-6 z-20 hidden sm:flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#0c1017]/85 backdrop-blur-md border border-zinc-800/80 shadow-xl font-mono text-[10px] text-zinc-400">
+        <span className="px-1.5 py-0.5 text-zinc-500 font-sans">Jump:</span>
         <button
-          onClick={() => {
-            if (onToggleLabels) {
-              onToggleLabels();
-            } else {
-              setInternalShowLabels(!internalShowLabels);
-            }
-          }}
-          className={`px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5 font-medium ${
-            showLabels ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold' : 'hover:bg-zinc-800 text-zinc-300'
-          }`}
-          title="Toggle Node Labels"
+          onClick={() => jumpToNodeInDirection('up')}
+          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center cursor-pointer"
+          title="Jump Up (↑)"
         >
-          <Tag className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="hidden sm:inline">Labels</span>
-        </button>
-
-        <div className="w-px h-4 bg-zinc-800 my-auto" />
-
-        <button
-          onClick={() => handleZoom(1.2)}
-          className="p-1.5 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition"
-          title="Zoom In"
-        >
-          <ZoomIn className="w-4 h-4" />
+          ↑
         </button>
         <button
-          onClick={() => handleZoom(0.8)}
-          className="p-1.5 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition"
-          title="Zoom Out"
+          onClick={() => jumpToNodeInDirection('down')}
+          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center cursor-pointer"
+          title="Jump Down (↓)"
         >
-          <ZoomOut className="w-4 h-4" />
+          ↓
         </button>
         <button
-          onClick={handleResetCamera}
-          className="p-1.5 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-lg transition"
-          title="Reset Camera"
+          onClick={() => jumpToNodeInDirection('left')}
+          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center cursor-pointer"
+          title="Jump Left (←)"
         >
-          <RotateCcw className="w-4 h-4" />
+          ←
+        </button>
+        <button
+          onClick={() => jumpToNodeInDirection('right')}
+          className="w-6 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 flex items-center justify-center cursor-pointer"
+          title="Jump Right (→)"
+        >
+          →
+        </button>
+        <button
+          onClick={resetCamera}
+          className="px-2 h-6 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-emerald-400 flex items-center justify-center cursor-pointer ml-1"
+          title="Recenter Graph (Space/R)"
+        >
+          Center
         </button>
       </div>
     </div>
   );
-};
+});
+
+ObsidianGraphCanvas.displayName = 'ObsidianGraphCanvas';

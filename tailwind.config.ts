@@ -10,9 +10,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['var(--font-body)', 'monospace'],
+        sans: ['var(--font-poppins)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        body: ['var(--font-poppins)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
         headline: ['var(--font-headline)', 'monospace'],
+        mono: ['var(--font-ibm-plex-mono)', 'monospace'],
         code: ['var(--font-ibm-plex-mono)', 'monospace'],
+        retro: ['var(--font-retro)', 'monospace'],
         'roboto-condensed': ['var(--font-roboto-condensed)', 'sans-serif'],
         poppins: ['var(--font-poppins)', 'sans-serif'],
       },
@@ -46,6 +49,18 @@ export default {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        surface: {
+          DEFAULT: 'hsl(var(--surface))',
+          elevated: 'hsl(var(--surface-elevated))',
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

@@ -1,3 +1,5 @@
+import { PageTransitionLoader } from '@/components/ui/page-transition-loader';
+
 export default function Loading() {
-  return null;
+  return <PageTransitionLoader message="INITIALIZING SUBSYSTEMS..." />;
 }

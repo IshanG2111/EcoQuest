@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Suspense } from 'react';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/hooks/use-auth';
 import { SessionProvider } from 'next-auth/react';
 import { Poppins, VT323, Press_Start_2P, IBM_Plex_Mono, Roboto_Condensed } from 'next/font/google';
+import { GlobalRouteLoader } from '@/components/global-route-loader';
 
 export const metadata: Metadata = {
   title: 'EcoQuest',
@@ -14,14 +16,14 @@ export const metadata: Metadata = {
 
 const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
 });
 
 const vt323 = VT323({
   weight: '400',
   subsets: ['latin'],
-  variable: '--font-body',
+  variable: '--font-retro',
 });
 
 const pressStart2P = Press_Start_2P({
@@ -31,13 +33,13 @@ const pressStart2P = Press_Start_2P({
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
-  weight: ['400', '700'],
+  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   variable: '--font-ibm-plex-mono',
 });
 
 const robotoCondensed = Roboto_Condensed({
-  weight: '700',
+  weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-roboto-condensed',
 });
@@ -55,7 +57,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var scale = localStorage.getItem('ecoquest_font_scale') || '1.08';
+                  var scale = localStorage.getItem('ecoquest_font_scale') || '1.0';
                   document.documentElement.style.setProperty('--ui-font-scale', scale);
                 } catch (e) {}
               })();
@@ -63,7 +65,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`font-body antialiased ${poppins.variable} ${vt323.variable} ${pressStart2P.variable} ${ibmPlexMono.variable} ${robotoCondensed.variable}`}>
+      <body className={`font-sans antialiased text-foreground bg-background ${poppins.variable} ${vt323.variable} ${pressStart2P.variable} ${ibmPlexMono.variable} ${robotoCondensed.variable}`}>
         <SessionProvider>
           <AuthProvider>
             <ThemeProvider
@@ -71,6 +73,9 @@ export default function RootLayout({
               defaultTheme="the-verdant-grove"
               enableSystem={false}
             >
+              <Suspense fallback={null}>
+                <GlobalRouteLoader />
+              </Suspense>
               {children}
               <Toaster />
               <SpeedInsights />

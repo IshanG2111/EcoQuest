@@ -1,246 +1,317 @@
-# 🌿 EcoQuest: The Immersive Retro Sustainability Edu-OS
+<div align="center">
 
 ```
-            ___ ____ ___   ___  _  _ ____ ____ ___
-            |__ |    |  \  |  \ |  | |___ [__   |
-            |___ |___ |__/  |__/ |__| |___ ___]  |
+███████╗ ██████╗ ██████╗  ██████╗ ██╗   ██╗███████╗███████╗████████╗
+██╔════╝██╔════╝██╔═══██╗██╔═══██╗██║   ██║██╔════╝██╔════╝╚══██╔══╝
+█████╗  ██║     ██║   ██║██║   ██║██║   ██║█████╗  ███████╗   ██║
+██╔══╝  ██║     ██║   ██║██║▄▄ ██║██║   ██║██╔══╝  ╚════██║   ██║
+███████╗╚██████╗╚██████╔╝╚██████╔╝╚██████╔╝███████╗███████║   ██║
+╚══════╝ ╚═════╝ ╚═════╝  ╚══▀▀═╝  ╚═════╝ ╚══════╝╚══════╝   ╚═╝
 ```
 
-![EcoQuest Preview](./demo.png)
+### **The World's Most Ambitious Gamified Ecological Learning Universe**
+*A full-stack Edu-OS where every quiz, game, and graph is a portal to planetary understanding.*
 
-> **"Pioneering the future of environmental education through self-paced, interactive mastery."**
+[![Next.js](https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase_Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com/)
+[![Gemini AI](https://img.shields.io/badge/Gemini_AI-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
-**EcoQuest** is a next-generation gamified learning environment built as a retro-inspired "Edu-OS." It bridges retro operating system aesthetics with modern, data-driven educational mechanics. By transforming complex sustainability concepts into interactive, LeetCode-style progressions, dynamic desktop widgets, and simulated strategy games, EcoQuest makes environmental education highly engaging, accessible, and rewarding.
-
----
-
-## 🖥️ The Retro "Edu-OS" Desktop Experience
-
-EcoQuest hosts its entire learning interface inside a custom-themed retro operating system environment that mimics desktop applications from the late 20th century.
-
-### 1. The CRT Window Manager
-*   **Draggable & Layered Windows**: Uses `React Draggable` to support fully movable window panels (Games, Dashboard, Quizzes, Settings).
-*   **CRT Aesthetics**: Styled with CRT monitor scanner lines, phosphor glow effects, custom screen flickers, and vintage retro-bezel frames.
-*   **Z-Index Focus**: Focuses active windows dynamically on-click, moving them to the front layer.
-*   **Instant Navigation**: All screen transitions and app windows load instantly without distracting loading screens or opening/closing animations, providing an extremely fast, responsive, and glitch-free user interface.
-
-### 2. Multi-Theme Engine
-Players can toggle themes from the taskbar, modifying CSS custom variables instantly:
-*   **The TVA Archives**: Parchment textures, sepia accents, warm amber temporal hues.
-*   **The Vault-Ed Program**: Traditional terminal green phosphor display with high-contrast scanlines.
-*   **The Lumon Method**: Minimalist, clinical blue-and-white retro-corporate aesthetic.
-
-### 3. Unified Widgeting & Ultra-Minimal Control Panel (WIDGET_DOCK.SYS)
-*   **Unified Widget Shells**: All widgets are framed in a standardized pixel-bezel wrapper that controls dragging, pinning, and closing. The widgets themselves are streamlined—stripped of redundant titlebars, double borders, and duplicate buttons for a highly polished, unified look.
-*   **Ultra-Minimal Right-Sidebar Library**: Access the widget controller via a slim, high-contrast right-sidebar control panel (`WIDGET_DOCK.SYS`). Its space-efficient profile lets you toggle widgets on/off instantly while maintaining full visibility and control of your active desktop.
-*   **Overlapping Prevention**: Desktop widgets possess coordinate restrictions to ensure they always spawn safely at or below `y: 120px`—vertical clearance that completely prevents clashing with the horizontal desktop icons grid.
+</div>
 
 ---
 
-## 🤖 EcoBot: Chat-Based Onboarding & Terminal Authentication
+##  What is EcoQuest?
 
-Rather than filling out traditional forms, registration and login are designed as a conversational command-line interface:
-*   **Interactive State Machine**: Guided conversation prompts returning or new recruits step-by-step.
-*   **Validation**: Real-time checking of email patterns, username availability, and password lengths.
-*   **System Commands**: Supports entering `restart` or `clear` in the input field to reset the session.
+EcoQuest isn't a tutorial. It isn't a slideshow. It isn't a quiz app.
 
----
+**EcoQuest is a living planetary operating system** — a full-stack, AI-powered educational universe that transforms the most pressing ecological challenges of the 21st century into an immersive, retro-futuristic gaming environment. Students don't just *learn* about climate change. They *simulate* it, *navigate* it, and *solve* it — wielding real-world data, policy frameworks, and scientific knowledge as their tools.
 
-## 🖱️ Immersive Desktop Widgets
+Built on top of **Next.js 15 App Router**, **Firebase Authentication**, **MongoDB**, **Google Gemini AI**, and a custom **force-directed ecological knowledge graph engine**, EcoQuest redefines what educational software can feel like. Every pixel carries pedagogical intent. Every interaction maps to a real-world environmental concept. Every achievement earns a **digital Planetary Passport** that proves the learner's ecological mastery.
 
-EcoQuest provides interactive desktop widgets that calculate metrics, update states, and let users track environmental tasks in real-time.
-
-### 1. Eco Tiles Calendar Widget
-A GitHub-style daily heatmap that logs eco-activity:
-*   **Heatmap Intensity**: Tiles color-code from dark zinc to bright lime based on the player's logged XP and carbon savings.
-*   **Quick Log Actions**: Users can quick-log daily real-world activities to earn points instantly:
-    *   `Ride` (Bike Commute): **+12 XP**, **0.70kg CO₂** saved.
-    *   `Recycle` (Waste Sort): **+10 XP**, **0.45kg CO₂** saved.
-    *   `Save` (Energy Conservation): **+15 XP**, **0.90kg CO₂** saved.
-*   **Streak Tracker**: Displays consecutive days of completed tasks.
-*   **Playback Simulation**: Animates through historical logs in a sequence to visualize progression.
-*   **Predictive Models**: Forecasts upcoming tiles with expected XP/carbon gains based on past averages.
-
-### 2. Eco Garden Widget (`ECO_GARDEN.SYS`)
-A real-time plant care simulation reflecting user learning efforts:
-*   **Growth Lifecycle**: Grows a seedling across five distinct phases: Sprout (🌱) ➔ Seedling (🌿) ➔ Sapling (☘️) ➔ Flowering Sprout (🌸) ➔ Mighty Oak (🌳).
-*   **Decay Loops**: Hydration decays by 2% per hour. If hydration hits 0%, the plant becomes withered (🥀).
-*   **Actions & Point Economics**:
-    *   *Water*: Costs **10 XP** ➔ **+25% Hydration**, **+12% Growth**.
-    *   *Fertilize*: Costs **20 XP** ➔ **+10% Hydration**, **+30% Growth**.
-    *   *Revive*: Costs **40 XP** ➔ **60% Hydration**, **-15% Growth** penalty.
-    *   *Harvest*: Available only at Stage 5 (Mighty Oak). Awards **+250 XP**, resets stage to Sprout, and increments the permanent "Trees Harvested" counter.
-
-### 3. Fact Widget (`ECO_FACT.SYS`)
-A double-sided flip card displaying verified ecological facts loaded from `/api/eco-facts`:
-*   **Front Side**: Features categories (waste, ocean, energy, forests, transport, etc.), difficulty levels (easy, medium, hard), and the raw fact.
-*   **Back Side**: Flips to reveal "Why It Matters" (scientific explanation) and "Your Action" (actionable everyday tip).
-
-### 4. Pixel Weather Widget
-An environmental status indicator matching the selected desktop skin:
-*   **Themed Layouts**: Forest/Clear (TVA), Ocean/Clouds (Lumon), City/Rain (Vault-Ed) with parallax background layers.
-*   **Micro-Facts**: Displays relevant regional micro-facts that cycle on refresh.
+> *"The most dangerous myth in modern education is that learning must be passive. EcoQuest shatters that myth — and replaces it with a universe."*
 
 ---
 
-## 🎮 The Game Suite (EcoPlay Subsystem)
+## 🖥️ The Retro Edu-OS Desktop
 
-EcoQuest includes six interactive, data-driven games configured under `src/lib/games.ts` and loaded dynamically into the OS window manager:
+EcoQuest boots into a **fully simulated operating system** — not a website, not an app, but a complete *windowed computing environment* with a custom taskbar, multi-theme engine, draggable app windows, real-time widgets, and a cinematic ambient video wallpaper.
 
-| Game | Internal Route | Gameplay Mechanics | Educational Concept |
-| :--- | :--- | :--- | :--- |
-| **Eco City Builder** | `/play/eco-city-builder` | Balances population growth, happiness, green energy %, and clean air level against policy cards. Real-time trend graphs. | Sustainable urban planning, resource management, and grid planning. |
-| **Reef Rescue** | `/play/ocean-explorer` | A 12-cell coral reef grid affected by thermal spikes. Spend points to apply Antidote, Cool Water, or Restore Coral before cells die. | Ocean acidification, coral bleaching, and biodiversity. |
-| **Carbon Crunch** | `/play/carbon-quest` | 8 rounds of real-world lifestyle choices (transport, food, energy) with a 15s timer. Manages district carbon level (0-100%). | Carbon footprints, green consumer alternatives, and emission factors. |
-| **Forest Defender** | `/play/forest-guardian` | REST API / local event model. Plant trees, clean streams, and clear weeds. Defend against random events like wildfires and pests. | Deforestation, ecosystem restoration, and habitat protection. |
-| **Waste Wizard** | `/play/recycle-rally` | Sort waste items into Recycle, Compost, Landfill, or E-Waste in 30s. Streak multipliers reward consecutive correct answers. | Waste segregation, circular economy, and recycling rules. |
-| **Migration Map** | `/play/migration-map` | World map expedition tracing wildlife migration routes. Answer questions about migration cues under a 14s timer. | Climate-driven animal migration, habitat fragmentation, and biomes. |
-| **Physical Archive** | `/play/physical-archive` | 3D interactive cartridge shelf built with React Three Fiber and Framer Motion. Select cartridges with fly-to-front animations. | Immersive game selection hub with retro physical media aesthetics. |
+| Feature | Detail |
+|---|---|
+| **Window Manager** | Draggable, z-indexed, focus-aware windows via React Draggable |
+| **OS Taskbar** | Glassmorphic `VERDANT_SYS` Start Menu with user profile, app nav, theme picker, and system tray |
+| **System Tray** | Live monospace clock + date pill, sound toggle, widget controller |
+| **Multi-Theme Engine** | TVA Archives · Vault-Ed Program · Lumon Method — toggle-instant via CSS custom properties |
+| **Video Wallpaper** | Ambient looping environmental footage with parallax depth layers |
+| **CRT Aesthetics** | Phosphor glow, scanlines, retro bezels, flicker effects |
+| **Mobile Responsive** | Full UX optimization for iOS/Android — native arcade grid, compact dock, adaptive loader |
 
-*Session Tracker Hook (`useGameSessionTracker`)*: Automatically tracks game session time, player scores, and custom metadata, syncs it to MongoDB, and updates student profiles.
+### 🎨 Desktop Themes
 
----
-
-## 🧠 Educational Quiz & Assessment Engine
-
-*   **Dynamic Question Banks**: Loads quiz content from modular JSON pools located in `/lib/game-data`.
-*   **Contextual Styles**: Utilizes accessible, high-contrast states (`quiz-correct` / `quiz-incorrect` styles maintaining a 4.5:1 contrast ratio) to indicate answer validity.
-*   **Progression Tracking**: Rewards players with XP, streaks, and custom badges on completion.
-
----
-
-## 📊 Student Dashboard & Leaderboards
-
-*   **XP Ranks**: Ranks are calculated at 500 XP steps, mapping to themed titles:
-    1.  *Seedling*
-    2.  *Sprout*
-    3.  *Sapling*
-    4.  *Eco Warrior*
-    5.  *Green Knight*
-    6.  *Earth Guardian*
-    7.  *Planet Protector*
-*   **Badges Achievement Panel**: Renders earned badges dynamically with descriptive cards.
-*   **Global Leaderboards**: Displays competitive brackets (weekly/monthly) syncing user ranks globally.
+```
+  TVA Archives          Vault-Ed Program        Lumon Method
+  ─────────────         ────────────────         ────────────
+  Parchment textures    Terminal green phosphor  Clinical white-blue
+  Amber temporal hues   High-contrast scanlines  Retro-corporate minimal
+  Temporal authority    Fallout-inspired vault   Severance-inspired OS
+```
 
 ---
 
-## 🛠️ Technical Stack & Architecture
+## 🌐 EcoGraph — The Ecological Knowledge Galaxy
 
-EcoQuest is built using a modern, scalable web stack optimized for rapid builds and high performance:
+The centerpiece of EcoQuest. **EcoGraph** is a **force-directed, physics-simulated, interactive knowledge graph** containing 450+ real ecological nodes — species, habitats, pollutants, climate trends, and policy frameworks — all interconnected by scientifically-modeled causal edges.
 
-*   **Framework**: [Next.js 15.3](https://nextjs.org/) (App Router, Turbopack, Server Actions)
-*   **Language**: [TypeScript](https://www.typescriptlang.org/) (Type-safe schemas, props, and states)
-*   **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/) for collections:
-    *   *Users*: Profiles, display name, avatar, and credentials.
-    *   *Progress*: Cumulative XP, streaks, badges earned, activity logs.
-    *   *GameSessions*: Tracking play times, scores, and metadata.
-*   **Authentication**: [NextAuth.js v5](https://next-auth.js.org/) (Beta) for secure session management.
-*   **State Syncing**: [SWR](https://swr.vercel.app/) for client-side queries and updates.
-*   **Styling**: [Tailwind CSS v3.4](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/) (Radix Primitives).
-*   **Utilities**: React Draggable, Lucide React, Recharts.
+```
+  Bengal Tiger ──lives_in──▶ Sundarbans Delta
+       │                           │
+  threatened_by              provides blue carbon
+       │                           │
+       ▼                           ▼
+  Sea Level Rise ◀──emits── Thermal Coal Plants
+       │                           │
+  threatened_by              reduces via
+       │                           │
+       ▼                           ▼
+  Habitat Loss         National Clean Air Programme
+```
+
+### 7 Rich Ecological Clusters
+
+| # | Cluster | Key Species & Nodes |
+|---|---|---|
+| 🌊 | **Sundarbans Mangrove Blue Carbon** | Bengal Tiger, Saltwater Croc, Sundari Tree, Blue Carbon Sequestration, Storm Surge Attenuation |
+| ⛰️ | **Western Ghats Montane Rainforest** | Asian Elephant, Lion-Tailed Macaque, Nilgiri Tahr, King Cobra, Elephant Corridors Policy |
+| 🏔️ | **Himalayan Cryosphere & Tundra** | Snow Leopard, Himalayan Blue Sheep, Brahma Kamal, Red Panda, Glacial Mass Loss |
+| 🌾 | **Kaziranga Brahmaputra Floodplain** | Indian Rhino, Barasingha Swamp Deer, Ganges River Dolphin, Monsoon Shift |
+| 🪸 | **Coral Reef & Pelagic Marine** | Staghorn Coral, Whale Shark, Olive Ridley Turtle, Dugong, Ocean Acidification |
+| 🏜️ | **Thar Desert & Clean Energy Transition** | Great Indian Bustard, Khejri Tree, Bhadla 2.2GW Solar Park, ISA, EV Mission |
+| 🏛️ | **Air Quality & Climate Policy Matrix** | PM2.5, SO₂, NCAP, UN SDG 13/14/15, Green Hydrogen Mission |
+
+### Graph Capabilities
+
+- **Node Inspector Drawer** — Click any node to reveal species taxonomy, IUCN status, GBIF provenance, trophic role, and connected cascade chain
+- **Cascade Simulator** — Trigger extinction or pollution events and watch the ripple cascade across the food web in real-time
+- **Keyboard Navigation** — Arrow keys navigate selected nodes only; `Enter` opens inspector; `Escape` dismisses
+- **AI Auto-Linker** — Gemini AI infers missing edges from raw ecological text dropped into the admin Knowledge Studio
+- **Physics Engine** — Force-directed D3.js simulation with cluster gravity wells, collision detection, and zoom/pan
 
 ---
 
-## 🔒 Security Hardening
+## 🛂 The Planetary Passport System
 
-EcoQuest has been audited and hardened against common vulnerabilities:
-*   **Registration Validation**: Schema-enforced input validation for email, username, and password length with secure bcrypt hashing.
-*   **Input Sanitization & Validation**: Endpoints such as `/api/user/progress` and game sessions utilize Zod schema validation to restrict point updates to valid ranges, preventing arbitrary score manipulation.
-*   **Secure Seeding**: Pre-populates environment with default badges and quizzes securely, maintaining strict data integrity.
-*   **NoSQL Injection Safeguards**: Strict typecasting via Mongoose schemas and input filtering blocks query-level operator injections.
+Every EcoQuest learner earns a **Planetary Passport** — a holographic, printable credential that proves their ecological mastery.
 
----
+### Passport Features
 
-## 🔌 Offline / Standalone HTML Games Spec
-
-For offline environments or simple iframe wrappers, the `/games` directory contains standalone, lightweight single-file HTML implementations:
-*   **Standalones**: `carbon-crunch.html`, `forest-defender.html`, `migration-map.html`, `physical-archive.html`, `reef-rescue.html`, `waste-wizard.html`.
-*   **Specs**: Zero-dependency bundles under 500KB. Playable with mouse/touch only. Uses Web Audio API for synthetic retro SFX, Google Fonts for styling, and includes start/play/end screens with actionable green tips.
+- **Hologram Aura Themes** — Verdant Grove · Abyssal Tide · Ember Hearth · Cosmic Amethyst · Cyber Neon
+- **Conservation Rank** — From `SEEDLING OBSERVER` to `PLANETARY GUARDIAN`, earned through XP milestones
+- **Custom Explorer Name** — Personalized identity (up to 22 characters, uppercase, saved to localStorage)
+- **Download as PNG** — High-resolution 1200×600px canvas render with perforated stub, watermark, and texture
+- **Print Layout** — Dedicated print media query for physical passport production
+- **Persistent Customization** — Passport data persists across sessions via `localStorage`; survives page reloads
 
 ---
 
-## ⚡ Getting Started (Local Development)
+## 🎮 The Game Suite — EcoPlay Subsystem
 
-### 1. Prerequisites
-*   Node.js (v18.0.0 or higher)
-*   MongoDB (v6.0 or higher, local instance or Atlas URI)
+Six interactive, data-driven ecological simulations, each rigorously modeled on real scientific concepts:
 
-### 2. Installation
-Clone the repository and install dependencies:
+| Game | Ecological Concept | Core Mechanic |
+|---|---|---|
+| 🏙️ **Eco City Builder** | Sustainable Urban Planning | Balance population, clean energy %, happiness, and CO₂ via policy cards |
+| 🪸 **Reef Rescue** | Coral Bleaching & Ocean Acidification | Manage a 12-cell reef grid threatened by thermal spikes — triage cells with antidote, cooling, and restoration |
+| 🌍 **Carbon Crunch** | Carbon Footprints | 8-round lifestyle choice simulation with a 15s timer; minimize your district carbon score |
+| 🌳 **Forest Defender** | Deforestation & Restoration | Plant trees, clean streams, and defend against simulated wildfires and invasive pest events |
+| ♻️ **Waste Wizard** | Waste Segregation & Circular Economy | Sort waste in 30s into Recycle, Compost, Landfill, and E-Waste bins with streak multipliers |
+| 🦅 **Migration Map** | Climate-Driven Animal Migration | Trace real wildlife migration routes on a world map and answer biome questions under a 14s timer |
+
+All games feature:
+- **Session Tracker Hook** (`useGameSessionTracker`) — Auto-syncs play time, scores, and metadata to MongoDB
+- **Standalone HTML Mode** — Each game has a zero-dependency single-file HTML build for offline / iframe use
+- **Mobile Arcade Grid** — Native high-performance grid on mobile with category filter pills and tactile feedback
+
+---
+
+## 🧠 Knowledge Assessment Engine
+
+- **Dynamic Question Banks** — Modular JSON pools covering Climate, Biodiversity, Waste, Energy, and Ocean
+- **Contextual Answer States** — WCAG 4.5:1 contrast-compliant correct/incorrect states with explanations
+- **XP Rewards** — Tiered rewards based on difficulty: Easy (+15 XP), Medium (+30 XP), Hard (+60 XP)
+- **Streak Multipliers** — Consecutive correct answers unlock XP multipliers up to 3×
+
+---
+
+## 📊 Citizen Dashboard & Leaderboards
+
+- **XP Rank Progression** — 7-tier system: Seedling → Sprout → Sapling → Eco Warrior → Green Knight → Earth Guardian → Planet Protector
+- **Carbon Impact Tracker** — Real-world CO₂ saved from logged daily eco-actions (biking, recycling, energy conservation)
+- **Eco Garden Widget** — A live plant simulation tied to your learning effort — neglect your garden and it withers; nurture it and harvest 250 XP
+- **Eco Activity Calendar** — GitHub-style contribution heatmap tracking daily eco-activity intensity
+- **Global Leaderboards** — Weekly and monthly competitive rankings synced globally via MongoDB aggregation
+
+---
+
+## 🛠️ Technical Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  EcoQuest Platform                       │
+├──────────────────────┬──────────────────────────────────┤
+│     Frontend         │         Backend / Services        │
+├──────────────────────┼──────────────────────────────────┤
+│ Next.js 15 App Router│ Firebase Auth (Google SSO)        │
+│ TypeScript strict    │ MongoDB + Mongoose (Atlas)        │
+│ Tailwind CSS v3      │ NextAuth.js v5 session mgmt       │
+│ ShadCN UI / Radix    │ Gemini AI (ecograph ingestion)    │
+│ React Three Fiber    │ Firestore (ecograph nodes)        │
+│ D3.js force graph    │ Vercel Serverless (API routes)    │
+│ Framer Motion        │ Python FastAPI (optional linker)  │
+│ Recharts             │ SWR (client cache / revalidation) │
+└──────────────────────┴──────────────────────────────────┘
+```
+
+## ⚡ Getting Started
+
+### Prerequisites
+
+- Node.js v18+
+- A Firebase project (Auth + Firestore enabled)
+- A MongoDB Atlas cluster URI
+- A Google Gemini API key
+
+### Install & Run
+
 ```bash
 git clone https://github.com/IshanG2111/EcoQuest.git
 cd EcoQuest
 npm install
+
+# Set up your environment variables:
+cp .env.example .env.local
+# Fill in your Firebase, MongoDB, NextAuth, and Gemini keys in .env.local
+
+npm run dev
+# → Open http://localhost:9002
 ```
 
-### 3. Environment Variables
-Create a `.env.local` file in the root folder using this schema:
+### Environment Variables
+
+Copy `.env.example` and fill in your own credentials:
+
 ```env
-# MongoDB Connection
-MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/ecoquest?retryWrites=true&w=majority"
+# Firebase Client (Public)
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 
-# NextAuth Config
-NEXTAUTH_URL="http://localhost:3000"
-AUTH_SECRET="use-a-32-byte-hexadecimal-secret-key-here"
+# Firebase Admin (Server-side)
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
 
-# App Ports & Environment
-PORT=3000
-NODE_ENV="development"
+# Database & Auth
+MONGODB_URI=
+AUTH_SECRET=
+NEXTAUTH_URL=http://localhost:9002
+
+# AI
+GEMINI_API_KEY=
+
+# Admin
+ADMIN_MASTER_PIN=
 ```
 
-### 4. Database Setup
-The application uses Mongoose to automatically generate schemas. However, it is recommended to set up the following index in your MongoDB shell for optimal performance:
-```javascript
-db.users.createIndex({ email: 1 }, { unique: true });
-db.progress.createIndex({ userId: 1 });
-```
+### Deploy to Vercel
 
-### 5. Running the Application
-*   **Development**: Run the Next.js development server with Turbopack:
-    ```bash
-    npm run dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) in your browser.
-*   **Production**: Build and run optimized bundles:
-    ```bash
-    npm run build
-    npm run start
-    ```
+```bash
+# 1. Push to GitHub
+git push origin main
+
+# 2. Import repo on vercel.com/new
+# 3. In Environment Variables → click "Import .env file" → select .env.local
+# 4. Update NEXTAUTH_URL to your production Vercel URL
+# 5. Deploy → Done
+```
 
 ---
 
-## 📂 Project Directory Structure
+## 📂 Project Structure
 
 ```
 EcoQuest/
-├── docs/                       # Architectural specs & rulebooks
-│   ├── ARCHITECT.md            # Original UI design and specifications
-│   ├── GAMERULES.md            # Mechanics & equations for play subsystem
-│   ├── OVERVIEW.md             # High-level software demonstration script
-│   └── TECHSTACK.md            # Technical decisions & third-party libraries
-├── games/                      # Standalone single-file HTML games
-├── public/                     # Static assets (images, videos, icons)
+├── .env.example                # Public template — commit this, not .env.local
+├── public/
+│   ├── screenshots/            # README screenshots (tracked in git)
+│   ├── videos/                 # Ambient video wallpapers
+│   └── assets/                 # Logos, SVGs, GIFs
+├── games/                      # Standalone zero-dependency HTML games
 ├── src/
-│   ├── app/                    # Next.js App Router (Pages, APIs, Layouts)
+│   ├── app/
 │   │   ├── (app)/              # Session-protected routes
-│   │   │   ├── dashboard/      # Student profile & suggestions panel
-│   │   │   ├── desktop/        # OS home workspace layout
-│   │   │   ├── leaderboard/    # Rankings & global stats
-│   │   │   ├── play/           # The six interactive games
-│   │   │   └── quizzes/        # Assessments list
-│   │   ├── api/                # Backend routes (auth, progress, facts)
-│   │   ├── login/ & signup/    # EcoBot chatbot authentication forms
-│   │   └── globals.css         # Global tailwind imports & CSS theme vars
-│   ├── components/             # Reusable UI widgets and containers
-│   │   ├── ui/                 # ShadCN primitives
-│   │   └── widgets/            # OS desktop widgets (Calendar, Garden, Fact, Weather)
-│   ├── hooks/                  # Custom state hooks (auth, SWR wrappers, trackers)
-│   └── lib/                    # Shared configurations, database clients, static data
+│   │   │   ├── dashboard/      # Citizen Dashboard + 3D Passport
+│   │   │   ├── desktop/        # Retro OS Workspace
+│   │   │   ├── ecograph/       # Knowledge Galaxy Graph
+│   │   │   ├── leaderboard/    # Global Rankings
+│   │   │   ├── play/           # 6 Eco Games + Arcade Vault
+│   │   │   └── quizzes/        # Challenge Suite
+│   │   ├── api/                # Serverless API routes
+│   │   │   ├── admin/ecograph/ # AI Knowledge Studio
+│   │   │   ├── auth/           # NextAuth handlers
+│   │   │   ├── eco-facts/      # Fact widget data
+│   │   │   └── user/           # Progress, badges, sessions
+│   │   └── login/              # Firebase Auth portal + Planetary Passport
+│   ├── components/
+│   │   ├── desktop-layout.tsx  # OS Taskbar, Start Menu, System Tray
+│   │   ├── ecograph/           # Force graph canvas, node inspector
+│   │   ├── passport/           # Passport card + customizer modal
+│   │   ├── ui/                 # ShadCN + custom primitives
+│   │   └── widgets/            # Calendar, Garden, Fact, Weather widgets
+│   ├── hooks/                  # useAuth, useProgress, useGameSessionTracker
+│   └── lib/
+│       ├── ecograph/           # seed-data.ts (450+ ecological nodes), types
+│       ├── games.ts            # Game registry
+│       ├── mongodb.ts          # DB client
+│       └── firebase/           # Client + Admin SDK init
+├── docs/
+│   ├── ARCHITECT.md
+│   ├── GAMERULES.md
+│   └── TECHSTACK.md
+└── .gitignore
 ```
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] **Multiplayer Ecosystems** — Collaborative real-time simulations where classes co-manage a shared biome
+- [ ] **AI Tutor Companion** — Gemini-powered conversational guide embedded in every screen
+- [ ] **Augmented Reality Mode** — WebXR overlay for exploring the EcoGraph in physical space
+- [ ] **Teacher Dashboard** — Class analytics, assignment creation, and progress monitoring
+- [ ] **Species Sound Library** — Bioacoustic node sounds play when hovering species in EcoGraph
+- [ ] **Global Eco-Action Feed** — Live leaderboard of real-world carbon actions by the EcoQuest community
+- [ ] **Offline PWA** — Service worker + IndexedDB for full offline-first gameplay
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Developed with ❤️ by [IshanG2111](https://github.com/IshanG2111).
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**Built with relentless ambition by [Ishan Ghosh](https://github.com/IshanG2111)**
+
+*EcoQuest exists because the planet cannot wait for passive learning.*
+
+⭐ Star this repo if EcoQuest inspires you · 🐛 Open an issue if something breaks · 🌿 Fork it and build your own biome
+
+</div>

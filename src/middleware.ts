@@ -4,21 +4,17 @@ import { NextResponse } from 'next/server';
 
 const { auth } = NextAuth(authConfig);
 
-// Protected routes for general logged-in users
-const PROTECTED_ROUTES = [
-  '/desktop',
+// Routes that require authentication (for normal signed-in users only: dashboard, rankings, settings)
+const AUTH_REQUIRED_ROUTES = [
   '/dashboard',
   '/leaderboard',
-  '/learn',
-  '/play',
-  '/quizzes',
   '/account-settings',
 ];
 
 // Stealth Secret Admin Routes (Hidden behind 404 for unauthorized visitors)
 const ADMIN_ROUTES = ['/admin'];
 
-// Auth routes for unauthenticated users
+// Auth routes — redirect authenticated users away from these
 const AUTH_ROUTES = ['/login', '/signup'];
 
 export default auth((req) => {
@@ -27,7 +23,7 @@ export default auth((req) => {
   const userRole = (session?.user as any)?.role || 'USER';
   const userEmail = session?.user?.email?.toLowerCase().trim();
 
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
+  const isAuthRequired = AUTH_REQUIRED_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
   const isAdminRoute = ADMIN_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
   const isAdminLoginRoute = nextUrl.pathname === '/admin/login';
   const isAuthRoute = AUTH_ROUTES.some((route) => nextUrl.pathname.startsWith(route));
@@ -51,8 +47,8 @@ export default auth((req) => {
     }
   }
 
-  // 2. Redirect unauthenticated users away from protected user routes to /login
-  if (isProtectedRoute && !isLoggedIn) {
+  // 2. Redirect unauthenticated users away from auth-required routes (dashboard, rankings, settings) to /login
+  if (isAuthRequired && !isLoggedIn) {
     return NextResponse.redirect(new URL('/login', nextUrl));
   }
 
