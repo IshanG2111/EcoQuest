@@ -24,7 +24,7 @@ import {
 import DotGrid from '@/components/ui/DotGrid';
 
 export default function PlayPage() {
-  const [is3DMode, setIs3DMode] = useState<boolean>(false);
+  const [is3DMode, setIs3DMode] = useState<boolean>(true);
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [isMuted, setIsMuted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -33,12 +33,7 @@ export default function PlayPage() {
 
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // On desktop default to 3D mode, on mobile default to fast native arcade grid
-      if (!mobile && window.innerWidth >= 1024) {
-        setIs3DMode(true);
-      }
+      setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);

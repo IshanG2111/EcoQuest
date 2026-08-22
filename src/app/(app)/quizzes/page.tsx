@@ -55,11 +55,7 @@ export default async function QuizzesPage() {
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1.5 max-w-xl">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-emerald-400 font-semibold">
-                  <Sparkles className="w-3 h-3" />
-                  KNOWLEDGE REPOSITORY
-                </span>
-                <span className="text-zinc-500 text-xs font-mono">v3.4 // ACTIVE</span>
+                <span className="text-zinc-500 text-xs font-mono tracking-widest uppercase">Knowledge Repository</span>
               </div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white font-sans">
                 Ecological Academy & Quizzes

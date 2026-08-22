@@ -27,18 +27,12 @@ export default function NotFound() {
 
       <div className="relative z-10 flex flex-col items-center justify-center space-y-6 max-w-xl text-center">
         
-        {/* Retro Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono text-xs tracking-wider">
-          <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-          <span>ERROR 404 // COORDINATE UNRESOLVED</span>
-        </div>
-
-        {/* ── Retro CRT Television with 404 Logo ── */}
+        {/* ── Retro CRT Television with bouncing 404 ── */}
         <div className="relative group cursor-pointer">
           <RetroDvdTv
             width="min(28rem, 88vw)"
             logoText="404"
-            speed={5}
+            speed={2.2}
             color="#ef4444"
             colorCycle={true}
           />

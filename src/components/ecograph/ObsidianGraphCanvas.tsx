@@ -223,22 +223,56 @@ export const ObsidianGraphCanvas = forwardRef<ObsidianGraphCanvasRef, ObsidianGr
     frameCountRef.current = 0;
   }, [graphData]);
 
-  // Initial Camera Centering
+  // ─── Always-Centered Camera: fires whenever canvas gets real dimensions ────
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas) {
+    if (!canvas) return;
+
+    const centerCamera = () => {
       const dpr = window.devicePixelRatio || 1;
       const W = canvas.width / dpr;
       const H = canvas.height / dpr;
-      cameraRef.current.panX = W / 2;
-      cameraRef.current.panY = H / 2;
-      cameraRef.current.targetPanX = W / 2;
-      cameraRef.current.targetPanY = H / 2;
-      cameraRef.current.zoom = 0.65;
-      cameraRef.current.targetZoom = 0.65;
-      forceRender((n) => n + 1);
-    }
-  }, []);
+      if (W <= 0 || H <= 0) return;
+
+      // Only center if we haven't been manually panned (pan stays at 0,0 until user touches it)
+      const cam = cameraRef.current;
+      const needsInit = cam.panX === 0 && cam.panY === 0;
+      if (needsInit || cam.panX === W / 2) {
+        cam.panX = W / 2;
+        cam.panY = H / 2;
+        cam.targetPanX = W / 2;
+        cam.targetPanY = H / 2;
+        cam.zoom = 0.65;
+        cam.targetZoom = 0.65;
+        forceRender((n) => n + 1);
+      }
+    };
+
+    // Fire immediately (in case canvas already has size)
+    centerCamera();
+
+    // Fire again whenever canvas is resized (covers: drawer open, window resize, first mount)
+    const ro = new ResizeObserver(() => {
+      // Reset to centered view on every open/resize
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.width / dpr;
+      const H = canvas.height / dpr;
+      if (W > 0 && H > 0) {
+        cameraRef.current.panX = W / 2;
+        cameraRef.current.panY = H / 2;
+        cameraRef.current.targetPanX = W / 2;
+        cameraRef.current.targetPanY = H / 2;
+        cameraRef.current.zoom = 0.65;
+        cameraRef.current.targetZoom = 0.65;
+        cameraRef.current.followNodeId = null;
+        forceRender((n) => n + 1);
+      }
+    });
+    ro.observe(canvas);
+
+    return () => ro.disconnect();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   // Screen to World Transform
   const screenToWorld = useCallback((screenX: number, screenY: number) => {

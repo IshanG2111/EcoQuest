@@ -238,22 +238,28 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Desktop Wallpaper Video — lazy loaded */}
+      {/* Desktop Wallpaper — poster shows instantly, video loads in background */}
       <div className="absolute inset-0 z-0">
-        {!videoLoaded && (
-          <div className="w-full h-full" style={{
-            background: `linear-gradient(135deg, #070e14 0%, #030609 50%, #010305 100%)`
-          }} />
-        )}
+        {/* Static gradient fallback always visible */}
+        <div className="absolute inset-0 w-full h-full" style={{
+          background: `linear-gradient(160deg, #040d14 0%, #021008 40%, #030608 100%)`
+        }} />
+        {/* Dither forest poster — instant, zero-network-wait */}
+        <div
+          className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-300"
+          style={{ backgroundImage: `url('/forest-bg.jpg')`, opacity: 0.22 }}
+        />
+        {/* Video fades in on top when ready */}
         <video
           src="/videos/desktop.mp4"
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover"
+          preload="auto"
+          className="absolute inset-0 w-full h-full object-cover"
           onLoadedData={() => setVideoLoaded(true)}
-          style={{ opacity: videoLoaded ? 1 : 0, transition: 'opacity 0.5s ease' }}
+          style={{ opacity: videoLoaded ? 1 : 0, transition: 'opacity 1.2s ease' }}
         />
         <div className="absolute inset-0 z-10 bg-black/35 backdrop-blur-[1px]" />
       </div>
@@ -297,7 +303,7 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
               );
             })}
             
-            {/* Utility: Themes */}
+            {/* Utility: Themes — cycle on click */}
             <div
               onClick={() => {
                 soundFX.playClick();
@@ -313,33 +319,9 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
             >
               <div className="flex flex-col items-center justify-center gap-1.5 text-white text-center no-underline hover:bg-emerald-500/20 active:scale-95 hover:border-emerald-500/50 hover:shadow-lg border border-transparent p-3 rounded-2xl h-full transition-all duration-150 group backdrop-blur-[4px] bg-black/15 hover:bg-black/35">
                 <Palette className="w-9 h-9 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform duration-150 text-zinc-200" />
-                <span className="text-xs sm:text-sm leading-tight font-sans font-medium">Themes</span>
+                <span className="text-xs sm:text-sm leading-tight font-sans font-medium">Theme</span>
               </div>
             </div>
-            
-            {/* Utility: Widgets */}
-            <div
-              onClick={() => {
-                soundFX.playClick();
-                setIsWidgetDockOpen(true);
-              }}
-              className="flex-shrink-0 cursor-pointer pointer-events-auto hidden md:block"
-            >
-              <div className="flex flex-col items-center justify-center gap-1.5 text-white text-center no-underline hover:bg-emerald-500/20 active:scale-95 hover:border-emerald-500/50 hover:shadow-lg border border-transparent p-3 rounded-2xl h-full transition-all duration-150 group backdrop-blur-[4px] bg-black/15 hover:bg-black/35">
-                <LayoutGrid className="w-9 h-9 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform duration-150 text-zinc-200" />
-                <span className="text-xs sm:text-sm leading-tight font-sans font-medium">Widgets</span>
-              </div>
-            </div>
-
-            {/* Utility: Settings */}
-            {user && (
-              <Link href="/account-settings" className="flex-shrink-0 cursor-pointer pointer-events-auto">
-                <div className="flex flex-col items-center justify-center gap-1.5 text-white text-center no-underline hover:bg-emerald-500/20 active:scale-95 hover:border-emerald-500/50 hover:shadow-lg border border-transparent p-3 rounded-2xl h-full transition-all duration-150 group backdrop-blur-[4px] bg-black/15 hover:bg-black/35">
-                  <Settings className="w-9 h-9 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform duration-150 text-zinc-200" strokeWidth={1.5} />
-                  <span className="text-xs sm:text-sm leading-tight font-sans font-medium">Settings</span>
-                </div>
-              </Link>
-            )}
           </div>
         </div>
 
@@ -356,7 +338,7 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-1.5 sm:gap-2">
           
           {/* OS Start Menu Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="default"
@@ -377,8 +359,15 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
               {user ? (
                 <div className="p-3 mb-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800/80 flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold font-mono text-xs">
-                      {(user.name || user.email || 'E').slice(0, 2).toUpperCase()}
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-emerald-500/30 bg-zinc-900 flex-shrink-0">
+                      <Image
+                        src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${encodeURIComponent((user.name || 'Explorer').trim())}&backgroundColor=0f172a&radius=50`}
+                        alt={user.name || 'Explorer'}
+                        width={32}
+                        height={32}
+                        unoptimized
+                        className="w-full h-full"
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-white text-xs truncate">{user.name || 'Explorer'}</div>
@@ -558,17 +547,22 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
         {/* Right Section: System Tray & Clock */}
         <div className="flex items-center gap-1.5 sm:gap-3 text-xs font-mono">
           
-          {/* Widget Toggle */}
+          {/* Widget Toggle — shows live active count badge */}
           <button
             onClick={() => {
               soundFX.playClick();
               setIsWidgetDockOpen(!isWidgetDockOpen);
             }}
-            className="p-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white transition cursor-pointer hidden md:flex items-center gap-1.5 px-2"
-            title="Toggle Desktop Widgets"
+            className="p-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800/80 text-zinc-400 hover:text-white transition cursor-pointer hidden md:flex items-center gap-1.5 px-2 relative"
+            title="Desktop Widgets"
           >
             <LayoutGrid className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-[11px]">Widgets</span>
+            {desktopWidgets.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-black text-[9px] font-bold flex items-center justify-center shadow">
+                {desktopWidgets.length}
+              </span>
+            )}
           </button>
 
           {/* Sound / Mute Toggle */}
@@ -601,10 +595,10 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
           )}
 
           {/* Digital Time & Date Pill */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900/90 border border-zinc-800/80 text-zinc-300 shadow-inner">
-            <span className="font-mono text-xs font-bold text-white tracking-wider">{time}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900/90 border border-zinc-800/80 text-zinc-300 shadow-inner" suppressHydrationWarning>
+            <span className="font-mono text-xs font-bold text-white tracking-wider" suppressHydrationWarning>{time}</span>
             <span className="text-zinc-600 hidden sm:inline">|</span>
-            <span className="font-mono text-[11px] text-zinc-400 hidden sm:inline">{date}</span>
+            <span className="font-mono text-[11px] text-zinc-400 hidden sm:inline" suppressHydrationWarning>{date}</span>
           </div>
         </div>
       </footer>

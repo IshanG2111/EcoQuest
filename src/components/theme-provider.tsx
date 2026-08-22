@@ -1,16 +1,8 @@
-// NOTE: This file is based on the `next-themes` package, but adapted for use
-// inside of the App Router and to avoid needing a client-side context provider.
-// This is a server-side only file.
-//
-// @see https://github.com/pacocoursey/next-themes
 'use client';
 
 import * as React from 'react';
 
 const STORAGE_KEY = 'theme';
-const THEMES = ['light', 'dark', 'system'];
-
-type Theme = 'light' | 'dark' | 'system';
 
 type ThemeProviderState = {
   theme: string;
@@ -18,7 +10,7 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: 'system',
+  theme: 'the-verdant-grove',
   setTheme: () => null,
 };
 
@@ -34,23 +26,27 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = 'the-verdant-grove',
   storageKey = STORAGE_KEY,
   enableSystem = true,
   attribute = 'data-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = React.useState(() => {
-    if (typeof window === 'undefined') {
-      return defaultTheme;
+  // Always initialize with defaultTheme to guarantee identical SSR and initial client hydration
+  const [theme, setTheme] = React.useState<string>(defaultTheme);
+
+  // Sync from localStorage after client mounts to prevent hydration mismatches
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      const validThemes = ['the-verdant-grove', 'the-ember-hearth', 'the-abyssal-tide', 'system', 'light', 'dark'];
+      if (stored && validThemes.includes(stored)) {
+        setTheme(stored);
+      }
+    } catch {
+      // Ignore localStorage errors
     }
-    const stored = localStorage.getItem(storageKey);
-    const validThemes = ['the-verdant-grove', 'the-ember-hearth', 'the-abyssal-tide', 'system', 'light', 'dark'];
-    if (stored && !validThemes.includes(stored)) {
-      return defaultTheme;
-    }
-    return stored || defaultTheme;
-  });
+  }, [storageKey]);
 
   React.useEffect(() => {
     const root = window.document.documentElement;
@@ -63,14 +59,17 @@ export function ThemeProvider({
     }
     
     root.setAttribute(attribute, effectiveTheme);
-    localStorage.setItem(storageKey, theme);
-    
+    try {
+      localStorage.setItem(storageKey, theme);
+    } catch {
+      // Ignore localStorage errors
+    }
   }, [theme, attribute, storageKey, enableSystem]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     theme,
     setTheme,
-  };
+  }), [theme]);
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>

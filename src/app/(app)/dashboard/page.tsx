@@ -6,25 +6,23 @@ import {
   Flame,
   Star,
   Award,
-  Sparkles,
   ChevronRight,
-  Shield,
-  TrendingUp,
-  Zap,
   BookOpen,
   Gamepad2,
   Compass,
   Sliders,
   Download,
   Printer,
+  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { Desktop } from '@/components/desktop';
 import { useAuth, AuthGuard } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdmitOneTicket, playShutterSound } from '@/components/ui/admit-one-ticket';
 import { soundFX } from '@/lib/audio-fx';
+import { getAvatarUrl } from '@/lib/utils';
 import {
   PassportConfig,
   PASSPORT_THEMES,
@@ -34,7 +32,6 @@ import {
   downloadPassportPng,
 } from '@/components/passport/PassportCustomizerModal';
 
-// XP level calculation
 function xpPercent(points: number) {
   const level = Math.floor(points / 500) + 1;
   const levelMin = (level - 1) * 500;
@@ -43,15 +40,10 @@ function xpPercent(points: number) {
 }
 
 const LEVEL_NAMES = [
-  'Seedling',
-  'Sprout',
-  'Sapling',
-  'Green Explorer',
-  'Forest Ranger',
-  'Earth Guardian',
-  'Eco Hero',
-  'Gaia Champion',
+  'Seedling', 'Sprout', 'Sapling', 'Green Explorer',
+  'Forest Ranger', 'Earth Guardian', 'Eco Hero', 'Gaia Champion',
 ];
+
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -64,11 +56,9 @@ export default function DashboardPage() {
   const { level, pct, levelMax } = xpPercent(pts);
   const levelName = LEVEL_NAMES[Math.min(level - 1, LEVEL_NAMES.length - 1)] ?? 'Eco Warrior';
 
-  // Passport Configuration & Customization State (Persistent in localStorage)
   const [passportConfig, setPassportConfig] = useState<PassportConfig>(() => loadSavedPassportConfig(username));
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
-  // Active theme properties
   const activeTheme = PASSPORT_THEMES[passportConfig.themeId] || PASSPORT_THEMES.emerald;
 
   const dashTicketTexture = {
@@ -110,238 +100,197 @@ export default function DashboardPage() {
     inkColor: activeTheme.inkColor,
   };
 
-  const handleDownload = () => {
-    downloadPassportPng(passportConfig);
-  };
+  const handleDownload = () => downloadPassportPng(passportConfig);
+  const handlePrint = () => window.print();
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const displayName = passportConfig.name || username;
 
   return (
     <AuthGuard allowGuest={false}>
       <Desktop>
-        <div className="dash-redesign space-y-6 max-w-6xl mx-auto font-sans pb-10">
-          
-          {/* ── HERO WITH 3D ADMIT-ONE TICKET SHOWCASE ── */}
-          <section className="relative overflow-hidden rounded-3xl bg-[#0c1017]/95 border border-zinc-800/90 shadow-2xl p-6 md:p-8 backdrop-blur-2xl">
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-1/4 -mb-10 w-60 h-60 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="space-y-6 max-w-5xl mx-auto font-sans pb-10 px-1">
 
-            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
-              
-              {/* Left Greeting & Level Telemetry */}
-              <div className="space-y-4 max-w-xl text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-mono text-emerald-400 font-semibold">
-                    <Sparkles className="w-3 h-3" />
-                    <span>GAIA CITIZEN · LEVEL {level}</span>
-                  </span>
-                  <span className="text-[11px] font-mono text-zinc-500">ID: {user?.id?.slice(0, 8) || 'ONLINE'}</span>
+          {/* ── USER IDENTITY HERO ── */}
+          <section className="relative overflow-hidden rounded-3xl bg-[#0b0f18] border border-zinc-800/80 shadow-2xl p-6 md:p-8">
+            {/* Ambient glow */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-0 w-72 h-72 bg-emerald-500/8 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-sky-500/8 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+            </div>
+
+            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-zinc-700/80 overflow-hidden shadow-xl">
+                  <Image
+                    src={getAvatarUrl(displayName)}
+                    alt={displayName}
+                    width={80}
+                    height={80}
+                    className="w-full h-full"
+                    unoptimized
+                  />
                 </div>
+                {/* Level badge */}
+                <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-emerald-500 border-2 border-[#0b0f18] flex items-center justify-center text-black font-black text-xs shadow-lg">
+                  {level}
+                </div>
+              </div>
 
-                <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                  Welcome back, <span className="text-emerald-400 font-mono">{passportConfig.name || username}</span>
+              {/* Name + Level */}
+              <div className="flex-1 text-center sm:text-left space-y-1.5">
+                <p className="text-[11px] font-mono text-zinc-500 tracking-widest uppercase">
+                  Gaia Citizen · {levelName}
+                </p>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+                  {displayName}
                 </h1>
-
-                <p className="text-zinc-400 text-sm leading-relaxed">
-                  Planetary Explorer Passport active. Continue your quests, preserve biomes, and expand the ecological knowledge graph.
+                <p className="text-zinc-500 text-xs">
+                  Planetary Explorer · EcoQuest Class of 2026
                 </p>
 
-                {/* Level Progress Bar */}
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-[11px]">
-                        {level}
-                      </div>
-                      <span className="font-bold text-white font-mono">{levelName}</span>
-                    </div>
-                    <span className="font-mono text-[11px] text-emerald-400 font-bold">
-                      {pts.toLocaleString()} / {levelMax.toLocaleString()} XP
-                    </span>
+                {/* XP Bar */}
+                <div className="pt-2 max-w-sm mx-auto sm:mx-0 space-y-1">
+                  <div className="flex justify-between text-[11px] font-mono">
+                    <span className="text-zinc-400">{pts.toLocaleString()} XP</span>
+                    <span className="text-zinc-600">{levelMax.toLocaleString()} XP</span>
                   </div>
-
-                  <div className="w-full bg-zinc-950 h-2 rounded-full overflow-hidden border border-zinc-800">
+                  <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
                     <div
-                      className="bg-gradient-to-r from-emerald-500 to-sky-400 h-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-emerald-500 to-sky-400 transition-all duration-700"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Right Side: 3D Tilting Admit-One Passport Badge */}
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <div className="relative group cursor-pointer">
-                  <AdmitOneTicket
-                    name={passportConfig.name || username.toUpperCase()}
-                    presenter="ECOQUEST // GAIA PROTOCOL"
-                    event={passportConfig.rank}
-                    venue={`RANK: ${levelName.toUpperCase()}`}
-                    dates={`LEVEL 0${level} · ${pts.toLocaleString()} XP`}
-                    stubText="SECTOR 7 // ACTIVE"
-                    watermark={passportConfig.watermark}
-                    width={windowWidthDashboard()}
-                    texture={dashTicketTexture}
-                    layout={dashTicketLayout}
-                  />
+              {/* Quick Stats inline */}
+              <div className="flex sm:flex-col gap-3 sm:gap-2 text-center sm:text-right flex-shrink-0">
+                <div className="flex flex-col items-center sm:items-end">
+                  <span className="text-lg font-black text-white font-mono">{pts.toLocaleString()}</span>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-wide">XP</span>
                 </div>
-
-                {/* Passport Action Toolbar */}
-                <div className="flex items-center justify-center gap-2 print:hidden">
-                  <button
-                    onClick={() => {
-                      soundFX.playClick();
-                      setIsCustomizerOpen(true);
-                    }}
-                    className="py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
-                  >
-                    <Sliders className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Customize</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      playShutterSound();
-                      handleDownload();
-                    }}
-                    className="py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
-                  >
-                    <Download className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Download PNG</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      soundFX.playClick();
-                      handlePrint();
-                    }}
-                    className="py-1.5 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-1.5 transition cursor-pointer backdrop-blur-md"
-                  >
-                    <Printer className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Print</span>
-                  </button>
+                <div className="w-px sm:w-full sm:h-px bg-zinc-800 hidden sm:block" />
+                <div className="flex flex-col items-center sm:items-end">
+                  <span className="text-lg font-black text-amber-400 font-mono">{streak}</span>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-wide">Streak</span>
+                </div>
+                <div className="w-px sm:w-full sm:h-px bg-zinc-800 hidden sm:block" />
+                <div className="flex flex-col items-center sm:items-end">
+                  <span className="text-lg font-black text-sky-400 font-mono">{badges.length}</span>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-wide">Badges</span>
                 </div>
               </div>
+            </div>
+          </section>
 
+          {/* ── 3D PLANETARY PASSPORT (FULL WIDTH HERO) ── */}
+          <section className="relative overflow-hidden rounded-3xl bg-[#0b0f18] border border-zinc-800/80 shadow-2xl p-6 md:p-8">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/6 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col items-center gap-5">
+              {/* Section label */}
+              <div className="w-full flex items-center justify-between">
+                <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-widest">
+                  Planetary Passport
+                </p>
+                <span className="text-[10px] font-mono text-emerald-500">{passportConfig.rank}</span>
+              </div>
+
+              {/* 3D Ticket — center stage */}
+              <div className="w-full flex justify-center">
+                <AdmitOneTicket
+                  name={displayName.toUpperCase()}
+                  presenter="ECOQUEST // GAIA PROTOCOL"
+                  event={passportConfig.rank}
+                  venue={`RANK: ${levelName.toUpperCase()}`}
+                  dates={`LEVEL 0${level} · ${pts.toLocaleString()} XP`}
+                  stubText="SECTOR 7 // ACTIVE"
+                  watermark={passportConfig.watermark}
+                  width={windowWidthDashboard()}
+                  texture={dashTicketTexture}
+                  layout={dashTicketLayout}
+                />
+              </div>
+
+              {/* Toolbar — clean 3-button row */}
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  onClick={() => { soundFX.playClick(); setIsCustomizerOpen(true); }}
+                  className="flex items-center gap-1.5 py-2 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-mono transition cursor-pointer"
+                >
+                  <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+                  Customize
+                </button>
+                <button
+                  onClick={() => { playShutterSound(); handleDownload(); }}
+                  className="flex items-center gap-1.5 py-2 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-mono transition cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-sky-400" />
+                  Download PNG
+                </button>
+                <button
+                  onClick={() => { soundFX.playClick(); handlePrint(); }}
+                  className="flex items-center gap-1.5 py-2 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white text-xs font-mono transition cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-amber-400" />
+                  Print
+                </button>
+              </div>
             </div>
           </section>
 
           {/* ── STAT CARDS ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Eco Points */}
-            <div className="p-5 rounded-2xl bg-[#0c1017]/95 border border-zinc-800/80 shadow-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">ECO POINTS</span>
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Star className="h-4 w-4" />
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {[
+              { label: 'Eco Points', value: isLoading ? '—' : pts.toLocaleString(), sub: 'Earned from games & quizzes', icon: Star, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+              { label: 'Day Streak', value: isLoading ? '—' : `${streak}d`, sub: 'Daily login multiplier', icon: Flame, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+              { label: 'Badges', value: isLoading ? '—' : String(badges.length), sub: 'Planetary achievements', icon: Award, color: 'text-sky-400', bg: 'bg-sky-500/10 border-sky-500/20' },
+            ].map((s) => (
+              <div key={s.label} className="p-4 rounded-2xl bg-[#0b0f18] border border-zinc-800/80 shadow-xl space-y-2">
+                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center ${s.bg}`}>
+                  <s.icon className={`w-4 h-4 ${s.color}`} />
                 </div>
+                <div className="text-xl font-black text-white font-mono">{s.value}</div>
+                <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wide">{s.label}</div>
               </div>
-              <div className="text-2xl font-bold text-white font-mono">
-                {isLoading ? <Skeleton className="h-8 w-24 bg-zinc-800" /> : pts.toLocaleString()}
-              </div>
-              <p className="text-[11px] text-zinc-500 font-sans">
-                Earn points by completing ecological quizzes and minigames.
-              </p>
-            </div>
-
-            {/* Daily Streak */}
-            <div className="p-5 rounded-2xl bg-[#0c1017]/95 border border-zinc-800/80 shadow-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">DAY STREAK</span>
-                <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                  <Flame className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-white font-mono">
-                {isLoading ? <Skeleton className="h-8 w-16 bg-zinc-800" /> : `${streak} Days`}
-              </div>
-              <p className="text-[11px] text-zinc-500 font-sans">
-                Log in daily to keep your conservation multiplier active.
-              </p>
-            </div>
-
-            {/* Badges Count */}
-            <div className="p-5 rounded-2xl bg-[#0c1017]/95 border border-zinc-800/80 shadow-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">MINTED BADGES</span>
-                <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
-                  <Award className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-white font-mono">
-                {isLoading ? <Skeleton className="h-8 w-16 bg-zinc-800" /> : badges.length}
-              </div>
-              <p className="text-[11px] text-zinc-500 font-sans">
-                Unlocked through achievements and planetary research.
-              </p>
-            </div>
+            ))}
           </div>
 
-          {/* ── QUICK LAUNCH NAVIGATION ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Link
-              href="/play"
-              className="group p-5 rounded-2xl bg-[#0c1017]/90 hover:bg-[#101622] border border-zinc-800/80 hover:border-emerald-500/40 transition shadow-xl flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-                  <Gamepad2 className="w-5 h-5" />
+          {/* ── QUICK LAUNCH ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { href: '/play', label: 'Play Games', sub: 'Arcade & 3D Quests', Icon: Gamepad2, color: 'text-emerald-400', border: 'hover:border-emerald-500/40', iconBg: 'bg-emerald-500/10 border-emerald-500/25' },
+              { href: '/quizzes', label: 'Quizzes', sub: 'Knowledge Challenges', Icon: BookOpen, color: 'text-sky-400', border: 'hover:border-sky-500/40', iconBg: 'bg-sky-500/10 border-sky-500/25' },
+              { href: '/ecograph', label: 'EcoGraph', sub: 'Knowledge Galaxy', Icon: Compass, color: 'text-teal-400', border: 'hover:border-teal-500/40', iconBg: 'bg-teal-500/10 border-teal-500/25' },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center justify-between p-4 rounded-2xl bg-[#0b0f18] border border-zinc-800/80 ${item.border} hover:bg-zinc-900/60 transition shadow-xl`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center ${item.iconBg} group-hover:scale-110 transition-transform`}>
+                    <item.Icon className={`w-4 h-4 ${item.color}`} />
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-sm">{item.label}</div>
+                    <div className="text-[11px] text-zinc-500">{item.sub}</div>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-bold text-white text-sm">Play Games</h2>
-                  <p className="text-[11px] text-zinc-400">Arcade & 3D Quests</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-            </Link>
-
-            <Link
-              href="/quizzes"
-              className="group p-5 rounded-2xl bg-[#0c1017]/90 hover:bg-[#101622] border border-zinc-800/80 hover:border-sky-500/40 transition shadow-xl flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-white text-sm">Quizzes</h2>
-                  <p className="text-[11px] text-zinc-400">Knowledge Challenges</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-            </Link>
-
-            <Link
-              href="/ecograph"
-              className="group p-5 rounded-2xl bg-[#0c1017]/90 hover:bg-[#101622] border border-zinc-800/80 hover:border-teal-500/40 transition shadow-xl flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
-                  <Compass className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-white text-sm">EcoGraph</h2>
-                  <p className="text-[11px] text-zinc-400">3D Relational Explorer</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-            </Link>
+                <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+            ))}
           </div>
 
         </div>
       </Desktop>
 
-      {/* ─── Interactive Passport Customizer Modal ─── */}
       <PassportCustomizerModal
         isOpen={isCustomizerOpen}
         onClose={() => setIsCustomizerOpen(false)}
         config={passportConfig}
-        onChange={(cfg) => {
-          setPassportConfig(cfg);
-          savePassportConfig(cfg);
-        }}
+        onChange={(cfg) => { setPassportConfig(cfg); savePassportConfig(cfg); }}
         onDownload={handleDownload}
         onPrint={handlePrint}
       />
@@ -351,7 +300,7 @@ export default function DashboardPage() {
 
 function windowWidthDashboard() {
   if (typeof window === 'undefined') return 480;
-  if (window.innerWidth < 640) return Math.min(330, window.innerWidth - 48);
-  if (window.innerWidth < 1024) return 420;
-  return 480;
+  if (window.innerWidth < 640) return Math.min(340, window.innerWidth - 40);
+  if (window.innerWidth < 1024) return 440;
+  return 520;
 }

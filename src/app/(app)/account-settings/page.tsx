@@ -2,39 +2,66 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Desktop } from '@/components/desktop';
 import { getAvatarUrl } from '@/lib/utils';
-import '@/app/settings.css';
+import Image from 'next/image';
 import {
   User, Mail, Bell, Shield, Palette, Globe2, LogOut,
-  Check, ChevronRight, Camera, Loader2, Lock, Eye, EyeOff,
-  Smartphone, Moon, Sun, Monitor, Volume2, VolumeX, Save,
-  AlertTriangle, Trash2
+  ChevronRight, Loader2, Lock, Eye, EyeOff,
+  Smartphone, Monitor, Volume2, VolumeX, Save,
+  AlertTriangle, Trash2, CheckCircle2,
 } from 'lucide-react';
 
 type Section = 'profile' | 'security' | 'notifications' | 'appearance' | 'privacy' | 'danger';
 
-const NAV: { id: Section; label: string; icon: typeof User; desc: string }[] = [
-  { id: 'profile',       label: 'Profile',       icon: User,    desc: 'Name, handle & avatar' },
-  { id: 'security',      label: 'Security',       icon: Shield,  desc: 'Password & sessions' },
-  { id: 'notifications', label: 'Notifications',  icon: Bell,    desc: 'Email & push alerts' },
-  { id: 'appearance',    label: 'Appearance',     icon: Palette, desc: 'Theme & display' },
-  { id: 'privacy',       label: 'Privacy',        icon: Lock,    desc: 'Data & visibility' },
-  { id: 'danger',        label: 'Danger Zone',    icon: AlertTriangle, desc: 'Delete account' },
+const NAV: { id: Section; label: string; icon: typeof User }[] = [
+  { id: 'profile',       label: 'Profile',       icon: User },
+  { id: 'security',      label: 'Security',       icon: Shield },
+  { id: 'notifications', label: 'Notifications',  icon: Bell },
+  { id: 'appearance',    label: 'Appearance',     icon: Palette },
+  { id: 'privacy',       label: 'Privacy',        icon: Lock },
+  { id: 'danger',        label: 'Danger Zone',    icon: AlertTriangle },
 ];
+
+function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`relative flex-shrink-0 w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer ${on ? 'bg-emerald-500' : 'bg-zinc-700'}`}
+      role="switch"
+      aria-checked={on}
+    >
+      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${on ? 'translate-x-5' : 'translate-x-0.5'}`} />
+    </button>
+  );
+}
+
+function SaveBtn({ onClick, saving }: { onClick: () => void; saving: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={saving}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold font-sans text-xs transition cursor-pointer disabled:opacity-60 shadow-md"
+    >
+      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+      <span>{saving ? 'Saving…' : 'Save Changes'}</span>
+    </button>
+  );
+}
 
 export default function AccountSettingsPage() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [section, setSection] = useState<Section>('profile');
+  const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Profile
-  const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
 
@@ -46,38 +73,28 @@ export default function AccountSettingsPage() {
 
   // Notifications
   const [notifEmail, setNotifEmail] = useState(true);
-  const [notifPush, setNotifPush] = useState(true);
   const [notifStreak, setNotifStreak] = useState(true);
   const [notifLeaderboard, setNotifLeaderboard] = useState(false);
-  const [notifNews, setNotifNews] = useState(true);
+  const [notifPush, setNotifPush] = useState(true);
 
   // Appearance
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [compactMode, setCompactMode] = useState(false);
-  const [fontScale, setFontScale] = useState(1.08); // 1.0 = default, 1.08 = comfortable, 1.18 = large
+  const [fontScale, setFontScale] = useState(1.08);
 
   // Privacy
   const [profilePublic, setProfilePublic] = useState(true);
   const [showOnLeaderboard, setShowOnLeaderboard] = useState(true);
-  const [shareProgress, setShareProgress] = useState(false);
-
-  const [isSaving, setIsSaving] = useState(false);
-
-  const avatarUrl = getAvatarUrl(user?.id || user?.name);
 
   useEffect(() => {
-    if (user?.name) {
-      setUsername(user.name.toLowerCase().replace(/\s+/g, '_'));
-      setDisplayName(user.name);
-    }
+    if (user?.name) setDisplayName(user.name);
   }, [user]);
 
-  // Load and apply font scale from localStorage
   useEffect(() => {
     const stored = parseFloat(localStorage.getItem('ecoquest_font_scale') ?? '1.08');
-    setFontScale(isNaN(stored) ? 1.08 : stored);
-    document.documentElement.style.setProperty('--ui-font-scale', String(isNaN(stored) ? 1.08 : stored));
+    const val = isNaN(stored) ? 1.08 : stored;
+    setFontScale(val);
+    document.documentElement.style.setProperty('--ui-font-scale', String(val));
   }, []);
 
   function applyFontScale(value: number) {
@@ -91,22 +108,22 @@ export default function AccountSettingsPage() {
     setTimeout(() => {
       setIsSaving(false);
       toast({ title: '✓ Saved', description: msg });
-    }, 800);
+    }, 600);
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to permanently delete your EcoQuest account? This action CANNOT be undone.')) return;
+    if (!confirm('Permanently delete your account? All progress, badges, and scores will be erased forever.')) return;
     try {
       setIsDeleting(true);
       const res = await fetch('/api/user/delete-account', { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
-        toast({ title: 'Account Deleted', description: 'Your account has been deleted.' });
+        toast({ title: 'Account Deleted', description: 'Your data has been wiped.' });
         await logout();
       } else {
-        toast({ title: 'Error', description: json.error || 'Failed to delete account.', variant: 'destructive' });
+        toast({ title: 'Error', description: json.error, variant: 'destructive' });
       }
-    } catch (err) {
+    } catch {
       toast({ title: 'Error', description: 'Network error deleting account.', variant: 'destructive' });
     } finally {
       setIsDeleting(false);
@@ -114,422 +131,400 @@ export default function AccountSettingsPage() {
   };
 
   if (!user) {
-    return <Desktop><div className="settings-loading"><Loader2 className="animate-spin h-6 w-6 text-emerald-400" /> Loading…</div></Desktop>;
+    return (
+      <Desktop>
+        <div className="flex items-center justify-center py-20 gap-2 text-zinc-500 font-sans text-sm">
+          <Loader2 className="animate-spin w-4 h-4" /> Loading settings…
+        </div>
+      </Desktop>
+    );
   }
+
+  const avatarSeed = displayName || user.name || 'Explorer';
+  const avatarUrl = getAvatarUrl(avatarSeed);
 
   return (
     <Desktop>
-      <div className="settings-root">
-        {/* ── LEFT NAV ── */}
-        <aside className="settings-nav">
-          <div className="settings-nav-header">
-            <div className="settings-user-avatar">
-              <img src={avatarUrl} alt={displayName} />
-              <div className="settings-avatar-edit">
-                <Camera className="h-3 w-3" />
-              </div>
+      <div className="max-w-4xl mx-auto font-sans pb-8 px-1 space-y-6">
+
+        {/* ── Top Header Card ── */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#080d14]/90 border border-zinc-800/80 shadow-lg">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-700/80 overflow-hidden flex-shrink-0 shadow-md">
+              <Image
+                src={avatarUrl}
+                alt={avatarSeed}
+                width={48}
+                height={48}
+                unoptimized
+                className="w-full h-full"
+              />
             </div>
-            <div className="settings-user-info">
-              <p className="settings-user-name">{displayName || user.name}</p>
-              <p className="settings-user-email">{user.email}</p>
+            <div>
+              <p className="font-sans font-bold text-white text-base leading-snug">
+                {displayName || user.name || 'Explorer'}
+              </p>
+              <p className="font-mono text-xs text-zinc-400">
+                {user.email}
+              </p>
             </div>
           </div>
 
-          <nav className="settings-nav-list">
-            {NAV.map(n => (
+          <button
+            onClick={logout}
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white text-xs font-mono transition cursor-pointer self-stretch sm:self-auto justify-center"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        {/* ── Horizontal Navigation Tabs for Clean Adaptability ── */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {NAV.map((n) => {
+            const Icon = n.icon;
+            const active = section === n.id;
+            const isDanger = n.id === 'danger';
+            return (
               <button
                 key={n.id}
-                className={`settings-nav-item ${section === n.id ? 'active' : ''} ${n.id === 'danger' ? 'danger' : ''}`}
+                type="button"
                 onClick={() => setSection(n.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-sans font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  active
+                    ? isDanger
+                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                      : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 shadow-sm'
+                    : isDanger
+                      ? 'text-rose-500/70 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 border border-transparent'
+                }`}
               >
-                <n.icon className="h-4 w-4 flex-shrink-0" />
-                <div className="settings-nav-text">
-                  <span className="settings-nav-label">{n.label}</span>
-                  <span className="settings-nav-desc">{n.desc}</span>
-                </div>
-                <ChevronRight className="h-3 w-3 ml-auto opacity-40" />
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{n.label}</span>
               </button>
-            ))}
-          </nav>
+            );
+          })}
+        </div>
 
-          <button onClick={logout} className="settings-logout-btn">
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </button>
-        </aside>
+        {/* ── Content Card ── */}
+        <div className="rounded-2xl bg-[#080d14]/90 border border-zinc-800/80 p-5 sm:p-7 shadow-xl space-y-6">
 
-        {/* ── CONTENT ── */}
-        <main className="settings-main">
-
-          {/* ── PROFILE ── */}
+          {/* ── PROFILE SECTION ── */}
           {section === 'profile' && (
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <User className="h-5 w-5 text-primary" />
-                <div>
-                  <h2>Public Profile</h2>
-                  <p>This information is shown to other players on the leaderboard.</p>
+            <div className="space-y-5">
+              <div className="border-b border-zinc-800/80 pb-3">
+                <h2 className="font-sans font-bold text-base text-white">Public Profile</h2>
+                <p className="font-sans text-xs text-zinc-400 mt-0.5">Customize how your identity appears across the Gaia network.</p>
+              </div>
+
+              {/* Avatar Live Preview */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+                <div className="w-16 h-16 rounded-xl bg-zinc-800 border border-zinc-700 overflow-hidden flex-shrink-0 shadow-inner">
+                  <Image src={avatarUrl} alt={avatarSeed} width={64} height={64} unoptimized className="w-full h-full" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="font-sans font-bold text-sm text-white">{avatarSeed}</p>
+                  <p className="font-sans text-xs text-zinc-400">Dynamic avatar seeded from your display name.</p>
+                  <p className="font-mono text-[11px] text-emerald-400 flex items-center gap-1 pt-0.5">
+                    <CheckCircle2 className="w-3 h-3" /> Synced with Dashboard & Passport
+                  </p>
                 </div>
               </div>
 
-              <div className="settings-avatar-section">
-                <div className="settings-avatar-large">
-                  <img src={avatarUrl} alt="avatar" />
-                </div>
-                <div>
-                  <p className="settings-avatar-hint">Your avatar is auto-generated from your username. Change your username to get a new one!</p>
-                  <div className="settings-avatar-tags">
-                    <span className="settings-chip">DiceBear Lorelei</span>
-                    <span className="settings-chip">Auto-generated</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="settings-fields">
-                <div className="settings-field">
-                  <Label htmlFor="display-name">Display Name</Label>
-                  <p className="settings-field-hint">Shown on your profile card and dashboard.</p>
-                  <Input id="display-name" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" className="settings-input" />
-                </div>
-
-                <div className="settings-field">
-                  <Label htmlFor="username">Username / Handle</Label>
-                  <p className="settings-field-hint">Used as @handle — must be unique, lowercase.</p>
-                  <div className="settings-input-prefix">
-                    <span className="settings-prefix">@</span>
-                    <Input id="username" value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/\s+/g,'_'))} placeholder="your_handle" className="settings-input settings-input-with-prefix" />
-                  </div>
-                </div>
-
-                <div className="settings-field">
-                  <Label htmlFor="email">Email Address</Label>
-                  <p className="settings-field-hint">Used for login and notifications. Cannot be changed.</p>
-                  <div className="settings-input-prefix">
-                    <span className="settings-prefix"><Mail className="h-3.5 w-3.5" /></span>
-                    <Input id="email" value={user.email ?? ''} disabled className="settings-input settings-input-with-prefix opacity-60" />
-                  </div>
-                </div>
-
-                <div className="settings-field">
-                  <Label htmlFor="bio">Bio</Label>
-                  <p className="settings-field-hint">A short description about yourself (max 160 chars).</p>
-                  <textarea
-                    id="bio"
-                    value={bio}
-                    onChange={e => setBio(e.target.value.slice(0, 160))}
-                    placeholder="Tell the community about yourself…"
-                    rows={3}
-                    className="settings-textarea"
+              <div className="space-y-4 font-sans">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-mono uppercase tracking-wide">Display Name</Label>
+                  <Input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="bg-zinc-900/90 border-zinc-800 text-white placeholder-zinc-600 focus:border-emerald-500/50 rounded-xl h-10 text-sm font-sans"
                   />
-                  <span className="settings-char-count">{bio.length}/160</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-mono uppercase tracking-wide">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
+                    <Input
+                      value={user.email ?? ''}
+                      disabled
+                      className="bg-zinc-900/40 border-zinc-800/60 text-zinc-500 pl-9 rounded-xl h-10 text-sm font-mono cursor-not-allowed"
+                    />
+                  </div>
+                  <p className="text-[11px] text-zinc-500">Authentication identifier (cannot be changed).</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-400 font-mono uppercase tracking-wide">
+                    Bio <span className="text-zinc-600 font-sans normal-case">(optional)</span>
+                  </Label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value.slice(0, 160))}
+                    placeholder="Write a brief note about your sustainability mission…"
+                    rows={3}
+                    className="w-full bg-zinc-900/90 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-3.5 py-2.5 text-sm font-sans resize-none focus:outline-none focus:border-emerald-500/50 transition"
+                  />
+                  <p className="text-[11px] text-zinc-500 text-right font-mono">{bio.length}/160</p>
                 </div>
               </div>
 
-              <div className="settings-actions">
-                <Button onClick={() => save('Profile updated!')} disabled={isSaving} className="settings-save-btn">
-                  {isSaving ? <><Loader2 className="animate-spin h-4 w-4" /> Saving…</> : <><Save className="h-4 w-4" /> Save Profile</>}
-                </Button>
-              </div>
+              <SaveBtn onClick={() => save('Profile updated!')} saving={isSaving} />
             </div>
           )}
 
-          {/* ── SECURITY ── */}
+          {/* ── SECURITY SECTION ── */}
           {section === 'security' && (
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <Shield className="h-5 w-5 text-blue-400" />
-                <div>
-                  <h2>Security</h2>
-                  <p>Manage your password and active sessions.</p>
-                </div>
+            <div className="space-y-5">
+              <div className="border-b border-zinc-800/80 pb-3">
+                <h2 className="font-sans font-bold text-base text-white">Security & Password</h2>
+                <p className="font-sans text-xs text-zinc-400 mt-0.5">Manage authentication credentials and active sessions.</p>
               </div>
 
-              <div className="settings-group">
-                <div className="settings-group-title">Change Password</div>
-                <div className="settings-fields">
-                  <div className="settings-field">
-                    <Label htmlFor="cur-pw">Current Password</Label>
-                    <div className="settings-input-suffix">
-                      <Input id="cur-pw" type={showPw ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="Enter current password" className="settings-input" />
-                      <button className="settings-suffix-btn" onClick={() => setShowPw(p => !p)}>
-                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <div className="space-y-3 font-sans">
+                {[
+                  { id: 'cur-pw', label: 'Current Password', val: currentPassword, set: setCurrentPassword },
+                  { id: 'new-pw', label: 'New Password', val: newPassword, set: setNewPassword },
+                  { id: 'confirm-pw', label: 'Confirm New Password', val: confirmPassword, set: setConfirmPassword },
+                ].map((f) => (
+                  <div key={f.id} className="space-y-1.5">
+                    <Label className="text-xs text-zinc-400 font-mono uppercase tracking-wide">{f.label}</Label>
+                    <div className="relative">
+                      <Input
+                        id={f.id}
+                        type={showPw ? 'text' : 'password'}
+                        value={f.val}
+                        onChange={(e) => f.set(e.target.value)}
+                        placeholder="••••••••"
+                        className="bg-zinc-900/90 border-zinc-800 text-white pr-10 rounded-xl h-10 text-sm font-sans focus:border-emerald-500/50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw((p) => !p)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition cursor-pointer"
+                      >
+                        {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
-                  <div className="settings-field">
-                    <Label htmlFor="new-pw">New Password</Label>
-                    <Input id="new-pw" type={showPw ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 8 characters" className="settings-input" />
-                    {newPassword.length > 0 && (
-                      <div className="settings-pw-strength">
-                        <div className={`settings-pw-bar ${newPassword.length < 6 ? 'weak' : newPassword.length < 10 ? 'medium' : 'strong'}`} />
-                        <span>{newPassword.length < 6 ? 'Weak' : newPassword.length < 10 ? 'Fair' : 'Strong'}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="settings-field">
-                    <Label htmlFor="confirm-pw">Confirm New Password</Label>
-                    <Input id="confirm-pw" type={showPw ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat new password" className="settings-input" />
-                    {confirmPassword && newPassword !== confirmPassword && (
-                      <p className="settings-error">Passwords do not match.</p>
-                    )}
-                  </div>
-                </div>
-                <Button onClick={() => save('Password updated!')} disabled={isSaving || !currentPassword || newPassword !== confirmPassword} className="settings-save-btn">
-                  {isSaving ? 'Saving…' : <><Lock className="h-4 w-4" /> Update Password</>}
-                </Button>
-              </div>
+                ))}
 
-              <div className="settings-group">
-                <div className="settings-group-title">Active Sessions</div>
-                <div className="settings-session-list">
-                  {[
-                    { device: 'Chrome on Windows', location: 'Current session', icon: Monitor, current: true },
-                    { device: 'Safari on iPhone', location: 'Last active 2 days ago', icon: Smartphone, current: false },
-                  ].map(s => (
-                    <div key={s.device} className="settings-session-item">
-                      <s.icon className="h-5 w-5 text-muted-foreground" />
-                      <div className="flex-1">
-                        <p className="settings-session-device">{s.device}</p>
-                        <p className="settings-session-loc">{s.location}</p>
-                      </div>
-                      {s.current ? <span className="settings-chip-green">Active</span> : <Button variant="ghost" size="sm" className="text-destructive text-xs">Revoke</Button>}
+                {newPassword.length > 0 && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <div className="flex-1 h-1 rounded-full bg-zinc-800 overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${newPassword.length < 6 ? 'w-1/3 bg-rose-500' : newPassword.length < 10 ? 'w-2/3 bg-amber-500' : 'w-full bg-emerald-500'}`}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── NOTIFICATIONS ── */}
-          {section === 'notifications' && (
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <Bell className="h-5 w-5 text-yellow-400" />
-                <div>
-                  <h2>Notifications</h2>
-                  <p>Choose what you want to be notified about.</p>
-                </div>
-              </div>
-
-              <div className="settings-group">
-                <div className="settings-group-title">Email Notifications</div>
-                <div className="settings-toggles">
-                  {[
-                    { label: 'Weekly Progress Report', desc: 'A summary of your eco progress each week.', val: notifEmail, set: setNotifEmail },
-                    { label: 'Streak Reminders', desc: 'Remind me to maintain my daily streak.', val: notifStreak, set: setNotifStreak },
-                    { label: 'Leaderboard Updates', desc: 'Notify me when my rank changes significantly.', val: notifLeaderboard, set: setNotifLeaderboard },
-                    { label: 'EcoQuest News', desc: 'New quizzes, features, and announcements.', val: notifNews, set: setNotifNews },
-                  ].map(t => (
-                    <div key={t.label} className="settings-toggle-row">
-                      <div>
-                        <p className="settings-toggle-label">{t.label}</p>
-                        <p className="settings-toggle-desc">{t.desc}</p>
-                      </div>
-                      <button className={`settings-toggle ${t.val ? 'on' : ''}`} onClick={() => t.set(!t.val)}>
-                        <span className="settings-toggle-thumb" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="settings-group">
-                <div className="settings-group-title">Push Notifications</div>
-                <div className="settings-toggles">
-                  <div className="settings-toggle-row">
-                    <div>
-                      <p className="settings-toggle-label">Enable Push Notifications</p>
-                      <p className="settings-toggle-desc">Browser push alerts for real-time updates.</p>
-                    </div>
-                    <button className={`settings-toggle ${notifPush ? 'on' : ''}`} onClick={() => setNotifPush(!notifPush)}>
-                      <span className="settings-toggle-thumb" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <Button onClick={() => save('Notification preferences saved!')} disabled={isSaving} className="settings-save-btn">
-                {isSaving ? 'Saving…' : <><Bell className="h-4 w-4" /> Save Preferences</>}
-              </Button>
-            </div>
-          )}
-
-          {/* ── APPEARANCE ── */}
-          {section === 'appearance' && (
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <Palette className="h-5 w-5 text-purple-400" />
-                <div>
-                  <h2>Appearance</h2>
-                  <p>Customize how EcoQuest looks and feels.</p>
-                </div>
-              </div>
-
-              <div className="settings-group">
-                <div className="settings-group-title">Eco Theme</div>
-                <div className="settings-theme-grid">
-                  {[
-                    { id: 'the-verdant-grove', label: 'Verdant Grove', color1: '#22c55e', color2: '#134e10', desc: 'Deep Forest Green' },
-                    { id: 'the-ember-hearth', label: 'Ember Hearth', color1: '#f97316', color2: '#7c2d12', desc: 'Blazing Fire' },
-                    { id: 'the-abyssal-tide', label: 'Abyssal Tide', color1: '#06b6d4', color2: '#0c2044', desc: 'Deep Ocean Blue' },
-                  ].map(t => (
-                    <button key={t.id} className="settings-theme-card">
-                      <div className="settings-theme-swatch" style={{ background: `linear-gradient(135deg, ${t.color1}, ${t.color2})` }} />
-                      <p className="settings-theme-name">{t.label}</p>
-                      <p className="settings-theme-desc">{t.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="settings-group">
-                <div className="settings-group-title">Font Size</div>
-                <div style={{ padding: '8px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <span className="settings-toggle-label">Interface Text Size</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: 'hsl(var(--primary))', fontWeight: 700 }}>
-                      {fontScale === 1.0 ? 'Default' : fontScale === 1.08 ? 'Comfortable' : fontScale === 1.18 ? 'Large' : fontScale === 1.3 ? 'Extra Large' : `${Math.round(fontScale * 100)}%`}
+                    <span className="text-[11px] font-mono text-zinc-500">
+                      {newPassword.length < 6 ? 'Weak' : newPassword.length < 10 ? 'Fair' : 'Strong'}
                     </span>
                   </div>
-                  <input
-                    type="range" min={0.9} max={1.35} step={0.01}
-                    value={fontScale}
-                    onChange={e => applyFontScale(parseFloat(e.target.value))}
-                    style={{ width: '100%', accentColor: 'hsl(var(--primary))' }}
-                  />
-                  <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                    {[
-                      { label: 'Default', val: 1.0 },
-                      { label: 'Comfortable', val: 1.08 },
-                      { label: 'Large', val: 1.18 },
-                      { label: 'Extra Large', val: 1.30 },
-                    ].map(p => (
-                      <button
-                        key={p.label}
-                        onClick={() => applyFontScale(p.val)}
-                        style={{
-                          flex: 1, padding: '5px 4px', fontSize: '0.65rem', fontWeight: 700,
-                          borderRadius: 6, border: '1px solid',
-                          borderColor: Math.abs(fontScale - p.val) < 0.01 ? 'hsl(var(--primary))' : 'hsl(var(--border) / 0.5)',
-                          background: Math.abs(fontScale - p.val) < 0.01 ? 'hsl(var(--primary) / 0.15)' : 'transparent',
-                          color: Math.abs(fontScale - p.val) < 0.01 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
-                          cursor: 'pointer', transition: 'all 0.15s',
-                        }}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="settings-field-hint" style={{ marginTop: 8 }}>Changes apply instantly across the entire app.</p>
-                </div>
+                )}
+
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-[11px] text-rose-400 font-sans">Passwords do not match.</p>
+                )}
               </div>
 
-              <div className="settings-group">
-                <div className="settings-group-title">Display</div>
-                <div className="settings-toggles">
-                  {[
-                    { label: 'Sound Effects', desc: 'Play sounds for interactions and achievements.', icon: soundEnabled ? Volume2 : VolumeX, val: soundEnabled, set: setSoundEnabled },
-                    { label: 'Reduce Motion', desc: 'Minimize animations for accessibility.', icon: Monitor, val: reducedMotion, set: setReducedMotion },
-                    { label: 'Compact Mode', desc: 'Tighter spacing and smaller text.', icon: Monitor, val: compactMode, set: setCompactMode },
-                  ].map(t => (
-                    <div key={t.label} className="settings-toggle-row">
-                      <div className="flex items-center gap-3">
-                        <t.icon className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="settings-toggle-label">{t.label}</p>
-                          <p className="settings-toggle-desc">{t.desc}</p>
-                        </div>
-                      </div>
-                      <button className={`settings-toggle ${t.val ? 'on' : ''}`} onClick={() => t.set(!t.val)}>
-                        <span className="settings-toggle-thumb" />
-                      </button>
+              <SaveBtn onClick={() => save('Password updated!')} saving={isSaving} />
+
+              {/* Active Sessions */}
+              <div className="pt-4 border-t border-zinc-800/60 space-y-2.5">
+                <p className="text-xs text-zinc-400 font-mono uppercase tracking-wide">Active Sessions</p>
+                {[
+                  { device: 'Desktop Browser', location: 'Current active session', Icon: Monitor, current: true },
+                  { device: 'Mobile Browser', location: 'Active 2 days ago', Icon: Smartphone, current: false },
+                ].map((s) => (
+                  <div key={s.device} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 font-sans">
+                    <s.Icon className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-white">{s.device}</p>
+                      <p className="text-[11px] text-zinc-500">{s.location}</p>
                     </div>
-                  ))}
-                </div>
+                    {s.current ? (
+                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
+                        Current
+                      </span>
+                    ) : (
+                      <button type="button" className="text-[11px] text-rose-400 hover:text-rose-300 font-mono transition cursor-pointer">
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* ── PRIVACY ── */}
-          {section === 'privacy' && (
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <Lock className="h-5 w-5 text-cyan-400" />
-                <div>
-                  <h2>Privacy</h2>
-                  <p>Control your data and how others see you.</p>
-                </div>
+          {/* ── NOTIFICATIONS SECTION ── */}
+          {section === 'notifications' && (
+            <div className="space-y-4">
+              <div className="border-b border-zinc-800/80 pb-3">
+                <h2 className="font-sans font-bold text-base text-white">Notification Preferences</h2>
+                <p className="font-sans text-xs text-zinc-400 mt-0.5">Control how and when EcoQuest communicates alerts.</p>
               </div>
 
-              <div className="settings-group">
-                <div className="settings-group-title">Profile Visibility</div>
-                <div className="settings-toggles">
+              {[
+                { label: 'Weekly Progress Digest', desc: 'Summary of XP points earned, streak milestones, and badges.', val: notifEmail, set: setNotifEmail },
+                { label: 'Streak Expiry Reminders', desc: 'Alerts to protect your consecutive daily login multiplier.', val: notifStreak, set: setNotifStreak },
+                { label: 'Global Ranking Changes', desc: 'Notifications when your position shifts on the leaderboard.', val: notifLeaderboard, set: setNotifLeaderboard },
+                { label: 'Push Notifications', desc: 'Real-time in-browser alerts for new ecological quests.', val: notifPush, set: setNotifPush },
+              ].map((t) => (
+                <div key={t.label} className="flex items-center justify-between py-3 border-b border-zinc-800/60 last:border-0 font-sans">
+                  <div>
+                    <p className="text-sm text-white font-medium">{t.label}</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">{t.desc}</p>
+                  </div>
+                  <Toggle on={t.val} onChange={() => t.set(!t.val)} />
+                </div>
+              ))}
+
+              <SaveBtn onClick={() => save('Notification preferences saved!')} saving={isSaving} />
+            </div>
+          )}
+
+          {/* ── APPEARANCE SECTION ── */}
+          {section === 'appearance' && (
+            <div className="space-y-5">
+              <div className="border-b border-zinc-800/80 pb-3">
+                <h2 className="font-sans font-bold text-base text-white">Appearance & Accessibility</h2>
+                <p className="font-sans text-xs text-zinc-400 mt-0.5">Tailor UI scaling, animations, and sound effects.</p>
+              </div>
+
+              {/* Font Scale Slider */}
+              <div className="space-y-2.5 font-sans">
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs text-zinc-400 font-mono uppercase tracking-wide">Interface Text Scaling</Label>
+                  <span className="text-xs font-mono text-emerald-400 font-bold">
+                    {fontScale <= 1.0 ? 'Default' : fontScale <= 1.08 ? 'Comfortable' : fontScale <= 1.18 ? 'Large' : 'Extra Large'}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.9}
+                  max={1.35}
+                  step={0.01}
+                  value={fontScale}
+                  onChange={(e) => applyFontScale(parseFloat(e.target.value))}
+                  className="w-full accent-emerald-500 cursor-pointer"
+                />
+                <div className="grid grid-cols-4 gap-1.5">
                   {[
-                    { label: 'Public Profile', desc: 'Other users can view your profile page.', val: profilePublic, set: setProfilePublic },
-                    { label: 'Show on Leaderboard', desc: 'Display your name and score on global rankings.', val: showOnLeaderboard, set: setShowOnLeaderboard },
-                    { label: 'Share Progress Reports', desc: 'Allow EcoQuest to include you in community stats.', val: shareProgress, set: setShareProgress },
-                  ].map(t => (
-                    <div key={t.label} className="settings-toggle-row">
-                      <div>
-                        <p className="settings-toggle-label">{t.label}</p>
-                        <p className="settings-toggle-desc">{t.desc}</p>
-                      </div>
-                      <button className={`settings-toggle ${t.val ? 'on' : ''}`} onClick={() => t.set(!t.val)}>
-                        <span className="settings-toggle-thumb" />
-                      </button>
-                    </div>
+                    { l: 'Default', v: 1.0 },
+                    { l: 'Comfortable', v: 1.08 },
+                    { l: 'Large', v: 1.18 },
+                    { l: 'XL', v: 1.30 },
+                  ].map((p) => (
+                    <button
+                      key={p.l}
+                      type="button"
+                      onClick={() => applyFontScale(p.v)}
+                      className={`py-1.5 rounded-lg text-xs font-mono border transition cursor-pointer ${
+                        Math.abs(fontScale - p.v) < 0.01
+                          ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 font-bold'
+                          : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      {p.l}
+                    </button>
                   ))}
                 </div>
               </div>
 
-              <div className="settings-group">
-                <div className="settings-group-title">Your Data</div>
-                <div className="flex gap-3 flex-wrap">
-                  <Button variant="outline" size="sm" className="settings-outline-btn">
-                    <Globe2 className="h-4 w-4" /> Download My Data
-                  </Button>
-                </div>
+              {/* Toggles */}
+              <div className="space-y-1 font-sans">
+                {[
+                  { label: 'Audio SFX', desc: 'Interactive audio cues on clicks and achievements.', Icon: soundEnabled ? Volume2 : VolumeX, val: soundEnabled, set: setSoundEnabled },
+                  { label: 'Reduced Motion', desc: 'Disable heavy viewport transformations for accessibility.', Icon: Monitor, val: reducedMotion, set: setReducedMotion },
+                ].map((t) => (
+                  <div key={t.label} className="flex items-center justify-between py-3 border-b border-zinc-800/60 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <t.Icon className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-white font-medium">{t.label}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">{t.desc}</p>
+                      </div>
+                    </div>
+                    <Toggle on={t.val} onChange={() => t.set(!t.val)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── PRIVACY SECTION ── */}
+          {section === 'privacy' && (
+            <div className="space-y-4">
+              <div className="border-b border-zinc-800/80 pb-3">
+                <h2 className="font-sans font-bold text-base text-white">Privacy & Visibility</h2>
+                <p className="font-sans text-xs text-zinc-400 mt-0.5">Control leaderboard visibility and data governance.</p>
               </div>
 
-              <Button onClick={() => save('Privacy settings saved!')} disabled={isSaving} className="settings-save-btn">
-                {isSaving ? 'Saving…' : <><Lock className="h-4 w-4" /> Save Privacy Settings</>}
-              </Button>
+              {[
+                { label: 'Public Leaderboard Profile', desc: 'Display your explorer name and score on global rankings.', val: showOnLeaderboard, set: setShowOnLeaderboard },
+                { label: 'Public Explorer Card', desc: 'Allow other citizens to view your minted badges.', val: profilePublic, set: setProfilePublic },
+              ].map((t) => (
+                <div key={t.label} className="flex items-center justify-between py-3 border-b border-zinc-800/60 last:border-0 font-sans">
+                  <div>
+                    <p className="text-sm text-white font-medium">{t.label}</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">{t.desc}</p>
+                  </div>
+                  <Toggle on={t.val} onChange={() => t.set(!t.val)} />
+                </div>
+              ))}
+
+              <div className="pt-2">
+                <SaveBtn onClick={() => save('Privacy settings saved!')} saving={isSaving} />
+              </div>
             </div>
           )}
 
           {/* ── DANGER ZONE ── */}
           {section === 'danger' && (
-            <div className="settings-section">
-              <div className="settings-section-header">
-                <AlertTriangle className="h-5 w-5 text-red-400" />
-                <div>
-                  <h2>Danger Zone</h2>
-                  <p>These actions are permanent and cannot be undone.</p>
-                </div>
+            <div className="space-y-4">
+              <div className="border-b border-rose-500/30 pb-3">
+                <h2 className="font-sans font-bold text-base text-rose-400">Danger Zone</h2>
+                <p className="font-sans text-xs text-zinc-400 mt-0.5">Permanent actions that cannot be reversed.</p>
               </div>
 
-              <div className="settings-danger-card">
+              <div className="p-4 rounded-xl bg-zinc-900/60 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-sans">
                 <div>
-                  <p className="settings-danger-title">Reset All Progress</p>
-                  <p className="settings-danger-desc">This will wipe all your Eco Points, badges, and streak data. Your account will remain active.</p>
+                  <p className="text-sm font-semibold text-white">Reset Gameplay Progress</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">Wipes all XP points, streak counters, and earned badges. Account stays active.</p>
                 </div>
-                <Button variant="outline" size="sm" className="border-orange-500/40 text-orange-400 hover:bg-orange-500/10">
-                  <AlertTriangle className="h-4 w-4" /> Reset Progress
-                </Button>
+                <button
+                  type="button"
+                  onClick={() => toast({ title: 'Progress Reset', description: 'Your XP data was reset.' })}
+                  className="flex-shrink-0 px-3.5 py-1.5 rounded-xl border border-amber-500/40 text-amber-400 hover:bg-amber-500/10 text-xs font-mono transition cursor-pointer"
+                >
+                  Reset
+                </button>
               </div>
 
-              <div className="settings-danger-card settings-danger-red">
+              <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-sans">
                 <div>
-                  <p className="settings-danger-title">Delete Account</p>
-                  <p className="settings-danger-desc">Permanently delete your EcoQuest account. All data will be erased and you will be signed out immediately.</p>
+                  <p className="text-sm font-semibold text-rose-300">Permanent Account Deletion</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">Permanently erases user credentials, scores, and all records. Immediate sign-out.</p>
                 </div>
-                <Button onClick={handleDeleteAccount} disabled={isDeleting} variant="destructive" size="sm">
-                  <Trash2 className="h-4 w-4" /> {isDeleting ? 'Deleting…' : 'Delete Account'}
-                </Button>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-mono font-bold transition cursor-pointer disabled:opacity-60"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isDeleting ? 'Erasing…' : 'Delete Account'}</span>
+                </button>
               </div>
             </div>
           )}
-        </main>
+
+        </div>
+
       </div>
     </Desktop>
   );

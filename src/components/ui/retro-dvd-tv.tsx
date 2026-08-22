@@ -1,299 +1,268 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useLayoutEffect } from "react";
 
 export type RetroDvdTvProps = {
-  /** Outer TV width (e.g. "35rem", "500px") */
   width?: string;
-  /** Outer TV height (e.g. "25rem", "auto") */
-  height?: string;
-  /** Text to show on the bouncing logo (default: "DVD") */
   logoText?: string;
-  /** Initial or static logo color */
   color?: string;
-  /** Enable automatic color cycling on each collision cycle */
   colorCycle?: boolean;
-  /** Speed of the bouncing animation in seconds (lower = faster, default 5) */
   speed?: number;
   className?: string;
 };
 
+const PALETTE = [
+  "#ef4444",
+  "#f59e0b",
+  "#10b981",
+  "#06b6d4",
+  "#8b5cf6",
+  "#ec4899",
+  "#3b82f6",
+  "#84cc16",
+];
+
+// Fixed logo size (matches inline style below) — avoids offsetWidth=0 bug with SSR/styled-jsx
+const LOGO_W = 80;
+const LOGO_H = 52;
+
 const RetroDvdTv: React.FC<RetroDvdTvProps> = ({
   width = "min(24rem, 88vw)",
-  height = "auto",
   logoText = "ECO",
   color = "#10b981",
   colorCycle = true,
-  speed = 4.5,
+  speed = 2.5,
   className = "",
 }) => {
+  const screenRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+
+  const stateRef = useRef({
+    x: 24,
+    y: 18,
+    vx: speed,
+    vy: speed * 0.85,
+    colorIdx: 0,
+    col: color,
+    initialized: false,
+  });
+
+  // Apply color to the logo element
+  const applyColor = (col: string) => {
+    const el = logoRef.current;
+    if (!el) return;
+    el.style.color = col;
+    el.style.textShadow = `0 0 18px ${col}, 0 0 36px ${col}55`;
+    const badge = el.querySelector<HTMLElement>("[data-badge]");
+    if (badge) badge.style.background = col;
+  };
+
+  useLayoutEffect(() => {
+    applyColor(color);
+  }, [color]);
+
+  useEffect(() => {
+    const screen = screenRef.current;
+    const logo = logoRef.current;
+    if (!screen || !logo) return;
+
+    const state = stateRef.current;
+
+    // Re-randomize start position & direction each mount so it never looks static
+    if (!state.initialized) {
+      state.x = 24 + Math.random() * 40;
+      state.y = 18 + Math.random() * 30;
+      // Randomize direction
+      state.vx = speed * (Math.random() > 0.5 ? 1 : -1);
+      state.vy = speed * 0.85 * (Math.random() > 0.5 ? 1 : -1);
+      state.initialized = true;
+    }
+
+    applyColor(state.col);
+
+    const tick = () => {
+      const sw = screen.offsetWidth;
+      const sh = screen.offsetHeight;
+
+      // Use hardcoded dims — avoids styled-jsx hydration bug where offsetWidth=0
+      const lw = LOGO_W;
+      const lh = LOGO_H;
+
+      const maxX = Math.max(0, sw - lw);
+      const maxY = Math.max(0, sh - lh);
+
+      if (sw === 0 || sh === 0) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      state.x += state.vx;
+      state.y += state.vy;
+
+      let bounced = false;
+
+      if (state.x <= 0) {
+        state.x = 0;
+        state.vx = Math.abs(state.vx);
+        bounced = true;
+      } else if (state.x >= maxX) {
+        state.x = maxX;
+        state.vx = -Math.abs(state.vx);
+        bounced = true;
+      }
+
+      if (state.y <= 0) {
+        state.y = 0;
+        state.vy = Math.abs(state.vy);
+        bounced = true;
+      } else if (state.y >= maxY) {
+        state.y = maxY;
+        state.vy = -Math.abs(state.vy);
+        bounced = true;
+      }
+
+      if (bounced && colorCycle) {
+        state.colorIdx = (state.colorIdx + 1) % PALETTE.length;
+        state.col = PALETTE[state.colorIdx];
+        applyColor(state.col);
+      }
+
+      logo.style.transform = `translate(${state.x}px, ${state.y}px)`;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speed, colorCycle]);
+
   return (
     <div
-      className={`tv-root ${className}`}
-      style={
-        {
-          "--tv-width": width,
-          "--tv-height": height,
-          "--logo-color": color,
-          "--color-animate": colorCycle ? "running" : "paused",
-          "--bounce-speed-h": `${speed}s`,
-          "--bounce-speed-v": `${speed * 0.72}s`,
-        } as React.CSSProperties
-      }
+      className={className}
+      style={{ width, maxWidth: "100vw", display: "grid", placeItems: "center", padding: "1rem", boxSizing: "border-box" }}
     >
-      <div className="tv">
-        <div className="tv__frame">
-          <div className="tv__screen">
-            <div className="tv__screen-inner">
-              {React.createElement(
-                "marquee" as any,
-                {
-                  behavior: "alternate",
-                  direction: "right",
-                  scrollamount: "6",
-                  className: "marquee-h",
-                  style: { width: "100%", height: "100%", overflow: "hidden" },
-                },
-                React.createElement(
-                  "marquee" as any,
-                  {
-                    behavior: "alternate",
-                    direction: "down",
-                    scrollamount: "5",
-                    className: "marquee-v",
-                    style: { width: "100%", height: "100%", overflow: "hidden" },
-                  },
-                  <span className="logo">{logoText}</span>
-                )
-              )}
+      {/* TV Shell */}
+      <div style={{
+        width: "100%",
+        padding: "1.25rem",
+        background: "#141b20",
+        borderRadius: "1.5rem",
+        border: "0.35rem solid #0d1215",
+        display: "grid",
+        gap: "1rem",
+        boxShadow: "0 20px 50px rgba(0,0,0,0.85), inset 0 2px 4px rgba(255,255,255,0.08)",
+        boxSizing: "border-box",
+      }}>
+
+        {/* Screen Frame */}
+        <div style={{
+          position: "relative",
+          borderRadius: "1rem",
+          background: "#060b0d",
+          overflow: "hidden",
+        }}>
+          {/* CRT Scanlines */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 2,
+            pointerEvents: "none",
+            borderRadius: "1rem",
+            backgroundImage: "repeating-linear-gradient(transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px)",
+            boxShadow: "inset 0 0 60px rgba(0,0,0,0.85), inset 4px 0 18px rgba(0,0,0,0.5), inset -4px 0 18px rgba(0,0,0,0.5)",
+          }} />
+
+          {/* Physics bounce area */}
+          <div
+            ref={screenRef}
+            style={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: "5 / 4",
+              minHeight: "160px",
+              overflow: "hidden",
+              background: "#030a07",
+            }}
+          >
+            {/* The bouncing logo — moved by transform each frame */}
+            <div
+              ref={logoRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: `${LOGO_W}px`,
+                height: `${LOGO_H}px`,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "3px",
+                willChange: "transform",
+                color: color,
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+            >
+              <span style={{
+                display: "block",
+                fontSize: "2rem",
+                fontWeight: 900,
+                lineHeight: 1,
+                letterSpacing: "-0.04em",
+                color: "inherit",
+                textTransform: "uppercase",
+                fontFamily: "system-ui, -apple-system, sans-serif",
+                whiteSpace: "nowrap",
+              }}>
+                {logoText}
+              </span>
+              <span
+                data-badge
+                style={{
+                  display: "block",
+                  fontSize: "0.44rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.18em",
+                  color: "#030a07",
+                  padding: "0.2em 0.5em",
+                  borderRadius: "2px",
+                  textTransform: "uppercase",
+                  fontFamily: "monospace",
+                  whiteSpace: "nowrap",
+                  background: color,
+                }}
+              >
+                ECOQUEST
+              </span>
             </div>
           </div>
         </div>
-        <div className="tv__bottom">
-          <div className="tv__controls">
-            <button className="tv__button" aria-label="TV Channel Down">‹</button>
-            <button className="tv__button" aria-label="TV Channel Up">›</button>
+
+        {/* TV Bottom Controls */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
+          <div style={{ display: "flex", gap: "0.4rem" }}>
+            {["‹", "›"].map((ch, i) => (
+              <button
+                key={i}
+                aria-label={i === 0 ? "TV Channel Down" : "TV Channel Up"}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "#1f272c", color: "#8fa0a8",
+                  border: "1px solid #0d1215", borderRadius: "50%",
+                  fontWeight: "bold", width: "1.5rem", height: "1.5rem",
+                  cursor: "pointer", fontSize: "11px",
+                }}
+              >{ch}</button>
+            ))}
           </div>
-          <div className="tv__speaker" />
+          <div style={{
+            backgroundImage: "radial-gradient(#080c0e 0.15rem, transparent 0)",
+            backgroundSize: "0.45rem 0.45rem",
+            width: "5rem", padding: "1.25rem", borderRadius: "0.5rem",
+          }} />
         </div>
       </div>
-
-      <style jsx>{`
-        .tv-root {
-          --shadow: drop-shadow(0px 2px 0px #ffffff0f)
-            drop-shadow(0px -2px 0px #0000000f);
-          width: var(--tv-width);
-          height: var(--tv-height);
-          display: grid;
-          place-items: center;
-          padding: 1rem;
-          background: transparent;
-          font-family: system-ui, -apple-system, sans-serif;
-          max-width: 100vw;
-          box-sizing: border-box;
-        }
-
-        .tv {
-          width: 100%;
-          padding: 1.25rem;
-          background: #141b20;
-          border-radius: 1.5rem;
-          border: 0.35rem solid #0d1215;
-          display: grid;
-          gap: 1rem;
-          height: 100%;
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), inset 0 2px 4px rgba(255, 255, 255, 0.08);
-          box-sizing: border-box;
-        }
-
-        .tv__frame {
-          position: relative;
-          border-radius: 1rem;
-          background-color: #080c0e;
-          padding: 1.25rem;
-          filter: var(--shadow);
-          flex: 1;
-          box-sizing: border-box;
-        }
-        .tv__frame::after {
-          content: "";
-          border-radius: 5% / 100%;
-          position: absolute;
-          inset: 1rem 1.4rem;
-          z-index: 1;
-          animation: scanlines 0.5s linear infinite;
-          background-image: repeating-linear-gradient(
-            transparent,
-            transparent 5px,
-            rgba(0, 0, 0, 0.06) 5px,
-            rgba(0, 0, 0, 0.06) 10px
-          );
-          box-shadow: inset 6px 5px 20px 11px rgba(0, 0, 0, 0.7);
-          pointer-events: none;
-        }
-
-        .tv__screen {
-          position: relative;
-          border-radius: 100% / 5%;
-          z-index: 1;
-          padding: 0;
-          overflow: hidden;
-        }
-        .tv__screen::after,
-        .tv__screen::before {
-          content: "";
-          background: #091a13;
-          border-radius: 5% / 100%;
-          position: absolute;
-          inset: 0;
-          z-index: -1;
-        }
-        .tv__screen::after {
-          inset: -0.6rem 0.7rem;
-          border-radius: 100% / 5%;
-        }
-
-        .tv__screen-inner {
-          width: 100%;
-          height: 100%;
-          min-height: 160px;
-          aspect-ratio: 5 / 4;
-          display: block;
-        }
-
-        .tv__bottom {
-          display: flex;
-          justify-content: space-between;
-          align-items: stretch;
-          gap: 0.75rem;
-        }
-
-        .tv__controls {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-        }
-
-        .tv__button {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #1f272c;
-          color: #8fa0a8;
-          border: 1px solid #0d1215;
-          border-radius: 50%;
-          font-weight: bold;
-          aspect-ratio: 1;
-          width: 1.5rem;
-          height: 1.5rem;
-          filter: var(--shadow);
-          cursor: pointer;
-          transition: background 0.2s;
-          font-size: 11px;
-        }
-        .tv__button:hover {
-          background: #2e3940;
-          color: #fff;
-        }
-
-        .tv__speaker {
-          background-image: radial-gradient(#080c0e 0.15rem, transparent 0);
-          background-size: 0.45rem 0.45rem;
-          width: 5rem;
-          padding: 1.25rem;
-          filter: var(--shadow);
-          border-radius: 0.5rem;
-        }
-
-        .logo {
-          display: inline-block;
-          text-align: center;
-          font-size: 2rem;
-          font-weight: 900;
-          line-height: 1;
-          letter-spacing: -0.05em;
-          color: var(--logo-color, #10b981);
-          animation: colorChange 12s infinite;
-          animation-play-state: var(--color-animate);
-          animation-timing-function: steps(1, end);
-          opacity: 0.95;
-          user-select: none;
-          text-transform: uppercase;
-          text-shadow: 0 0 15px currentColor;
-        }
-        .logo::after {
-          display: block;
-          font-size: 0.35em;
-          font-weight: bold;
-          letter-spacing: 0.25em;
-          background-color: var(--logo-color, #10b981);
-          color: #080c0e;
-          padding-block: 0.25em;
-          border-radius: 50%;
-          text-transform: uppercase;
-          content: "ECOQUEST";
-          margin-top: 0.2rem;
-        }
-
-        /* ── Mobile Phone Responsive Adjustments ── */
-        @media (max-width: 640px) {
-          .tv-root {
-            padding: 0.5rem;
-          }
-          .tv {
-            padding: 0.85rem;
-            gap: 0.65rem;
-            border-radius: 1.2rem;
-            border-width: 0.25rem;
-          }
-          .tv__frame {
-            padding: 0.85rem;
-            border-radius: 0.75rem;
-          }
-          .tv__screen-inner {
-            min-height: 130px;
-          }
-          .logo {
-            font-size: 1.6rem;
-          }
-          .tv__speaker {
-            width: 3.5rem;
-            padding: 0.85rem;
-          }
-          .tv__button {
-            width: 1.3rem;
-            height: 1.3rem;
-            font-size: 10px;
-          }
-        }
-
-        @keyframes scanlines {
-          to {
-            background-position-y: 10px;
-          }
-        }
-
-        @keyframes colorChange {
-          0% {
-            --logo-color: #10b981;
-          }
-          20% {
-            --logo-color: #06b6d4;
-          }
-          40% {
-            --logo-color: #f59e0b;
-          }
-          60% {
-            --logo-color: #ec4899;
-          }
-          80% {
-            --logo-color: #8b5cf6;
-          }
-          100% {
-            --logo-color: #10b981;
-          }
-        }
-      `}</style>
     </div>
   );
 };
