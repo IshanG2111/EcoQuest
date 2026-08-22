@@ -23,7 +23,50 @@
 
 ---
 
-##  What is EcoQuest?
+## 📸 Visual Showcase
+
+<div align="center">
+
+### 🌌 Interactive Dither Welcome Terminal
+<img src="public/screenshots/00_welcome_terminal.png" alt="EcoQuest Interactive Dither Welcome Terminal" width="100%" />
+*Real-time 8×8 Bayer ordered dither engine with responsive cursor illumination & system diagnostics*
+
+<br/><br/>
+
+### 🖥️ High-Tech Retro Edu-OS Desktop Workspace
+<img src="public/screenshots/01_desktop_os.png" alt="EcoQuest Retro Desktop OS Workspace" width="100%" />
+*True-color dithered live video wallpaper, draggable windows, real-time widgets, and system taskbar*
+
+<br/><br/>
+
+| 🌐 EcoGraph Knowledge Galaxy | 🛂 Holographic Planetary Passport |
+|:---:|:---:|
+| <img src="public/screenshots/02_ecograph_galaxy.png" alt="EcoGraph Knowledge Galaxy" width="100%" /> | <img src="public/screenshots/03_passport_portal.png" alt="Planetary Passport System" width="100%" /> |
+| *Force-directed 450+ node ecological food web* | *Holographic printable passport with rank seals* |
+
+<br/>
+
+| 🕹️ Planetary Arcade Vault | 📊 Citizen Dashboard & Achievements |
+|:---:|:---:|
+| <img src="public/screenshots/04_arcade_vault.png" alt="Planetary Arcade Vault" width="100%" /> | <img src="public/screenshots/05_citizen_dashboard.png" alt="Citizen Dashboard & XP Progression" width="100%" /> |
+| *3D hardware cartridge rack with gesture controls* | *XP progression, carbon impact, and live garden* |
+
+</div>
+
+<!-- 
+======================================================================
+  ADD YOUR ADDITIONAL SCREENSHOTS HERE:
+  Replace the paths below with your custom screenshot filenames:
+======================================================================
+- Quizzes Challenge Screen:  ![Quizzes Challenge](public/screenshots/06_quizzes.png)
+- Node Inspector Drawer:     ![Node Inspector](public/screenshots/07_ecograph_inspector.png)
+- Account Settings Screen:   ![Account Settings](public/screenshots/08_account_settings.png)
+======================================================================
+-->
+
+---
+
+## 🌍 What is EcoQuest?
 
 EcoQuest isn't a tutorial. It isn't a slideshow. It isn't a quiz app.
 
@@ -35,28 +78,46 @@ Built on top of **Next.js 15 App Router**, **Firebase Authentication**, **MongoD
 
 ---
 
+## 🌌 The Interactive Welcome Terminal
+
+Before entering the operating system, learners encounter the **EcoQuest Genesis Terminal** (`/welcome`) — an interactive portal with real-time video dithering.
+
+<div align="center">
+  <img src="public/screenshots/00_welcome_terminal.png" alt="Welcome Terminal Screen" width="90%" />
+</div>
+
+- **Live Bayer 8×8 Ordered Dithering Engine** — Streams ambient environmental video quantized into high-contrast retro phosphor tones.
+- **Interactive Cursor & Touch Lens** — Illuminates fine pixel details under the mouse or finger with soft ambient light.
+- **Session Continuity** — Remembers login status and smoothly routes to the Desktop OS or Passport Portal with sound effects.
+
+---
+
 ## 🖥️ The Retro Edu-OS Desktop
 
-EcoQuest boots into a **fully simulated operating system** — not a website, not an app, but a complete *windowed computing environment* with a custom taskbar, multi-theme engine, draggable app windows, real-time widgets, and a cinematic ambient video wallpaper.
+EcoQuest boots into a **fully simulated operating system** — not a website, not an app, but a complete *windowed computing environment* with a custom taskbar, multi-theme engine, draggable app windows, real-time widgets, and a true-color dithered animated wallpaper.
+
+<div align="center">
+  <img src="public/screenshots/01_desktop_os.png" alt="Desktop OS Workspace" width="90%" />
+</div>
 
 | Feature | Detail |
 |---|---|
 | **Window Manager** | Draggable, z-indexed, focus-aware windows via React Draggable |
 | **OS Taskbar** | Glassmorphic `VERDANT_SYS` Start Menu with user profile, app nav, theme picker, and system tray |
 | **System Tray** | Live monospace clock + date pill, sound toggle, widget controller |
-| **Multi-Theme Engine** | TVA Archives · Vault-Ed Program · Lumon Method — toggle-instant via CSS custom properties |
-| **Video Wallpaper** | Ambient looping environmental footage with parallax depth layers |
+| **Multi-Theme Engine** | Verdant Grove (Earth) · Ember Hearth (Fire) · Abyssal Tide (Water) — instant theme synchronization |
+| **True-Color Dither Wallpaper** | Real-time per-channel RGB Bayer matrix dither shader over `/videos/desktop.mp4` |
 | **CRT Aesthetics** | Phosphor glow, scanlines, retro bezels, flicker effects |
-| **Mobile Responsive** | Full UX optimization for iOS/Android — native arcade grid, compact dock, adaptive loader |
+| **Mobile Responsive** | Full UX optimization for iOS/Android — touch-friendly controls, adaptive loader, and compact taskbar |
 
 ### 🎨 Desktop Themes
 
 ```
-  TVA Archives          Vault-Ed Program        Lumon Method
-  ─────────────         ────────────────         ────────────
-  Parchment textures    Terminal green phosphor  Clinical white-blue
-  Amber temporal hues   High-contrast scanlines  Retro-corporate minimal
-  Temporal authority    Fallout-inspired vault   Severance-inspired OS
+  Verdant Grove (Earth)    Ember Hearth (Fire)      Abyssal Tide (Water)
+  ─────────────────────    ───────────────────      ────────────────────
+  Deep forest emeralds     Charcoal ash & flame     Deep ocean midnight
+  Lush botanical phosphor  Blazing ember oranges    Luminous cyan currents
+  Planetary biosphere      Geothermal energy vault  Marine pelagic abyss
 ```
 
 ---
@@ -64,6 +125,10 @@ EcoQuest boots into a **fully simulated operating system** — not a website, no
 ## 🌐 EcoGraph — The Ecological Knowledge Galaxy
 
 The centerpiece of EcoQuest. **EcoGraph** is a **force-directed, physics-simulated, interactive knowledge graph** containing 450+ real ecological nodes — species, habitats, pollutants, climate trends, and policy frameworks — all interconnected by scientifically-modeled causal edges.
+
+<div align="center">
+  <img src="public/screenshots/02_ecograph_galaxy.png" alt="EcoGraph Knowledge Galaxy" width="90%" />
+</div>
 
 ```
   Bengal Tiger ──lives_in──▶ Sundarbans Delta
@@ -105,6 +170,10 @@ The centerpiece of EcoQuest. **EcoGraph** is a **force-directed, physics-simulat
 
 Every EcoQuest learner earns a **Planetary Passport** — a holographic, printable credential that proves their ecological mastery.
 
+<div align="center">
+  <img src="public/screenshots/03_passport_portal.png" alt="Planetary Passport Customizer" width="90%" />
+</div>
+
 ### Passport Features
 
 - **Hologram Aura Themes** — Verdant Grove · Abyssal Tide · Ember Hearth · Cosmic Amethyst · Cyber Neon
@@ -118,7 +187,11 @@ Every EcoQuest learner earns a **Planetary Passport** — a holographic, printab
 
 ## 🎮 The Game Suite — EcoPlay Subsystem
 
-Six interactive, data-driven ecological simulations, each rigorously modeled on real scientific concepts:
+Six interactive, data-driven ecological simulations, each rigorously modeled on real scientific concepts, accessible via an interactive **3D Cartridge Rack**:
+
+<div align="center">
+  <img src="public/screenshots/04_arcade_vault.png" alt="Planetary Arcade Vault 3D Rack" width="90%" />
+</div>
 
 | Game | Ecological Concept | Core Mechanic |
 |---|---|---|
@@ -132,7 +205,7 @@ Six interactive, data-driven ecological simulations, each rigorously modeled on 
 All games feature:
 - **Session Tracker Hook** (`useGameSessionTracker`) — Auto-syncs play time, scores, and metadata to MongoDB
 - **Standalone HTML Mode** — Each game has a zero-dependency single-file HTML build for offline / iframe use
-- **Mobile Arcade Grid** — Native high-performance grid on mobile with category filter pills and tactile feedback
+- **Mobile 3D Rack & Grid** — Touch gesture orbit, pinch-to-zoom, and tactile feedback on mobile devices
 
 ---
 
@@ -146,6 +219,10 @@ All games feature:
 ---
 
 ## 📊 Citizen Dashboard & Leaderboards
+
+<div align="center">
+  <img src="public/screenshots/05_citizen_dashboard.png" alt="Citizen Dashboard & Stats" width="90%" />
+</div>
 
 - **XP Rank Progression** — 7-tier system: Seedling → Sprout → Sapling → Eco Warrior → Green Knight → Earth Guardian → Planet Protector
 - **Carbon Impact Tracker** — Real-world CO₂ saved from logged daily eco-actions (biking, recycling, energy conservation)
@@ -248,70 +325,38 @@ git push origin main
 EcoQuest/
 ├── .env.example                # Public template — commit this, not .env.local
 ├── public/
-│   ├── screenshots/            # README screenshots (tracked in git)
-│   ├── videos/                 # Ambient video wallpapers
-│   └── assets/                 # Logos, SVGs, GIFs
-├── games/                      # Standalone zero-dependency HTML games
+│   ├── forest-bg.jpg           # High-resolution misty forest background
+│   ├── VIDD.mp4                # Ambient looping welcome video
+│   ├── wallpaper.gif           # Animated retro OS wallpaper
+│   ├── games/                  # Standalone simulation builds
+│   └── screenshots/            # UI documentation screenshots
+│       ├── 00_welcome_terminal.png
+│       ├── 01_desktop_os.png
+│       ├── 02_ecograph_galaxy.png
+│       ├── 03_passport_portal.png
+│       ├── 04_arcade_vault.png
+│       └── 05_citizen_dashboard.png
 ├── src/
 │   ├── app/
-│   │   ├── (app)/              # Session-protected routes
-│   │   │   ├── dashboard/      # Citizen Dashboard + 3D Passport
-│   │   │   ├── desktop/        # Retro OS Workspace
-│   │   │   ├── ecograph/       # Knowledge Galaxy Graph
-│   │   │   ├── leaderboard/    # Global Rankings
-│   │   │   ├── play/           # 6 Eco Games + Arcade Vault
-│   │   │   └── quizzes/        # Challenge Suite
-│   │   ├── api/                # Serverless API routes
-│   │   │   ├── admin/ecograph/ # AI Knowledge Studio
-│   │   │   ├── auth/           # NextAuth handlers
-│   │   │   ├── eco-facts/      # Fact widget data
-│   │   │   └── user/           # Progress, badges, sessions
-│   │   └── login/              # Firebase Auth portal + Planetary Passport
-│   ├── components/
-│   │   ├── desktop-layout.tsx  # OS Taskbar, Start Menu, System Tray
-│   │   ├── ecograph/           # Force graph canvas, node inspector
-│   │   ├── passport/           # Passport card + customizer modal
-│   │   ├── ui/                 # ShadCN + custom primitives
-│   │   └── widgets/            # Calendar, Garden, Fact, Weather widgets
-│   ├── hooks/                  # useAuth, useProgress, useGameSessionTracker
-│   └── lib/
-│       ├── ecograph/           # seed-data.ts (450+ ecological nodes), types
-│       ├── games.ts            # Game registry
-│       ├── mongodb.ts          # DB client
-│       └── firebase/           # Client + Admin SDK init
-├── docs/
-│   ├── ARCHITECT.md
-│   ├── GAMERULES.md
-│   └── TECHSTACK.md
-└── .gitignore
+│   │   ├── (app)/              # Windowed OS applications
+│   │   │   ├── account-settings/
+│   │   │   ├── dashboard/
+│   │   │   ├── desktop/
+│   │   │   ├── leaderboard/
+│   │   │   ├── learn/
+│   │   │   └── play/
+│   │   ├── privacy/            # Gaia privacy policy & data governance
+│   │   ├── welcome/            # Interactive dither entrance terminal
+│   │   └── api/                # Next.js API route handlers
+│   ├── components/             # Reusable UI widgets & layout engines
+│   ├── hooks/                  # Custom React hooks (useAuth, useTheme, etc.)
+│   ├── lib/                    # Utilities, D3 graph physics, DiceBear generator
+│   └── models/                 # Mongoose DB schema definitions
+└── package.json
 ```
 
 ---
 
-## 🗺️ Roadmap
-
-- [ ] **Multiplayer Ecosystems** — Collaborative real-time simulations where classes co-manage a shared biome
-- [ ] **AI Tutor Companion** — Gemini-powered conversational guide embedded in every screen
-- [ ] **Augmented Reality Mode** — WebXR overlay for exploring the EcoGraph in physical space
-- [ ] **Teacher Dashboard** — Class analytics, assignment creation, and progress monitoring
-- [ ] **Species Sound Library** — Bioacoustic node sounds play when hovering species in EcoGraph
-- [ ] **Global Eco-Action Feed** — Live leaderboard of real-world carbon actions by the EcoQuest community
-- [ ] **Offline PWA** — Service worker + IndexedDB for full offline-first gameplay
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
 <div align="center">
-
-**Built with relentless ambition by [Ishan Ghosh](https://github.com/IshanG2111)**
-
-*EcoQuest exists because the planet cannot wait for passive learning.*
-
-⭐ Star this repo if EcoQuest inspires you · 🐛 Open an issue if something breaks · 🌿 Fork it and build your own biome
-
+  <b>Built with 💚 for the Planet · EcoQuest 2026</b>
 </div>

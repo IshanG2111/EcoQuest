@@ -43,6 +43,7 @@ import {
 // Widgets
 import { FactWidget } from '@/components/widgets/FactWidget';
 import { DailyBriefingWidget } from '@/components/widgets/DailyBriefingWidget';
+import DitherCanvas from '@/components/ui/DitherCanvas';
 import { PixelWeatherWidget } from '@/components/widgets/PixelWeatherWidget';
 import { EcoNewsWidget } from '@/components/widgets/EcoNewsWidget';
 import { EcoTilesCalendarWidget } from '@/components/widgets/EcoTilesCalendarWidget';
@@ -238,30 +239,19 @@ export function DesktopLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Desktop Wallpaper — poster shows instantly, video loads in background */}
-      <div className="absolute inset-0 z-0">
-        {/* Static gradient fallback always visible */}
+      {/* Desktop Wallpaper — True-Color Dither Video */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <div className="absolute inset-0 w-full h-full" style={{
-          background: `linear-gradient(160deg, #040d14 0%, #021008 40%, #030608 100%)`
+          background: `linear-gradient(135deg, #070e14 0%, #030609 50%, #010305 100%)`
         }} />
-        {/* Dither forest poster — instant, zero-network-wait */}
-        <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-300"
-          style={{ backgroundImage: `url('/forest-bg.jpg')`, opacity: 0.22 }}
-        />
-        {/* Video fades in on top when ready */}
-        <video
+        {/* Real-time Meticulous True-Color Dither Shader on desktop.mp4 */}
+        <DitherCanvas
           src="/videos/desktop.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover"
-          onLoadedData={() => setVideoLoaded(true)}
-          style={{ opacity: videoLoaded ? 1 : 0, transition: 'opacity 1.2s ease' }}
+          colorMode="rgb"
+          lensRadius={220}
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 z-10 bg-black/35 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 z-10 bg-black/15 backdrop-blur-[0.5px]" />
       </div>
 
       {/* Desktop Workspace */}

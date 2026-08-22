@@ -30,7 +30,6 @@ const SECTIONS = [
   { id: 'cookies', label: '6. Essential Cookies Only', icon: Cookie },
   { id: 'subprocessors', label: '7. Third-Party Infrastructure', icon: Server },
   { id: 'children', label: '8. Children’s Privacy', icon: Baby },
-  { id: 'contact', label: '9. Contact & Data Officer', icon: Mail },
 ];
 
 export default function PrivacyPolicyPage() {
@@ -340,31 +339,6 @@ export default function PrivacyPolicyPage() {
                 <p>
                   EcoQuest is an educational platform designed to inspire planetary stewardship across all ages. We do not knowingly collect personal data from children under 13 without consent. If you believe a child has created an account without parental guidance, please contact us for immediate deletion.
                 </p>
-              </div>
-            </PolicyCard>
-
-            {/* 9. Contact */}
-            <PolicyCard id="contact" title="9. Contact & Data Protection Officer" icon={Mail}>
-              <div className="space-y-4 text-sm text-zinc-300 leading-relaxed">
-                <p>
-                  For any privacy inquiries, data export requests, or security disclosures, reach our Data Governance team directly:
-                </p>
-                <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div>
-                    <div className="font-bold text-white font-mono text-xs uppercase tracking-wider">
-                      EcoQuest Data Governance Officer
-                    </div>
-                    <div className="text-xs text-zinc-400 mt-0.5">
-                      Direct response time: within 24–48 hours
-                    </div>
-                  </div>
-                  <a
-                    href="mailto:privacy@ecoquest.org"
-                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs font-mono transition"
-                  >
-                    privacy@ecoquest.org
-                  </a>
-                </div>
               </div>
             </PolicyCard>
 
