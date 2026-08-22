@@ -39,6 +39,7 @@ interface PhysicsNode {
   node: EcoNode;
   x: number;
   y: number;
+  z?: number;
   vx: number;
   vy: number;
   targetX?: number;
@@ -52,11 +53,13 @@ interface ObsidianGraphCanvasProps {
   graphData: GraphData;
   activeNodeId?: string;
   viewMode?: 'overview' | 'focus' | 'paths' | 'timeline';
+  projectionMode?: '2d' | 'globe';
   selectedCategory?: string | null;
   highlightedPathNodeIds?: string[];
   zoomSignal?: { type: 'in' | 'out' | 'reset' | 'fit'; timestamp: number } | null;
   showLabels?: boolean;
   onToggleLabels?: () => void;
+  onToggleProjectionMode?: () => void;
   onSelectNode?: (node: EcoNode) => void;
   onExpandNeighborhood?: (nodeId: string) => void;
 }
@@ -64,11 +67,13 @@ interface ObsidianGraphCanvasProps {
 export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   graphData,
   viewMode = 'overview',
+  projectionMode = '2d',
   selectedCategory = null,
   highlightedPathNodeIds = [],
   zoomSignal = null,
   showLabels: externalShowLabels = false,
   onToggleLabels,
+  onToggleProjectionMode,
   onSelectNode,
   onExpandNeighborhood,
 }) => {
@@ -99,6 +104,9 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
   const [hoveredNode, setHoveredNode] = useState<PhysicsNode | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
+  const globeRotYRef = useRef(0);
+  const globeRotXRef = useRef(0.2);
+
   // ─── Stable Props Ref for High-Performance Canvas Loop ───────────────────
   const propsRef = useRef({
     graphData,
@@ -107,6 +115,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     highlightedPathNodeIds,
     selectedCategory,
     viewMode,
+    projectionMode,
     showLabels,
     repulsion,
     linkDist,
@@ -125,6 +134,7 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       highlightedPathNodeIds,
       selectedCategory,
       viewMode,
+      projectionMode,
       showLabels,
       repulsion,
       linkDist,
@@ -183,23 +193,26 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
     startPanY: number;
   }>({ mode: 'none', nodeId: null, startX: 0, startY: 0, startPanX: 0, startPanY: 0 });
 
-  // ─── Initialize Physics Nodes with Outer Ring & Sub-Clusters ──────────────
-  useEffect(() => {
-    const W = 1800;
-    const H = 1200;
-    const cx = W / 2;
-    const cy = H / 2;
+  // ─── Category Cluster Offsets relative to world center ─────────────────
+  const catCenterOffsets: Record<string, { dx: number; dy: number }> = {
+    Biodiversity: { dx: 180, dy: 160 },    // Bottom Right (Green)
+    Spatial: { dx: -60, dy: 220 },          // Bottom (Blue)
+    Pollution: { dx: -220, dy: -140 },      // Top Left (Red/Pink)
+    Climate: { dx: 0, dy: -20 },            // Center (Orange)
+    Policy: { dx: 220, dy: -140 },         // Top Right (Purple)
+    User: { dx: -240, dy: 60 },             // Left (Pink)
+    Quest: { dx: 240, dy: 60 },             // Right (Cyan)
+  };
 
-    const categories = Object.keys(CATEGORY_COLORS);
-    const catCenters: Record<string, { x: number; y: number }> = {};
-    categories.forEach((cat, idx) => {
-      const angle = (idx / categories.length) * Math.PI * 2;
-      const radius = 280;
-      catCenters[cat] = {
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
-      };
-    });
+  // ─── Initialize Physics Nodes with Cluster Centers ──────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas ? canvas.width / dpr : 1200;
+    const H = canvas ? canvas.height / dpr : 800;
+    const cam = cameraRef.current;
+    const cx = (W / 2 - cam.panX) / cam.zoom;
+    const cy = (H / 2 - cam.panY) / cam.zoom;
 
     const degreeMap = new Map<string, number>();
     graphData.edges.forEach((e) => {
@@ -207,7 +220,6 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       degreeMap.set(e.targetId, (degreeMap.get(e.targetId) || 0) + 1);
     });
 
-    // Save existing node positions to prevent resetting/scattering on data updates
     const existingPosMap = new Map<string, { x: number; y: number }>();
     physicsRef.current.forEach((n) => existingPosMap.set(n.id, { x: n.x, y: n.y }));
 
@@ -224,21 +236,14 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
         x = existing.x;
         y = existing.y;
       } else {
-        const degree = degreeMap.get(node.id) || 0;
-        const isPeripheral = degree <= 1;
+        const offset = catCenterOffsets[node.category] || { dx: 0, dy: 0 };
+        const ccX = cx + offset.dx;
+        const ccY = cy + offset.dy;
 
-        if (isPeripheral) {
-          const ringAngle = (idx / graphData.nodes.length) * Math.PI * 2;
-          const ringRadius = 500 + (Math.random() - 0.5) * 40;
-          x = cx + Math.cos(ringAngle) * ringRadius;
-          y = cy + Math.sin(ringAngle) * ringRadius;
-        } else {
-          const cc = catCenters[node.category] || { x: cx, y: cy };
-          const angle = Math.random() * Math.PI * 2;
-          const spread = 30 + Math.random() * 120;
-          x = cc.x + Math.cos(angle) * spread;
-          y = cc.y + Math.sin(angle) * spread;
-        }
+        const angle = Math.random() * Math.PI * 2;
+        const spread = 20 + Math.random() * 110;
+        x = ccX + Math.cos(angle) * spread;
+        y = ccY + Math.sin(angle) * spread;
       }
 
       const baseColor = groupColors[node.category] || CATEGORY_COLORS[node.category] || NEON_PALETTE[idx % NEON_PALETTE.length];
@@ -355,8 +360,41 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
 
       const dragging = dragRef.current;
 
-      // ── 1. Timeline Mode Layout Interpolation ──
-      if (p.viewMode === 'timeline') {
+      // ── 1. 3D Spherical Globe Projection Mode ──
+      if (p.projectionMode === 'globe') {
+        globeRotYRef.current += 0.0035;
+        const rotY = globeRotYRef.current;
+        const rotX = globeRotXRef.current;
+        const total = nodes.length || 1;
+        const sphereRadius = 310;
+
+        nodes.forEach((n, idx) => {
+          if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
+
+          const lat = Math.asin(-1 + (2 * idx) / total);
+          const lon = idx * 2.3999632297286533; // Golden angle
+
+          const x0 = sphereRadius * Math.cos(lat) * Math.cos(lon);
+          const y0 = sphereRadius * Math.sin(lat);
+          const z0 = sphereRadius * Math.cos(lat) * Math.sin(lon);
+
+          const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+          const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+          const x1 = x0 * cosY + z0 * sinY;
+          const z1 = -x0 * sinY + z0 * cosY;
+          const y1 = y0 * cosX - z1 * sinX;
+          const z2 = y0 * sinX + z1 * cosX;
+
+          const perspectiveScale = 520 / (520 - z2);
+          const targetX = worldCx + x1 * perspectiveScale;
+          const targetY = worldCy + y1 * perspectiveScale;
+
+          n.x += (targetX - n.x) * 0.16;
+          n.y += (targetY - n.y) * 0.16;
+          n.z = z2;
+        });
+      } else if (p.viewMode === 'timeline') {
         const total = nodes.length;
         const totalWidth = 1400;
         const startX = worldCx - totalWidth / 2;
@@ -414,8 +452,12 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
           nodes.forEach((n) => {
             if (dragging.mode === 'node' && dragging.nodeId === n.id) return;
 
-            n.vx += (worldCx - n.x) * p.centerForce;
-            n.vy += (worldCy - n.y) * p.centerForce;
+            const offset = catCenterOffsets[n.node.category] || { dx: 0, dy: 0 };
+            const targetX = worldCx + offset.dx;
+            const targetY = worldCy + offset.dy;
+
+            n.vx += (targetX - n.x) * (p.centerForce * 1.5);
+            n.vy += (targetY - n.y) * (p.centerForce * 1.5);
 
             n.vx *= coolFriction;
             n.vy *= coolFriction;
@@ -427,7 +469,6 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
             n.y += n.vy;
           });
         } else {
-          // FREEZE velocity completely when settled
           nodes.forEach((n) => {
             if (dragging.mode !== 'node' || dragging.nodeId !== n.id) {
               n.vx = 0;
@@ -441,19 +482,47 @@ export const ObsidianGraphCanvas: React.FC<ObsidianGraphCanvasProps> = ({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W / dpr, H / dpr);
 
-      // Deep Obsidian background
-      ctx.fillStyle = '#0d1117';
+      // Deep Obsidian Space Background
+      ctx.fillStyle = '#07090e';
       ctx.fillRect(0, 0, W / dpr, H / dpr);
 
-      const grad = ctx.createRadialGradient(W / dpr / 2, H / dpr / 2, 100, W / dpr / 2, H / dpr / 2, (W / dpr) * 0.7);
-      grad.addColorStop(0, 'rgba(20, 25, 40, 0)');
-      grad.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+      const grad = ctx.createRadialGradient(W / dpr / 2, H / dpr / 2, 80, W / dpr / 2, H / dpr / 2, (W / dpr) * 0.7);
+      grad.addColorStop(0, 'rgba(15, 23, 42, 0.6)');
+      grad.addColorStop(0.6, 'rgba(13, 17, 23, 0.9)');
+      grad.addColorStop(1, 'rgba(7, 9, 14, 1.0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W / dpr, H / dpr);
 
       ctx.save();
       ctx.translate(cam.panX, cam.panY);
       ctx.scale(cam.zoom, cam.zoom);
+
+      // Render 2D Network Cluster Constellation Orbit Ring & Category Halos
+      const clusterR = 520;
+
+      // Outer Constellation Boundary Ring
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.lineWidth = 1.0 / cam.zoom;
+      ctx.setLineDash([3, 6]);
+      ctx.beginPath();
+      ctx.arc(worldCx, worldCy, clusterR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Category Cluster Halos
+      Object.entries(catCenterOffsets).forEach(([cat, offset]) => {
+        const hx = worldCx + offset.dx;
+        const hy = worldCy + offset.dy;
+        const color = CATEGORY_COLORS[cat] || '#10b981';
+
+        const haloGrad = ctx.createRadialGradient(hx, hy, 10, hx, hy, 180);
+        haloGrad.addColorStop(0, color + '22');
+        haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = haloGrad;
+        ctx.beginPath();
+        ctx.arc(hx, hy, 180, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       // Connected Nodes Set for Focus & Paths Mode
       const connectedNodeIds = new Set<string>();

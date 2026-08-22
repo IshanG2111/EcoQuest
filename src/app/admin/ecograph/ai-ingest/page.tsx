@@ -12,6 +12,12 @@ export default function AIIngestionStudioPage() {
   const [imported, setImported] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const [wikiIngesting, setWikiIngesting] = useState(false);
+  const [wikiMsg, setWikiMsg] = useState('');
+
+  const [extIngesting, setExtIngesting] = useState(false);
+  const [extMsg, setExtMsg] = useState('');
+
   const handleExtract = async () => {
     if (!urlInput && !rawTextInput) return;
     try {
@@ -43,7 +49,6 @@ export default function AIIngestionStudioPage() {
       const entities = extractedData.extractedEntities;
       const edges = extractedData.proposedEdges || [];
 
-      // 1. Import all extracted entities as Nodes
       for (const entity of entities) {
         await fetch('/api/admin/ecograph/nodes', {
           method: 'POST',
@@ -60,7 +65,6 @@ export default function AIIngestionStudioPage() {
         });
       }
 
-      // 2. Import proposed graph relationships as Edges
       for (const edge of edges) {
         if (edge.sourceId && edge.targetId) {
           await fetch('/api/admin/ecograph/edges', {
@@ -84,6 +88,42 @@ export default function AIIngestionStudioPage() {
     }
   };
 
+  const handleIngestWikiKG = async () => {
+    try {
+      setWikiIngesting(true);
+      setWikiMsg('');
+      const res = await fetch('/api/admin/ecograph/wikikg-ingest', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setWikiMsg(`Successfully ingested ${json.nodeCount} entities and ${json.edgeCount} Wikidata property relationships from Stanford WikiKG90Mv2!`);
+      } else {
+        throw new Error(json.error || 'WikiKG Ingestion failed.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error ingesting WikiKG data.');
+    } finally {
+      setWikiIngesting(false);
+    }
+  };
+
+  const handleIngestKaggleHF = async () => {
+    try {
+      setExtIngesting(true);
+      setExtMsg('');
+      const res = await fetch('/api/admin/ecograph/external-ingest', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setExtMsg(`Successfully ingested ${json.nodeCount} Kaggle, HuggingFace, & NASA Earth Observation entities!`);
+      } else {
+        throw new Error(json.error || 'External Dataset Ingestion failed.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error ingesting Kaggle & HuggingFace datasets.');
+    } finally {
+      setExtIngesting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
@@ -94,6 +134,67 @@ export default function AIIngestionStudioPage() {
         <p className="text-xs text-zinc-400 mt-1">
           Scrape WWF, IUCN, or CPCB environmental article URLs or text snippets. Multi-model AI (Gemini + Local NLP Auto-Linker) extracts species, habitats, pollutants, policies, and graph relationships.
         </p>
+      </div>
+
+      {/* Dataset Presets Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Stanford WikiKG90Mv2 Benchmark Presets Banner */}
+        <div className="bg-[#11131c] border border-purple-500/40 p-4 rounded-xl flex flex-col justify-between space-y-3 shadow-xl">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-purple-400" />
+              <h2 className="text-sm font-bold text-white">Stanford OGB WikiKG90Mv2</h2>
+              <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-purple-950 text-purple-300 border border-purple-500/40 font-bold">
+                91.2M Wikidata Entities
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Ingest structured Wikidata entities (Panthera tigris Q140, Elephas maximus Q7377, Sundarbans Q4550) & 601 property relation types.
+            </p>
+            {wikiMsg && (
+              <div className="text-[11px] text-emerald-400 font-bold pt-1 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> {wikiMsg}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleIngestWikiKG}
+            disabled={wikiIngesting}
+            className="w-full py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-2 transition shadow"
+          >
+            <Database className={`w-3.5 h-3.5 ${wikiIngesting ? 'animate-spin' : ''}`} />
+            {wikiIngesting ? 'Ingesting WikiKG Data...' : '1-Click Ingest Stanford WikiKG'}
+          </button>
+        </div>
+
+        {/* Kaggle & HuggingFace Dataset Presets Banner */}
+        <div className="bg-[#11131c] border border-sky-500/40 p-4 rounded-xl flex flex-col justify-between space-y-3 shadow-xl">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-sky-400" />
+              <h2 className="text-sm font-bold text-white">Kaggle & HuggingFace Clusters</h2>
+              <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-sky-950 text-sky-300 border border-sky-500/40 font-bold">
+                NASA + IPCC + ReefWatch
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400">
+              Ingest HuggingFace Climate-NLP, Kaggle Biodiversity Matrix, Great Barrier Reef Bleaching, and NASA Landsat 9 Deforestation alerts.
+            </p>
+            {extMsg && (
+              <div className="text-[11px] text-emerald-400 font-bold pt-1 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> {extMsg}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleIngestKaggleHF}
+            disabled={extIngesting}
+            className="w-full py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-2 transition shadow"
+          >
+            <Globe className={`w-3.5 h-3.5 ${extIngesting ? 'animate-spin' : ''}`} />
+            {extIngesting ? 'Ingesting External Clusters...' : '1-Click Ingest Kaggle & HuggingFace'}
+          </button>
+        </div>
       </div>
 
       {/* Error Banner */}
